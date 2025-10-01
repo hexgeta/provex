@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { usePerpetualPool, PERPETUAL_POOL_ADDRESS } from '@/hooks/contracts/usePerpetualPool';
+import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
+import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 
@@ -19,6 +20,8 @@ export default function StakeInterface({
   onTransactionSuccess,
   onTransactionError,
 }: StakeInterfaceProps) {
+  const { selectedPool } = usePool();
+  
   const {
     stakeIsActive,
     stakeEndDay,
@@ -32,7 +35,7 @@ export default function StakeInterface({
     isLoading,
     isConnected,
     refetchBalance,
-  } = usePerpetualPool();
+  } = usePerpetualPool(selectedPool.contractAddress);
 
   const [redeemAmount, setRedeemAmount] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('info');
@@ -97,7 +100,7 @@ export default function StakeInterface({
       const result = await redeemHex(amountInMini);
       
       onTransactionSuccess?.(
-        `Successfully redeemed ${redeemAmount} ${tokenSymbol || 'tokens'} for TRIO!`,
+        `Successfully redeemed ${redeemAmount} ${tokenSymbol || 'tokens'} for ${selectedPool.ticker}!`,
         result.hash
       );
       
@@ -166,9 +169,9 @@ export default function StakeInterface({
             <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
               <h3 className="text-lg font-semibold text-white mb-2">Contract Address</h3>
               <div className="flex items-center gap-2">
-                <code className="text-sm text-gray-300 break-all">{PERPETUAL_POOL_ADDRESS}</code>
+                <code className="text-sm text-gray-300 break-all">{selectedPool.contractAddress}</code>
                 <a
-                  href={`https://otter.pulsechain.com/address/${PERPETUAL_POOL_ADDRESS}`}
+                  href={`https://otter.pulsechain.com/address/${selectedPool.contractAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300"
@@ -234,11 +237,11 @@ export default function StakeInterface({
 
         {activeTab === 'claim' && (
           <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Claim TRIO Tokens</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Claim {selectedPool.ticker} Tokens</h2>
             
             <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-xl">
               <p className="text-gray-300 mb-2">
-                Burn your {tokenSymbol || 'pool tokens'} to receive your pro-rata share of TRIO tokens from the pool.
+                Burn your {tokenSymbol || 'pool tokens'} to receive your pro-rata share of {selectedPool.ticker} tokens from the pool.
               </p>
               <p className="text-sm text-gray-400">
                 Your balance: <span className="text-white font-semibold">{formattedBalance} {tokenSymbol || ''}</span>
@@ -272,7 +275,7 @@ export default function StakeInterface({
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">
-                    {calculateRedeemableHex(redeemAmount)} TRIO
+                    {calculateRedeemableHex(redeemAmount)} {selectedPool.ticker}
                   </p>
                 </div>
               )}
@@ -282,7 +285,7 @@ export default function StakeInterface({
                 disabled={!redeemAmount || parseFloat(redeemAmount) <= 0 || isLoading || stakeIsActive}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                   redeemAmount && parseFloat(redeemAmount) > 0 && !isLoading && !stakeIsActive
-                    ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white'
+                    ? `bg-gradient-to-r ${selectedPool.gradientFrom} ${selectedPool.gradientTo} hover:opacity-90 text-white`
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -292,7 +295,7 @@ export default function StakeInterface({
                     Processing...
                   </span>
                 ) : (
-                  'Claim TRIO Tokens'
+                  `Claim ${selectedPool.ticker} Tokens`
                 )}
               </button>
 

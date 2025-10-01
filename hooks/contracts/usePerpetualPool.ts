@@ -2,9 +2,6 @@ import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'w
 import { Address, parseAbi } from 'viem';
 import { useState } from 'react';
 
-// Contract address for the Perpetual Pool
-export const PERPETUAL_POOL_ADDRESS = '0xF55cD1e399e1cc3D95303048897a680be3313308' as Address;
-
 // ABI for the Perpetual Pool contract - only including functions we need
 const PERPETUAL_POOL_ABI = parseAbi([
   'function CURRENT_PERIOD() view returns (uint256)',
@@ -36,7 +33,7 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'function transfer(address recipient, uint256 amount) returns (bool)',
 ]);
 
-export function usePerpetualPool() {
+export function usePerpetualPool(contractAddress: Address) {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -44,43 +41,43 @@ export function usePerpetualPool() {
 
   // Read contract state
   const { data: stakeIsActive } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_IS_ACTIVE',
   });
 
   const { data: stakeEndDay } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_END_DAY',
   });
 
   const { data: currentHexDay } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'getHexDay',
   });
 
   const { data: currentPeriod } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'getCurrentPeriod',
   });
 
   const { data: hexRedemptionRate } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'HEX_REDEMPTION_RATE',
   });
 
   const { data: reloadPhaseEnd } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'RELOAD_PHASE_END',
   });
 
   const { data: userBalance, refetch: refetchBalance } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
@@ -88,19 +85,19 @@ export function usePerpetualPool() {
   });
 
   const { data: totalSupply } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'totalSupply',
   });
 
   const { data: tokenName } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'name',
   });
 
   const { data: tokenSymbol } = useContractRead({
-    address: PERPETUAL_POOL_ADDRESS,
+    address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'symbol',
   });
@@ -114,7 +111,7 @@ export function usePerpetualPool() {
     setIsLoading(true);
     try {
       const { request } = await publicClient!.simulateContract({
-        address: PERPETUAL_POOL_ADDRESS,
+        address: contractAddress,
         abi: PERPETUAL_POOL_ABI,
         functionName: 'endStakeHEX',
         args: [stakeIndex, stakeIdParam],
@@ -134,7 +131,7 @@ export function usePerpetualPool() {
     }
   };
 
-  // Redeem HEX function (claim TRIO tokens by burning pool tokens)
+  // Redeem HEX function (claim tokens by burning pool tokens)
   const redeemHex = async (amount: bigint) => {
     if (!walletClient || !address) {
       throw new Error('Wallet not connected');
@@ -143,7 +140,7 @@ export function usePerpetualPool() {
     setIsLoading(true);
     try {
       const { request } = await publicClient!.simulateContract({
-        address: PERPETUAL_POOL_ADDRESS,
+        address: contractAddress,
         abi: PERPETUAL_POOL_ABI,
         functionName: 'redeemHEX',
         args: [amount],
@@ -175,7 +172,7 @@ export function usePerpetualPool() {
     setIsLoading(true);
     try {
       const { request } = await publicClient!.simulateContract({
-        address: PERPETUAL_POOL_ADDRESS,
+        address: contractAddress,
         abi: PERPETUAL_POOL_ABI,
         functionName: 'mintHedron',
         args: [stakeIndex, stakeId],
