@@ -12,7 +12,7 @@ interface PoolContextType {
 const PoolContext = createContext<PoolContextType | undefined>(undefined);
 
 export function PoolProvider({ children }: { children: ReactNode }) {
-  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('TRIO');
+  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('DECI');
 
   const value = {
     selectedPool: PERPETUAL_POOLS[selectedTicker],

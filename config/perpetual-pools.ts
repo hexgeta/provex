@@ -49,6 +49,12 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
   },
 };
 
-export const POOL_OPTIONS = Object.values(PERPETUAL_POOLS);
+// Ordered pool options: DECI, LUCKY, TRIO, BASE
+export const POOL_OPTIONS = [
+  PERPETUAL_POOLS.DECI,
+  PERPETUAL_POOLS.LUCKY,
+  PERPETUAL_POOLS.TRIO,
+  PERPETUAL_POOLS.BASE,
+];
 export type PoolTicker = keyof typeof PERPETUAL_POOLS;
 
