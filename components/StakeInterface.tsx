@@ -38,7 +38,7 @@ export default function StakeInterface({
   } = usePerpetualPool(selectedPool.contractAddress);
 
   const [redeemAmount, setRedeemAmount] = useState('');
-  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
 
   // Calculate if stake can be ended
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
