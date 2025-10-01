@@ -40,6 +40,15 @@ export default function StakeInterface({
   const [redeemAmount, setRedeemAmount] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
 
+  // Set default tab based on stake status
+  useEffect(() => {
+    if (stakeIsActive === true) {
+      setActiveTab('end');
+    } else if (stakeIsActive === false) {
+      setActiveTab('claim');
+    }
+  }, [stakeIsActive]);
+
   // Calculate if stake can be ended
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
   const daysUntilEnd = stakeEndDay && currentHexDay ? Number(stakeEndDay - currentHexDay) : 0;
