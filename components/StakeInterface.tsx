@@ -131,7 +131,7 @@ export default function StakeInterface({
   return (
     <div className="w-full max-w-4xl mx-auto mt-8">
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex justify-center gap-2 mb-6">
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
