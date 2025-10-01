@@ -928,8 +928,11 @@ export const OpenPositionsTable = forwardRef<any, {}>((props, ref) => {
         const remainingAmountFormatted = parseFloat(formatTokenAmount(remainingAmount, tokenInfo.decimals));
         
         // Apply the percentage to the remaining amount
-        const fillAmount = (remainingAmountFormatted * percentage).toString();
-        newInputs[tokenInfo.address] = fillAmount;
+        const fillAmount = remainingAmountFormatted * percentage;
+        // Round to reasonable precision to avoid floating point issues, then convert to string
+        // This will automatically remove trailing zeros
+        const roundedAmount = Math.round(fillAmount * 1e15) / 1e15;
+        newInputs[tokenInfo.address] = roundedAmount.toString();
       }
     });
     

@@ -11,20 +11,20 @@ import { headers } from 'next/headers'
 export const revalidate = 2592000; // 30 days in seconds
 
 export const metadata = {
-  title: 'AgoráX - OTC Platform for Pooled HEX Stake Tokens',
-  description: 'AgoráX is an OTC platform for trading pooled HEX stake tokens. Trade your HEX stakes with other users in a secure, decentralized environment.',
+  title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
+  description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline. Secure, decentralized stake pool management.',
   metadataBase: new URL('https://otc.lookintomaxi.com'),
   openGraph: {
-    title: 'AgoráX - Peer-to-peer OTC Pooled HEX Stake Trading',
-    description: 'Peer-to-peer OTC pooled HEX stake trading. At scale. On your own terms.',
+    title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
+    description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline.',
     url: 'https://otc.lookintomaxi.com',
-    siteName: 'AgoráX',
+    siteName: 'HEX Stake Pool',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'AgoráX - OTC Platform for Pooled HEX Stake Tokens',
+        alt: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
       },
     ],
     locale: 'en_US',
@@ -32,8 +32,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AgoráX - Peer-to-peer OTC Pooled HEX Stake Trading',
-    description: 'Peer-to-peer OTC pooled HEX stake trading. At scale. On your own terms.',
+    title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
+    description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline.',
     images: ['/opengraph-image.png'],
   },
   icons: {

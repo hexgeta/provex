@@ -13,13 +13,10 @@ const Footer = () => {
           {/* Main Info Column */}
           <div>
             <h3 className="text-s font-semibold mb-2">
-              AgoráX {CURRENT_YEAR}
+              LookIntoMaxi {CURRENT_YEAR}
             </h3>
             <p className="text-sm text-[rgb(153,153,153)]">
-              Peer-to-peer pooled HEX stake trading
-            </p>
-            <p className="text-sm mt-1 text-[rgb(153,153,153)]">
-              Powered by <a href="https://www.0xbistro.io/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">0xBistro</a>
+              Claim your HEX boi
             </p>
           </div>
 
