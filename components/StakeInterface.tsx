@@ -20,7 +20,7 @@ export default function StakeInterface({
   onTransactionSuccess,
   onTransactionError,
 }: StakeInterfaceProps) {
-  const { selectedPool } = usePool();
+  const { selectedPool, selectedTicker } = usePool();
   
   const {
     stakeIsActive,
@@ -35,10 +35,11 @@ export default function StakeInterface({
     isLoading,
     isConnected,
     refetchBalance,
-  } = usePerpetualPool(selectedPool.contractAddress);
+  } = usePerpetualPool(selectedPool.contractAddress, selectedTicker);
 
   const [redeemAmount, setRedeemAmount] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
+  const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   // Set default tab based on stake status
   useEffect(() => {
@@ -52,6 +53,45 @@ export default function StakeInterface({
   // Calculate if stake can be ended
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
   const daysUntilEnd = stakeEndDay && currentHexDay ? Number(stakeEndDay - currentHexDay) : 0;
+
+  // Real-time countdown when less than 3 days remaining
+  useEffect(() => {
+    if (!stakeEndDay || !stakeIsActive || daysUntilEnd >= 3) {
+      return;
+    }
+
+    const updateCountdown = () => {
+      // HEX day is 86400 seconds (24 hours)
+      // Calculate the exact Unix timestamp when the stake ends
+      // HEX Day 1 started at Unix timestamp 1575331200 (Dec 3, 2019 00:00:00 UTC)
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      const stakeEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(stakeEndDay) * SECONDS_PER_DAY);
+      const now = Math.floor(Date.now() / 1000);
+      const secondsRemaining = stakeEndTimestamp - now;
+
+      if (secondsRemaining <= 0) {
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
+      const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
+      const minutes = Math.floor((secondsRemaining % 3600) / 60);
+      const seconds = secondsRemaining % 60;
+
+      setTimeRemaining({ days, hours, minutes, seconds });
+    };
+
+    // Initial update
+    updateCountdown();
+
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [stakeEndDay, stakeIsActive, daysUntilEnd]);
 
   // Format user balance
   const formattedBalance = userBalance ? (Number(userBalance) / 1e8).toFixed(2) : '0.00';
@@ -208,13 +248,32 @@ export default function StakeInterface({
                   <span>Stake is ready to be ended!</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-yellow-400 mb-4">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>
-                    {stakeIsActive 
-                      ? `Stake cannot be ended yet. ${daysUntilEnd} days remaining.`
-                      : 'Stake is not currently active or has already been ended.'}
-                  </span>
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>
+                      {stakeIsActive 
+                        ? daysUntilEnd < 3
+                          ? 'Stake cannot be ended yet.'
+                          : `Stake cannot be ended yet. ${daysUntilEnd} days remaining.`
+                        : 'Stake is not currently active or has already been ended.'}
+                    </span>
+                  </div>
+                  {stakeIsActive && daysUntilEnd < 3 && daysUntilEnd > 0 && (
+                    <div className="flex items-center justify-center gap-2 mt-2 text-2xl md:text-3xl font-mono font-bold text-yellow-300">
+                      {timeRemaining.days > 0 && (
+                        <>
+                          <span>{timeRemaining.days}</span>
+                          <span className="text-gray-500 text-lg">d</span>
+                        </>
+                      )}
+                      <span>{String(timeRemaining.hours).padStart(2, '0')}</span>
+                      <span className="text-gray-500">:</span>
+                      <span>{String(timeRemaining.minutes).padStart(2, '0')}</span>
+                      <span className="text-gray-500">:</span>
+                      <span>{String(timeRemaining.seconds).padStart(2, '0')}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

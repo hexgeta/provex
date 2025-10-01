@@ -1,6 +1,7 @@
 import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'wagmi';
 import { Address, parseAbi } from 'viem';
 import { useState } from 'react';
+import { TEST_OVERRIDES, PoolTicker } from '@/config/perpetual-pools';
 
 // ABI for the Perpetual Pool contract - only including functions we need
 const PERPETUAL_POOL_ABI = parseAbi([
@@ -33,7 +34,7 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'function transfer(address recipient, uint256 amount) returns (bool)',
 ]);
 
-export function usePerpetualPool(contractAddress: Address) {
+export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -45,6 +46,20 @@ export function usePerpetualPool(contractAddress: Address) {
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_IS_ACTIVE',
   });
+
+  // Apply test override if enabled
+  const getOverriddenStakeStatus = () => {
+    if (!ticker) return stakeIsActive;
+    
+    const overrideKey = `${ticker}_STAKE_ENDED` as keyof typeof TEST_OVERRIDES;
+    const isOverrideEnabled = TEST_OVERRIDES[overrideKey];
+    
+    if (isOverrideEnabled) {
+      return false; // Override to simulate ended stake
+    }
+    
+    return stakeIsActive;
+  };
 
   const { data: stakeEndDay } = useContractRead({
     address: contractAddress,
@@ -193,8 +208,8 @@ export function usePerpetualPool(contractAddress: Address) {
   };
 
   return {
-    // Contract state
-    stakeIsActive: stakeIsActive as boolean | undefined,
+    // Contract state (with test override applied)
+    stakeIsActive: getOverriddenStakeStatus() as boolean | undefined,
     stakeEndDay: stakeEndDay as bigint | undefined,
     currentHexDay: currentHexDay as bigint | undefined,
     currentPeriod: currentPeriod as bigint | undefined,

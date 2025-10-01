@@ -11,6 +11,14 @@ export interface PerpetualPoolConfig {
   deadlineUTC: string; // ISO string format
 }
 
+// TEST OVERRIDES - Set to true to simulate ended stake / claim period
+export const TEST_OVERRIDES = {
+  TRIO_STAKE_ENDED: false,
+  DECI_STAKE_ENDED: false,
+  LUCKY_STAKE_ENDED: false,
+  BASE_STAKE_ENDED: false,
+};
+
 export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
   TRIO: {
     name: 'TRIO',
