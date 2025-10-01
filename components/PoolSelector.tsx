@@ -46,7 +46,7 @@ export default function PoolSelector() {
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-6">
-      <div className="flex justify-center sm:justify-start mb-4 w-full">
+      <div className="flex justify-center mb-4 w-full">
         <div className={`inline-flex items-center bg-black border rounded-full relative w-full md:w-auto ${getBorderColor()}`}>
           {POOL_OPTIONS.map((pool) => {
             const isSelected = selectedTicker === pool.ticker;
