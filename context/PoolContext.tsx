@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { PERPETUAL_POOLS, PerpetualPoolConfig, PoolTicker } from '@/config/perpetual-pools';
+import { PERPETUAL_POOLS, POOL_OPTIONS, PerpetualPoolConfig, PoolTicker } from '@/config/perpetual-pools';
 
 interface PoolContextType {
   selectedPool: PerpetualPoolConfig;
@@ -11,8 +11,24 @@ interface PoolContextType {
 
 const PoolContext = createContext<PoolContextType | undefined>(undefined);
 
+// Get pool ending soonest
+const getPoolEndingSoonest = (): PoolTicker => {
+  let soonestPool = POOL_OPTIONS[0];
+  let soonestDate = new Date(soonestPool.deadlineUTC);
+
+  POOL_OPTIONS.forEach(pool => {
+    const poolDate = new Date(pool.deadlineUTC);
+    if (poolDate < soonestDate) {
+      soonestDate = poolDate;
+      soonestPool = pool;
+    }
+  });
+
+  return soonestPool.ticker as PoolTicker;
+};
+
 export function PoolProvider({ children }: { children: ReactNode }) {
-  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('DECI');
+  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>(getPoolEndingSoonest());
 
   const value = {
     selectedPool: PERPETUAL_POOLS[selectedTicker],
