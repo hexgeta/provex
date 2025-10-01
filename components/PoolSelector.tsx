@@ -5,39 +5,86 @@ import { usePool } from '@/context/PoolContext';
 import { POOL_OPTIONS, PoolTicker } from '@/config/perpetual-pools';
 
 export default function PoolSelector() {
-  const { selectedTicker, setSelectedTicker } = usePool();
+  const { selectedTicker, setSelectedTicker, selectedPool } = usePool();
+
+  // Get border color based on selected pool
+  const getBorderColor = () => {
+    switch (selectedTicker) {
+      case 'TRIO':
+        return 'border-purple-600';
+      case 'DECI':
+        return 'border-green-600';
+      case 'LUCKY':
+        return 'border-yellow-600';
+      case 'BASE':
+        return 'border-blue-600';
+      default:
+        return 'border-purple-600';
+    }
+  };
+
+  // Get background gradient class for active button
+  const getActiveBackground = (ticker: string) => {
+    switch (ticker) {
+      case 'TRIO':
+        return 'bg-purple-600';
+      case 'DECI':
+        return 'bg-green-600';
+      case 'LUCKY':
+        return 'bg-yellow-600';
+      case 'BASE':
+        return 'bg-blue-600';
+      default:
+        return 'bg-purple-600';
+    }
+  };
+
+  // Get hover text color for inactive buttons
+  const getHoverTextColor = (ticker: string) => {
+    switch (ticker) {
+      case 'TRIO':
+        return 'text-purple-600 hover:text-purple-500';
+      case 'DECI':
+        return 'text-green-600 hover:text-green-500';
+      case 'LUCKY':
+        return 'text-yellow-600 hover:text-yellow-500';
+      case 'BASE':
+        return 'text-blue-600 hover:text-blue-500';
+      default:
+        return 'text-purple-600 hover:text-purple-500';
+    }
+  };
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8">
-      <div className="bg-black/40 border border-white/10 rounded-2xl p-4">
-        <h3 className="text-sm font-semibold text-gray-400 mb-3 text-center">
-          SELECT PERPETUAL POOL
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="w-full max-w-4xl mx-auto mb-6">
+      <div className="flex justify-center sm:justify-start mb-4 w-full">
+        <div className={`inline-flex items-center bg-black border rounded-full relative w-full md:w-auto ${getBorderColor()}`}>
           {POOL_OPTIONS.map((pool) => {
             const isSelected = selectedTicker === pool.ticker;
             return (
-              <motion.button
+              <button
                 key={pool.ticker}
                 onClick={() => setSelectedTicker(pool.ticker as PoolTicker)}
-                className={`relative px-6 py-4 rounded-xl font-bold text-lg transition-all ${
+                className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-base font-bold transition-colors duration-200 relative z-10 whitespace-nowrap ${
                   isSelected
-                    ? `bg-gradient-to-r ${pool.gradientFrom} ${pool.gradientTo} text-white border-2 border-white/30`
-                    : 'bg-black/60 text-gray-400 border-2 border-white/10 hover:border-white/30 hover:text-white'
+                    ? 'text-white'
+                    : getHoverTextColor(pool.ticker)
                 }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
-                {pool.ticker}
                 {isSelected && (
                   <motion.div
-                    className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"
-                    layoutId="selectedIndicator"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                    layoutId="activePoolTab"
+                    className={`absolute inset-0 rounded-full ${getActiveBackground(pool.ticker)} shadow-sm`}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30
+                    }}
+                    style={{ zIndex: -1 }}
                   />
                 )}
-              </motion.button>
+                {pool.ticker}
+              </button>
             );
           })}
         </div>
