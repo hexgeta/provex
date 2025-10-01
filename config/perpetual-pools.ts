@@ -8,6 +8,7 @@ export interface PerpetualPoolConfig {
   gradientFrom: string;
   gradientTo: string;
   description: string;
+  deadlineUTC: string; // ISO string format
 }
 
 export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
@@ -19,6 +20,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientFrom: 'from-purple-600',
     gradientTo: 'to-blue-600',
     description: 'TRIO Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
   },
   DECI: {
     name: 'DECI',
@@ -28,6 +30,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientFrom: 'from-green-600',
     gradientTo: 'to-emerald-600',
     description: 'DECI Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
   },
   LUCKY: {
     name: 'LUCKY',
@@ -37,6 +40,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientFrom: 'from-yellow-600',
     gradientTo: 'to-orange-600',
     description: 'LUCKY Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
   },
   BASE: {
     name: 'BASE',
@@ -46,6 +50,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientFrom: 'from-blue-600',
     gradientTo: 'to-cyan-600',
     description: 'BASE Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
   },
 };
 

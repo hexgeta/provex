@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { PoolProvider } from '@/context/PoolContext';
 import PoolSelector from '@/components/PoolSelector';
-import CountdownTimer from '@/components/CountdownTimer';
+import PoolCountdown from '@/components/PoolCountdown';
 import StakeInterface from '@/components/StakeInterface';
 import useToast from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
@@ -29,14 +29,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Pool Selector */}
+        {/* Pool Selector with Countdown */}
         <div className="w-full px-2 md:px-8">
           <PoolSelector />
         </div>
 
-        {/* Countdown Timer */}
-        <div className="w-full px-2 md:px-8">
-          <CountdownTimer />
+        {/* Subtle Pool-Specific Countdown */}
+        <div className="w-full px-2 md:px-8 mb-6">
+          <div className="max-w-4xl mx-auto flex justify-center">
+            <PoolCountdown />
+          </div>
         </div>
 
         {/* Main Content */}
