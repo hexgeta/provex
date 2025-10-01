@@ -34,13 +34,6 @@ export default function Home() {
           <PoolSelector />
         </div>
 
-        {/* Subtle Pool-Specific Countdown */}
-        <div className="w-full px-2 md:px-8 mb-6">
-          <div className="max-w-4xl mx-auto flex justify-center">
-            <PoolCountdown />
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="w-full px-2 md:px-8 mt-2">
           <div className="max-w-6xl mx-auto">
