@@ -39,20 +39,9 @@ export default function PoolSelector() {
     }
   };
 
-  // Get hover text color for inactive buttons
-  const getHoverTextColor = (ticker: string) => {
-    switch (ticker) {
-      case 'TRIO':
-        return 'text-purple-600 hover:text-purple-500';
-      case 'DECI':
-        return 'text-green-600 hover:text-green-500';
-      case 'LUCKY':
-        return 'text-yellow-600 hover:text-yellow-500';
-      case 'BASE':
-        return 'text-blue-600 hover:text-blue-500';
-      default:
-        return 'text-purple-600 hover:text-purple-500';
-    }
+  // Clean look - all unselected buttons have white text
+  const getHoverTextColor = () => {
+    return 'text-white/70 hover:text-white';
   };
 
   return (
@@ -68,7 +57,7 @@ export default function PoolSelector() {
                 className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-base font-bold transition-colors duration-200 relative z-10 whitespace-nowrap ${
                   isSelected
                     ? 'text-white'
-                    : getHoverTextColor(pool.ticker)
+                    : getHoverTextColor()
                 }`}
               >
                 {isSelected && (
