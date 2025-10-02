@@ -110,8 +110,9 @@ body {
   @apply max-w-[1200px] mx-auto relative;
 }
 
+/* Removed padding-left calc to fix scrolling issues */
 html {
-  padding-left: calc(100vw - 100%);
+  /* padding-left: calc(100vw - 100%); */
 }
 
 /* Framer's standard breakpoints */
@@ -232,12 +233,9 @@ textarea {
 }
 
 /* Cross-Browser Compatibility (Lines 205-217) */
-@supports (-webkit-overflow-scrolling: touch) {
-  * {
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {

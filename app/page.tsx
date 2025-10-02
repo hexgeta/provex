@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function HomeContent() {
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('claim');
   const { isConnected } = useAccount();
   const { toast } = useToast();
   const { selectedTicker } = usePool();
@@ -33,6 +34,8 @@ function HomeContent() {
   // Determine which interface to render
   const renderInterface = () => {
     const sharedProps = {
+      activeTab,
+      setActiveTab,
       onTransactionStart: () => setIsTransactionLoading(true),
       onTransactionEnd: () => setIsTransactionLoading(false),
       onTransactionSuccess: (message: string, txHash?: string) => {

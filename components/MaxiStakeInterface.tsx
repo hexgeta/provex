@@ -8,6 +8,8 @@ import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
 
 interface MaxiStakeInterfaceProps {
+  activeTab: 'info' | 'end' | 'claim';
+  setActiveTab: (tab: 'info' | 'end' | 'claim') => void;
   onTransactionStart?: () => void;
   onTransactionEnd?: () => void;
   onTransactionSuccess?: (message: string, txHash?: string) => void;
@@ -15,6 +17,8 @@ interface MaxiStakeInterfaceProps {
 }
 
 export default function MaxiStakeInterface({
+  activeTab,
+  setActiveTab,
   onTransactionStart,
   onTransactionEnd,
   onTransactionSuccess,
@@ -42,9 +46,7 @@ export default function MaxiStakeInterface({
   } = useMaxiPool();
 
   const [redeemAmount, setRedeemAmount] = useState('');
-  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [hasSetInitialTab, setHasSetInitialTab] = useState(false);
   const redeemAmountRef = useRef<HTMLInputElement>(null);
 
   // Threshold for showing detailed countdown (days)
@@ -152,18 +154,7 @@ export default function MaxiStakeInterface({
     }
   };
 
-  // Set default tab based on stake status (only on initial load)
-  useEffect(() => {
-    if (hasSetInitialTab) return;
-    
-    if (stakeIsActive === true) {
-      setActiveTab('end');
-      setHasSetInitialTab(true);
-    } else if (stakeIsActive === false) {
-      setActiveTab('claim');
-      setHasSetInitialTab(true);
-    }
-  }, [stakeIsActive, hasSetInitialTab]);
+  // Tab state is now managed by parent component to persist across pool changes
 
   // Calculate if stake can be ended
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
@@ -202,10 +193,19 @@ export default function MaxiStakeInterface({
     return () => clearInterval(interval);
   }, [stakeEndDay, stakeIsActive, daysUntilEnd]);
 
-  // Format user balance
+  // Format user balance for display (2 decimals)
   const formattedBalance = userBalance 
     ? (Number(userBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '0.00';
+  
+  // Get full precision balance for MAX button (8 decimals)
+  const getFullPrecisionBalance = () => {
+    if (!userBalance) return '0';
+    const balanceStr = userBalance.toString().padStart(9, '0'); // Ensure at least 9 digits
+    const whole = balanceStr.slice(0, -8) || '0';
+    const decimal = balanceStr.slice(-8).replace(/0+$/, ''); // Remove trailing zeros
+    return decimal ? `${whole}.${decimal}` : whole;
+  };
   
   // Calculate redeemable HEX
   const calculateRedeemableHex = (amount: string) => {
@@ -250,7 +250,10 @@ export default function MaxiStakeInterface({
     try {
       onTransactionStart?.();
       
-      const amountInMini = BigInt(Math.floor(parseFloat(cleanAmount) * 1e8));
+      // Convert to mini (8 decimals) - handle precision carefully
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
       
       const result = await redeemHex(amountInMini);
       
@@ -454,7 +457,7 @@ export default function MaxiStakeInterface({
                   </span>
                   <button
                     type="button"
-                    onClick={() => setRedeemAmount(removeCommas(formattedBalance))}
+                    onClick={() => setRedeemAmount(getFullPrecisionBalance())}
                     className="text-white hover:text-white/80 text-xs font-medium transition-colors"
                   >
                     MAX
