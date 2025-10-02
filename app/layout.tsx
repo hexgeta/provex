@@ -15,7 +15,7 @@ export const metadata = {
   description: 'Don\'t fade liquid hex stakes bro - End stakes & redeem your HEX principle and yield. Manage your perpetual pool stakes with ease.',
   metadataBase: new URL('https://stake.lookintomaxi.com'),
   openGraph: {
-    title: 'LookIntoRedeem Dapp',
+    title: 'LookIntoMaxi Dapp',
     description: 'Claim your HEX here.',
     url: 'https://stake.lookintomaxi.com',
     siteName: 'LookIntoMaxi Dapp',
@@ -24,7 +24,7 @@ export const metadata = {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'LookIntoRedeem',
+        alt: 'LookIntoMaxi Dapp',
       },
     ],
     locale: 'en_US',
@@ -32,7 +32,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LookIntoRedeem',
+    title: 'LookIntoMaxi Dapp',
     description: 'The home of perpetual pool stake redemption',
     images: ['/opengraph-image.png'],
   },
@@ -54,7 +54,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black',
-    title: 'LookIntoRedeem',
+    title: 'LookIntoMaxi Dapp',
   },
 }
 
