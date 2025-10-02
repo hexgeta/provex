@@ -25,14 +25,18 @@ const CHAINS = [
 ];
 
 export function ChainSwitcher() {
-  const { chain } = useAccount();
+  const { chain, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
 
   const currentChain = CHAINS.find((c) => c.id === chain?.id) || CHAINS[0];
 
+  if (!isConnected) {
+    return null;
+  }
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-white/10 rounded-md hover:bg-white/5 transition-colors w-[190px] focus:outline-none focus-visible:outline-none">
+      <DropdownMenuTrigger className="flex items-center gap-3 px-4 py-2 bg-black/40 border border-white/10 rounded-md hover:bg-white/5 transition-colors w-[210px] focus:outline-none focus-visible:outline-none">
         <Image
           src={currentChain.icon}
           alt={currentChain.name}
@@ -43,7 +47,7 @@ export function ChainSwitcher() {
         <span className="text-white font-medium">{currentChain.name}</span>
         <ChevronDown className="w-4 h-4 text-white/70" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-black/95 border rounded-md border-white/10 backdrop-blur-sm z-[200]">
+      <DropdownMenuContent className="bg-black/95 border rounded-md border-white/10 backdrop-blur-sm z-[200] w-[210px]">
         {CHAINS.map((chainOption) => (
           <DropdownMenuItem
             key={chainOption.id}

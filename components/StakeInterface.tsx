@@ -6,6 +6,7 @@ import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
+import { ConnectButton } from './ConnectButton';
 
 interface StakeInterfaceProps {
   onTransactionStart?: () => void;
@@ -36,6 +37,8 @@ export default function StakeInterface({
     isConnected,
     refetchBalance,
     endStaker,
+    endStakeTxHash,
+    chain,
   } = usePerpetualPool(selectedPool.contractAddress as `0x${string}`, selectedTicker);
 
   const [redeemAmount, setRedeemAmount] = useState('');
@@ -46,6 +49,26 @@ export default function StakeInterface({
   // Threshold for showing detailed countdown (days)
   // Change this number to adjust when the HH:MM:SS countdown appears
   const COUNTDOWN_THRESHOLD_DAYS = 30;
+
+  // Get the correct block explorer URL based on chain
+  const getBlockExplorerUrl = (address: string) => {
+    if (chain?.id === 1) {
+      // Ethereum mainnet
+      return `https://etherscan.io/address/${address}`;
+    }
+    // Default to PulseChain (chain ID 369)
+    return `https://otter.pulsechain.com/address/${address}`;
+  };
+
+  // Get the correct transaction URL based on chain
+  const getTxUrl = (txHash: string) => {
+    if (chain?.id === 1) {
+      // Ethereum mainnet
+      return `https://etherscan.io/tx/${txHash}`;
+    }
+    // Default to PulseChain (chain ID 369)
+    return `https://otter.pulsechain.com/tx/${txHash}`;
+  };
 
   // Load redeem amount from localStorage when pool changes
   useEffect(() => {
@@ -263,12 +286,8 @@ export default function StakeInterface({
 
   if (!isConnected) {
     return (
-      <div className="w-full max-w-4xl mx-auto mt-8">
-        <div className="bg-black/40 border border-white/10 rounded-2xl p-8 text-center">
-          <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">Wallet Not Connected</h3>
-          <p className="text-gray-400">Please connect your wallet to interact with the stake pool</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <ConnectButton />
       </div>
     );
   }
@@ -296,7 +315,7 @@ export default function StakeInterface({
 
       {/* Content Area */}
       <div className="bg-black border-2 border-gray-900 rounded-2xl p-6 md:p-8">
-        <div className="relative min-h-[400px]">
+        <div className="relative">
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'info' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pool Information</h2>
             
@@ -330,7 +349,7 @@ export default function StakeInterface({
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'end' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">End HEX Stake</h2>
             
-            <div className="p-4 bg-purple-900/20 border-2 border-gray-400/50 rounded-xl">
+            <div className="p-4 bg-gray-900/20 border border-gray-800 rounded-xl">
               <p className="text-gray-300 mb-4">
                 Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
                 Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
@@ -367,17 +386,33 @@ export default function StakeInterface({
               <div className="p-4 bg-gradient-to-r from-yellow-900/20 to-amber-900/20 border-2 border-yellow-600/50 rounded-xl">
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">👑</span>
-                  <div className="flex-1">
-                    <p className="text-yellow-400 font-semibold mb-2">Stake Ended By:</p>
-                    <a
-                      href={`https://otter.pulsechain.com/address/${endStaker}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white hover:text-yellow-400 transition-colors font-mono text-sm break-all flex items-center gap-2"
-                    >
-                      {endStaker}
-                      <ExternalLink className="w-4 h-4 flex-shrink-0" />
-                    </a>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <p className="text-yellow-400 font-semibold mb-2">Stake Ended By:</p>
+                      <a
+                        href={getBlockExplorerUrl(endStaker)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white hover:text-yellow-400 transition-colors font-mono text-sm break-all flex items-center gap-2"
+                      >
+                        {endStaker}
+                        <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                      </a>
+                    </div>
+                    {endStakeTxHash && (
+                      <div>
+                        <p className="text-yellow-400 font-semibold mb-2">Tx:</p>
+                        <a
+                          href={getTxUrl(endStakeTxHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white hover:text-yellow-400 transition-colors font-mono text-sm break-all flex items-center gap-2"
+                        >
+                          {endStakeTxHash}
+                          <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -389,7 +424,7 @@ export default function StakeInterface({
                 disabled={!canEndStake || isLoading}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                   canEndStake && !isLoading
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white'
+                    ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -448,7 +483,7 @@ export default function StakeInterface({
                 disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                   redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive
-                    ? `bg-gradient-to-r ${selectedPool.gradientFrom} ${selectedPool.gradientTo} hover:opacity-90 text-white`
+                    ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >

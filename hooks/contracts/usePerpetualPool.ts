@@ -1,6 +1,6 @@
 import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'wagmi';
 import { Address, parseAbi } from 'viem';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PoolTicker } from '@/config/perpetual-pools';
 import { getOverrideValue } from '@/config/test-overrides';
 
@@ -36,6 +36,7 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'function mintHedron(uint256 stakeIndex, uint40 stakeId)',
   'function approve(address spender, uint256 amount) returns (bool)',
   'function transfer(address recipient, uint256 amount) returns (bool)',
+  'event StakeEnd(uint256 data0, uint256 data1, address indexed stakerAddr, uint40 indexed stakeId)',
 ]);
 
 // ABI for HEX contract - for querying stake information
@@ -45,10 +46,11 @@ const HEX_ABI = parseAbi([
 ]);
 
 export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const [isLoading, setIsLoading] = useState(false);
+  const [endStakeTxHash, setEndStakeTxHash] = useState<string | null>(null);
 
   // Read contract state
   const { data: stakeIsActiveRaw } = useContractRead({
@@ -203,6 +205,60 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const tokenName = tokenNameRaw;
   const tokenSymbol = tokenSymbolRaw;
 
+  // Fetch end stake transaction hash when stake is ended
+  useEffect(() => {
+    const fetchEndStakeTxHash = async () => {
+      if (!publicClient || !endStaker || endStaker === '0x0000000000000000000000000000000000000000') {
+        return;
+      }
+
+      try {
+        // Search for transactions where the endStaker called the pool contract's endStakeHEX function
+        const currentBlock = await publicClient.getBlockNumber();
+        const fromBlock = currentBlock - 1000000n > 0n ? currentBlock - 1000000n : 0n;
+        
+        // Get all logs from the pool contract to find transactions
+        const logs = await publicClient.getLogs({
+          address: contractAddress,
+          fromBlock,
+          toBlock: 'latest',
+        });
+        
+        // Check each unique transaction to see if it was from the endStaker calling endStakeHEX
+        const checkedTxs = new Set<string>();
+        
+        for (const log of logs.reverse()) { // Reverse to get most recent first
+          if (checkedTxs.has(log.transactionHash)) continue;
+          checkedTxs.add(log.transactionHash);
+          
+          try {
+            const tx = await publicClient.getTransaction({ hash: log.transactionHash });
+            if (tx.from.toLowerCase() === endStaker.toLowerCase() && tx.to?.toLowerCase() === contractAddress.toLowerCase()) {
+              // This is a transaction from endStaker to the pool contract
+              // Verify it was calling endStakeHEX by checking the function selector
+              if (tx.input.startsWith('0x') && tx.input.length > 10) {
+                const functionSelector = tx.input.slice(0, 10);
+                // endStakeHEX(uint256,uint40) function selector
+                // keccak256('endStakeHEX(uint256,uint40)') = 0x4953a509...
+                if (functionSelector === '0x4953a509') {
+                  setEndStakeTxHash(log.transactionHash);
+                  break;
+                }
+              }
+            }
+          } catch (txError) {
+            // Skip transactions we can't fetch
+            console.error('Error fetching transaction:', txError);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching end stake transaction:', error);
+      }
+    };
+
+    fetchEndStakeTxHash();
+  }, [publicClient, endStaker, contractAddress]);
+
   // End stake function - automatically fetches stake index and ID
   const endStake = async () => {
     if (!walletClient || !address) {
@@ -323,6 +379,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     stakeCount: stakeCount as bigint | undefined,
     stakeInfo: stakeInfo as readonly [bigint, bigint, bigint, number, number, number, boolean] | undefined,
     endStaker: endStaker as Address | undefined,
+    endStakeTxHash,
     teamContractAddress: teamContractAddress as Address | undefined,
     decimals: decimals as number | undefined,
     
@@ -335,6 +392,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     // State
     isLoading,
     address,
+    chain,
     isConnected: !!address,
   };
 }

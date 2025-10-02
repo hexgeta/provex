@@ -22,7 +22,7 @@ export const ConnectButton = () => {
       >
         {isTransactionPending ? (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-md animate-spin"></div>
             <span>Pending...</span>
           </div>
         ) : (
@@ -35,7 +35,7 @@ export const ConnectButton = () => {
   return (
     <button
       onClick={() => open()}
-      className="px-4 md:px-8 py-2 md:py-3 bg-white text-black rounded-full font-semibold hover:bg-gray-200 transition-colors text-sm md:text-base"
+      className="px-4 md:px-8 py-2 md:py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 transition-colors text-sm md:text-base"
     >
       Connect Wallet
     </button>

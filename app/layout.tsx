@@ -11,20 +11,20 @@ import { headers } from 'next/headers'
 export const revalidate = 2592000; // 30 days in seconds
 
 export const metadata = {
-  title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
-  description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline. Secure, decentralized stake pool management.',
+  title: 'LookIntoRedeem',
+  description: 'Don\'t fade liquid hex stakes bro - End stakes & redeem your HEX principle and yield. Manage your perpetual pool stakes with ease.',
   metadataBase: new URL('https://otc.lookintomaxi.com'),
   openGraph: {
-    title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
-    description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline.',
+    title: 'LookIntoRedeem',
+    description: 'The home of perpetual pool stake redemption',
     url: 'https://otc.lookintomaxi.com',
-    siteName: 'HEX Stake Pool',
+    siteName: 'LookIntoRedeem',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
+        alt: 'LookIntoRedeem',
       },
     ],
     locale: 'en_US',
@@ -32,8 +32,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HEX Stake Pool - End Stake & Claim TRIO Tokens',
-    description: 'End your HEX stake and claim your TRIO tokens before the October 12, 2025 deadline.',
+    title: 'LookIntoRedeem',
+    description: 'The home of perpetual pool stake redemption',
     images: ['/opengraph-image.png'],
   },
   icons: {
@@ -47,8 +47,14 @@ export const metadata = {
       {
         url: '/favicon-apple.png',
         type: 'image/png',
+        sizes: '180x180',
       }
     ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black',
+    title: 'LookIntoRedeem',
   },
 }
 
