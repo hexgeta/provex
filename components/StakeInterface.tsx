@@ -41,6 +41,10 @@ export default function StakeInterface({
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
+  // Threshold for showing detailed countdown (days)
+  // Change this number to adjust when the HH:MM:SS countdown appears
+  const COUNTDOWN_THRESHOLD_DAYS = 30;
+
   // Set default tab based on stake status
   useEffect(() => {
     if (stakeIsActive === true) {
@@ -54,9 +58,9 @@ export default function StakeInterface({
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
   const daysUntilEnd = stakeEndDay && currentHexDay ? Number(stakeEndDay - currentHexDay) : 0;
 
-  // Real-time countdown when less than 3 days remaining
+  // Real-time countdown when less than threshold days remaining
   useEffect(() => {
-    if (!stakeEndDay || !stakeIsActive || daysUntilEnd >= 3) {
+    if (!stakeEndDay || !stakeIsActive || daysUntilEnd >= COUNTDOWN_THRESHOLD_DAYS) {
       return;
     }
 
@@ -184,17 +188,17 @@ export default function StakeInterface({
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
-          label="Pool Info"
+          label="Stake Info"
         />
         <TabButton
           active={activeTab === 'end'}
           onClick={() => setActiveTab('end')}
-          label="End Stake"
+          label="End The Stake"
         />
         <TabButton
           active={activeTab === 'claim'}
           onClick={() => setActiveTab('claim')}
-          label="Claim TRIO"
+          label="Claim Your HEX"
         />
       </div>
 
@@ -253,14 +257,17 @@ export default function StakeInterface({
                     <AlertCircle className="w-5 h-5" />
                     <span>
                       {stakeIsActive 
-                        ? daysUntilEnd < 3
+                        ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
                           ? 'Stake cannot be ended yet.'
                           : `Stake cannot be ended yet. ${daysUntilEnd} days remaining.`
                         : 'Stake is not currently active or has already been ended.'}
                     </span>
                   </div>
-                  {stakeIsActive && daysUntilEnd < 3 && daysUntilEnd > 0 && (
-                    <div className="flex items-center justify-center gap-2 mt-2 text-2xl md:text-3xl font-mono font-bold text-yellow-300">
+                  {stakeIsActive && daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS && daysUntilEnd > 0 && (
+                    <div 
+                      className="flex items-center justify-center gap-2 mt-2 text-2xl md:text-3xl font-mono font-bold"
+                      style={{ color: selectedPool.color }}
+                    >
                       {timeRemaining.days > 0 && (
                         <>
                           <span>{timeRemaining.days}</span>
@@ -363,7 +370,7 @@ export default function StakeInterface({
                     Processing...
                   </span>
                 ) : (
-                  `Claim ${selectedPool.ticker} Tokens`
+                  `Redeem Your HEX Tokens`
                 )}
               </button>
 
