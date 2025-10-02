@@ -252,35 +252,23 @@ export default function StakeInterface({
                   <span>Stake is ready to be ended!</span>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 mb-4">
-                  <div className="flex items-center gap-2 text-yellow-400">
-                    <AlertCircle className="w-5 h-5" />
-                    <span>
-                      {stakeIsActive 
-                        ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
-                          ? 'Stake cannot be ended yet.'
-                          : `Stake cannot be ended yet. ${daysUntilEnd} days remaining.`
-                        : 'Stake is not currently active or has already been ended.'}
-                    </span>
-                  </div>
-                  {stakeIsActive && daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS && daysUntilEnd > 0 && (
-                    <div 
-                      className="flex items-center justify-center gap-2 mt-2 text-2xl md:text-3xl font-mono font-bold"
-                      style={{ color: selectedPool.color }}
-                    >
-                      {timeRemaining.days > 0 && (
-                        <>
-                          <span>{timeRemaining.days}</span>
-                          <span className="text-gray-500 text-lg">d</span>
-                        </>
-                      )}
-                      <span>{String(timeRemaining.hours).padStart(2, '0')}</span>
-                      <span className="text-gray-500">:</span>
-                      <span>{String(timeRemaining.minutes).padStart(2, '0')}</span>
-                      <span className="text-gray-500">:</span>
-                      <span>{String(timeRemaining.seconds).padStart(2, '0')}</span>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2 text-yellow-400 mb-4">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>
+                    {stakeIsActive 
+                      ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
+                        ? <>
+                            Stake cannot be ended yet. {' '}
+                            <span className="font-mono" style={{ color: selectedPool.color }}>
+                              {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+                              {String(timeRemaining.hours).padStart(2, '0')}h{' '}
+                              {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
+                              {String(timeRemaining.seconds).padStart(2, '0')}s
+                            </span>
+                          </>
+                        : `Stake cannot be ended yet. ${daysUntilEnd} days remaining.`
+                      : 'Stake is not currently active or has already been ended.'}
+                  </span>
                 </div>
               )}
             </div>
