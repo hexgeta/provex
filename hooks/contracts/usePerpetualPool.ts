@@ -39,10 +39,14 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'event StakeEnd(uint256 data0, uint256 data1, address indexed stakerAddr, uint40 indexed stakeId)',
 ]);
 
-// ABI for HEX contract - for querying stake information
+// ABI for HEX contract - for querying stake information and token operations
 const HEX_ABI = parseAbi([
   'function stakeCount(address) view returns (uint256)',
   'function stakeLists(address, uint256) view returns (uint40 stakeId, uint72 stakedHearts, uint72 stakeShares, uint16 lockedDay, uint16 stakedDays, uint16 unlockedDay, bool isAutoStake)',
+  'function balanceOf(address account) view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function decimals() view returns (uint8)',
 ]);
 
 export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
@@ -179,6 +183,24 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     functionName: 'stakeLists',
     args: [contractAddress, 0n],
     enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
+  });
+
+  // Query user's HEX balance
+  const { data: hexBalanceRaw, refetch: refetchHexBalance } = useContractRead({
+    address: HEX_CONTRACT_ADDRESS,
+    abi: HEX_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    enabled: !!address,
+  });
+
+  // Query user's HEX allowance for this pool
+  const { data: hexAllowanceRaw, refetch: refetchAllowance } = useContractRead({
+    address: HEX_CONTRACT_ADDRESS,
+    abi: HEX_ABI,
+    functionName: 'allowance',
+    args: address ? [address, contractAddress] : undefined,
+    enabled: !!address,
   });
 
   // Apply test overrides to functional read values only
@@ -359,6 +381,72 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     }
   };
 
+  // Approve HEX function
+  const approveHex = async (amount: bigint) => {
+    if (!walletClient || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsLoading(true);
+    try {
+      const { request } = await publicClient!.simulateContract({
+        address: HEX_CONTRACT_ADDRESS,
+        abi: HEX_ABI,
+        functionName: 'approve',
+        args: [contractAddress, amount],
+        account: address,
+      });
+
+      const hash = await walletClient.writeContract(request);
+      
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+      
+      // Refetch allowance after approval
+      await refetchAllowance();
+      
+      return { hash, receipt };
+    } catch (error: any) {
+      console.error('Error approving HEX:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Pledge HEX function (mint pool tokens)
+  const pledgeHex = async (amount: bigint) => {
+    if (!walletClient || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsLoading(true);
+    try {
+      const { request } = await publicClient!.simulateContract({
+        address: contractAddress,
+        abi: PERPETUAL_POOL_ABI,
+        functionName: 'pledgeHEX',
+        args: [amount],
+        account: address,
+      });
+
+      const hash = await walletClient.writeContract(request);
+      
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+      
+      // Refetch balances after pledging
+      await refetchBalance();
+      await refetchHexBalance();
+      await refetchAllowance();
+      
+      return { hash, receipt };
+    } catch (error: any) {
+      console.error('Error pledging HEX:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // Contract state (with test overrides applied when TESTING_ON = true)
     stakeIsActive: stakeIsActive as boolean | undefined,
@@ -382,12 +470,18 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     endStakeTxHash,
     teamContractAddress: teamContractAddress as Address | undefined,
     decimals: decimals as number | undefined,
+    hexBalance: hexBalanceRaw as bigint | undefined,
+    hexAllowance: hexAllowanceRaw as bigint | undefined,
     
     // Functions
     endStake,
     redeemHex,
     mintHedron,
+    approveHex,
+    pledgeHex,
     refetchBalance,
+    refetchHexBalance,
+    refetchAllowance,
     
     // State
     isLoading,

@@ -8,8 +8,8 @@ import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
 
 interface MaxiStakeInterfaceProps {
-  activeTab: 'info' | 'end' | 'claim';
-  setActiveTab: (tab: 'info' | 'end' | 'claim') => void;
+  activeTab: 'info' | 'end' | 'claim' | 'mint';
+  setActiveTab: (tab: 'info' | 'end' | 'claim' | 'mint') => void;
   onTransactionStart?: () => void;
   onTransactionEnd?: () => void;
   onTransactionSuccess?: (message: string, txHash?: string) => void;
@@ -285,7 +285,7 @@ export default function MaxiStakeInterface({
   return (
     <div className="w-full max-w-2xl mx-auto mt-4">
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-2 mb-0 text-md md:text-xl">
+      <div className="flex justify-center gap-2 mb-0 text-md md:text-lg">
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
@@ -301,7 +301,7 @@ export default function MaxiStakeInterface({
         <TabButton
           active={activeTab === 'claim'}
           onClick={() => setActiveTab('claim')}
-          label="Claim Your HEX"
+          label="Claim HEX"
           borderColor={poolBorderColor}
         />
       </div>
@@ -437,7 +437,7 @@ export default function MaxiStakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Deposit MAXI. Claim HEX.</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Burn MAXI. Claim HEX.</h2>
 
             <div className="space-y-4">
               <div>
@@ -465,7 +465,7 @@ export default function MaxiStakeInterface({
                 </div>
               </div>
 
-              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && (
+              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && (
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">

@@ -9,8 +9,8 @@ import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 
 interface StakeInterfaceProps {
-  activeTab: 'info' | 'end' | 'claim';
-  setActiveTab: (tab: 'info' | 'end' | 'claim') => void;
+  activeTab: 'info' | 'end' | 'claim' | 'mint';
+  setActiveTab: (tab: 'info' | 'end' | 'claim' | 'mint') => void;
   onTransactionStart?: () => void;
   onTransactionEnd?: () => void;
   onTransactionSuccess?: (message: string, txHash?: string) => void;
@@ -38,17 +38,26 @@ export default function StakeInterface({
     tokenName,
     endStake,
     redeemHex,
+    approveHex,
+    pledgeHex,
     isLoading,
     isConnected,
     refetchBalance,
     endStaker,
     endStakeTxHash,
     chain,
+    hexBalance,
+    hexAllowance,
+    reloadPhaseEnd,
+    reloadPhaseDuration,
   } = usePerpetualPool(selectedPool.contractAddress as `0x${string}`, selectedTicker);
 
   const [redeemAmount, setRedeemAmount] = useState('');
+  const [mintAmount, setMintAmount] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [reloadPhaseTimeRemaining, setReloadPhaseTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const redeemAmountRef = useRef<HTMLInputElement>(null);
+  const mintAmountRef = useRef<HTMLInputElement>(null);
 
   // Threshold for showing detailed countdown (days)
   // Change this number to adjust when the HH:MM:SS countdown appears
@@ -181,6 +190,7 @@ export default function StakeInterface({
       // HEX day is 86400 seconds (24 hours)
       // Calculate the exact Unix timestamp when the stake ends
       // HEX Day 1 started at Unix timestamp 1575331200 (Dec 3, 2019 00:00:00 UTC)
+      // Stake ends at UTC midnight (00:00:00) at the START of the end day
       const HEX_LAUNCH_TIMESTAMP = 1575331200;
       const SECONDS_PER_DAY = 86400;
       
@@ -210,6 +220,40 @@ export default function StakeInterface({
     return () => clearInterval(interval);
   }, [stakeEndDay, stakeIsActive, daysUntilEnd]);
 
+  // Reload phase countdown - only when stake has ended
+  useEffect(() => {
+    if (stakeIsActive || !reloadPhaseEnd || !currentHexDay) {
+      return;
+    }
+
+    const updateReloadCountdown = () => {
+      // Reload phase ends at UTC midnight (00:00:00) at the START of the end day
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(reloadPhaseEnd) * SECONDS_PER_DAY);
+      const now = Math.floor(Date.now() / 1000);
+      const secondsRemaining = reloadEndTimestamp - now;
+
+      if (secondsRemaining <= 0) {
+        setReloadPhaseTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
+      const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
+      const minutes = Math.floor((secondsRemaining % 3600) / 60);
+      const seconds = secondsRemaining % 60;
+
+      setReloadPhaseTimeRemaining({ days, hours, minutes, seconds });
+    };
+
+    updateReloadCountdown();
+    const interval = setInterval(updateReloadCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [reloadPhaseEnd, currentHexDay, stakeIsActive]);
+
   // Format user balance for display (2 decimals)
   const formattedBalance = userBalance 
     ? (Number(userBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -236,6 +280,37 @@ export default function StakeInterface({
       return '0';
     }
   };
+
+  // Format HEX balance
+  const formattedHexBalance = hexBalance 
+    ? (Number(hexBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+  
+  // Get full precision HEX balance for MAX button
+  const getFullPrecisionHexBalance = () => {
+    if (!hexBalance) return '0';
+    const balanceStr = hexBalance.toString().padStart(9, '0');
+    const whole = balanceStr.slice(0, -8) || '0';
+    const decimal = balanceStr.slice(-8).replace(/0+$/, '');
+    return decimal ? `${whole}.${decimal}` : whole;
+  };
+
+  // Calculate how many pool tokens will be minted
+  const calculateMintableTokens = (hexAmount: string) => {
+    if (!hexAmount || !hexRedemptionRate) return '0';
+    try {
+      const cleanAmount = removeCommas(hexAmount);
+      const hexInHearts = parseFloat(cleanAmount) * 1e8;
+      // Pool tokens minted = (HEX hearts * 1e8) / redemption rate
+      const tokensInMini = (hexInHearts * 1e8) / Number(hexRedemptionRate);
+      return (tokensInMini / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch {
+      return '0';
+    }
+  };
+
+  // Check if minting phase is active
+  const isMintingPhaseActive = currentHexDay && reloadPhaseEnd && currentHexDay <= reloadPhaseEnd && !stakeIsActive;
 
   const handleEndStake = async () => {
     try {
@@ -292,6 +367,70 @@ export default function StakeInterface({
     }
   };
 
+  const handleApprove = async () => {
+    const cleanAmount = removeCommas(mintAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to approve');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      // Convert to hearts (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInHearts = BigInt(whole + paddedDecimal);
+      
+      const result = await approveHex(amountInHearts);
+      
+      onTransactionSuccess?.(
+        `Successfully approved ${formatNumberWithCommas(cleanAmount)} HEX for ${selectedPool.ticker}!`,
+        result.hash
+      );
+    } catch (error: any) {
+      console.error('Error approving HEX:', error);
+      onTransactionError?.(
+        error?.message || 'Failed to approve HEX. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
+  const handlePledge = async () => {
+    const cleanAmount = removeCommas(mintAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to pledge');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      // Convert to hearts (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInHearts = BigInt(whole + paddedDecimal);
+      
+      const result = await pledgeHex(amountInHearts);
+      
+      onTransactionSuccess?.(
+        `Successfully pledged ${formatNumberWithCommas(cleanAmount)} HEX and minted ${calculateMintableTokens(cleanAmount)} ${tokenSymbol}!`,
+        result.hash
+      );
+      
+      setMintAmount('');
+    } catch (error: any) {
+      console.error('Error pledging HEX:', error);
+      onTransactionError?.(
+        error?.message || 'Failed to pledge HEX. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
   if (!isConnected) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -303,7 +442,7 @@ export default function StakeInterface({
   return (
     <div className="w-full max-w-2xl mx-auto mt-4">
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-2 mb-0 text-md md:text-xl">
+      <div className="flex justify-center gap-2 mb-0 text-md md:text-lg">
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
@@ -319,7 +458,13 @@ export default function StakeInterface({
         <TabButton
           active={activeTab === 'claim'}
           onClick={() => setActiveTab('claim')}
-          label="Claim Your HEX"
+          label="Claim HEX"
+          borderColor={poolBorderColor}
+        />
+        <TabButton
+          active={activeTab === 'mint'}
+          onClick={() => setActiveTab('mint')}
+          label="Mint"
           borderColor={poolBorderColor}
         />
       </div>
@@ -455,7 +600,7 @@ export default function StakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Deposit {selectedPool.ticker}. Claim HEX.</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Burn {selectedPool.ticker}. Claim HEX.</h2>
 
             <div className="space-y-4">
               <div>
@@ -483,11 +628,20 @@ export default function StakeInterface({
                 </div>
               </div>
 
-              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && (
+              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && (
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">
                     {calculateRedeemableHex(redeemAmount)} HEX
+                  </p>
+                </div>
+              )}
+
+              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= reloadPhaseEnd && (
+                <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+                  <p className="text-sm text-yellow-400">Reload phase ends in:</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {reloadPhaseTimeRemaining.days}d {reloadPhaseTimeRemaining.hours}h {reloadPhaseTimeRemaining.minutes}m {reloadPhaseTimeRemaining.seconds}s
                   </p>
                 </div>
               )}
@@ -514,6 +668,110 @@ export default function StakeInterface({
               {stakeIsActive && (
                 <p className="text-sm text-yellow-400 text-center">
                   Redemption is only available after the stake has ended.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className={`space-y-6 transition-all duration-200 ${activeTab === 'mint' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pledge HEX. Mint {selectedPool.ticker}.</h2>
+
+            <div className="space-y-4">
+              <div>
+                <input
+                  ref={mintAmountRef}
+                  type="text"
+                  value={formatNumberWithCommas(mintAmount)}
+                  onChange={(e) => handleAmountChange(e, setMintAmount, mintAmountRef)}
+                  placeholder="0.00"
+                  className="w-full bg-black border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none"
+                />
+                
+                {/* HEX Balance and MAX button */}
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-gray-400 text-xs">
+                    HEX Balance: {formattedHexBalance}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMintAmount(getFullPrecisionHexBalance())}
+                    className="text-white hover:text-white/80 text-xs font-medium transition-colors"
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+
+              {mintAmount && parseFloat(removeCommas(mintAmount)) > 0 && !stakeIsActive && (
+                <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+                  <p className="text-sm text-gray-400">You will receive approximately:</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {calculateMintableTokens(mintAmount)} {tokenSymbol}
+                  </p>
+                </div>
+              )}
+
+              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= reloadPhaseEnd && (
+                <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+                  <p className="text-sm text-yellow-400">Reload phase ends in:</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {reloadPhaseTimeRemaining.days}d {reloadPhaseTimeRemaining.hours}h {reloadPhaseTimeRemaining.minutes}m {reloadPhaseTimeRemaining.seconds}s
+                  </p>
+                </div>
+              )}
+
+              {/* Check if approval is needed */}
+              {mintAmount && parseFloat(removeCommas(mintAmount)) > 0 && (() => {
+                const cleanAmount = removeCommas(mintAmount);
+                const [whole, decimal = ''] = cleanAmount.split('.');
+                const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+                const amountInHearts = BigInt(whole + paddedDecimal);
+                const needsApproval = !hexAllowance || hexAllowance < amountInHearts;
+
+                return needsApproval ? (
+                  <button
+                    onClick={handleApprove}
+                    disabled={isLoading || !isMintingPhaseActive}
+                    className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                      !isLoading && isMintingPhaseActive
+                        ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      `Approve HEX`
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePledge}
+                    disabled={isLoading || !isMintingPhaseActive}
+                    className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                      !isLoading && isMintingPhaseActive
+                        ? 'bg-white text-black hover:bg-gray-200'
+                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      `Mint ${tokenSymbol}`
+                    )}
+                  </button>
+                );
+              })()}
+
+              {!isMintingPhaseActive && (
+                <p className="text-sm text-yellow-400 text-center">
+                  Minting is only available during the reload phase. A period of {reloadPhaseDuration ? Number(reloadPhaseDuration) : '...'} days between the stake being ended and starting once again.
                 </p>
               )}
             </div>

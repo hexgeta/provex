@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function HomeContent() {
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
-  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('claim');
+  const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim' | 'mint'>('claim');
   const { isConnected } = useAccount();
   const { toast } = useToast();
   const { selectedTicker } = usePool();
@@ -30,6 +30,13 @@ function HomeContent() {
     
     return () => clearTimeout(timer);
   }, [isConnected]);
+
+  // Auto-switch to info tab when switching to MAXI while on mint tab
+  useEffect(() => {
+    if (selectedTicker === 'MAXI' && activeTab === 'mint') {
+      setActiveTab('info');
+    }
+  }, [selectedTicker, activeTab]);
 
   // Determine which interface to render
   const renderInterface = () => {
