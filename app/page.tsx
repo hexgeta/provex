@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { PoolProvider } from '@/context/PoolContext';
 import PoolSelector from '@/components/PoolSelector';
@@ -9,43 +9,79 @@ import StakeInterface from '@/components/StakeInterface';
 import useToast from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { ConnectButton } from '@/components/ConnectButton';
+import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   const { isConnected } = useAccount();
   const { toast } = useToast();
+
+  // Check connection status
+  useEffect(() => {
+    // Wait a brief moment to determine connection status
+    const timer = setTimeout(() => {
+      setIsCheckingConnection(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isConnected]);
   
   return (
     <PoolProvider>
-      <main className={`flex ${!isConnected ? 'min-h-screen' : ''} flex-col items-center ${isConnected ? 'pb-16' : ''}`}>
-        {/* Hero Section */}
-        {!isConnected && (
-          <div className="w-full px-2 md:px-8 bg-black flex-grow flex items-center justify-center">
-            <div className="max-w-6xl mx-auto text-center">
-              <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">
-                Pooled Stake Redemption Front-End
-              </h2>
-              <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
-                End MAXI stakes. Redeem HEX for your stake tokens.
-              </p>
-              <div className="mt-8">
-                <ConnectButton />
-              </div>
+      <main className={`flex ${!isConnected && !isCheckingConnection ? 'min-h-screen' : ''} flex-col items-center ${isConnected ? 'pb-16' : ''}`}>
+        <AnimatePresence mode="wait">
+          {/* Loading State */}
+          {isCheckingConnection && (
+            <div
+              key="loading"
+              className="w-full min-h-screen flex items-center justify-center"
+            >
+              <Loader2 className="w-12 h-12 animate-spin text-white" />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Pool Selector with Countdown */}
-        {isConnected && (
-          <div className="w-full px-2 md:px-8 mt-24">
-            <PoolSelector />
-          </div>
-        )}
+          {/* Hero Section */}
+          {!isCheckingConnection && !isConnected && (
+            <motion.div
+              key="hero"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="w-full px-2 md:px-8 bg-black flex-grow flex items-center justify-center"
+            >
+              <div className="max-w-6xl mx-auto text-center">
+                <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">
+                  Pooled Stake Redemption Front-End
+                </h2>
+                <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
+                  End MAXI stakes. Redeem HEX for your stake tokens.
+                </p>
+                <div className="mt-8">
+                  <ConnectButton />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-        {/* Main Content */}
-        {isConnected && (
-          <div className="w-full px-2 md:px-8 mt-2">
-            <div className="max-w-6xl mx-auto">
+          {/* Connected Content */}
+          {!isCheckingConnection && isConnected && (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="w-full"
+            >
+              {/* Pool Selector with Countdown */}
+              <div className="w-full px-2 md:px-8 mt-24">
+                <PoolSelector />
+              </div>
+
+              {/* Main Content */}
+              <div className="w-full px-2 md:px-8 mt-2">
+                <div className="max-w-6xl mx-auto">
               <StakeInterface 
                 onTransactionStart={() => setIsTransactionLoading(true)}
                 onTransactionEnd={() => setIsTransactionLoading(false)}
@@ -72,9 +108,11 @@ export default function Home() {
                   });
                 }}
               />
-            </div>
-          </div>
-        )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </PoolProvider>
   );
