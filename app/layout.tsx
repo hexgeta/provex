@@ -11,14 +11,14 @@ import { headers } from 'next/headers'
 export const revalidate = 2592000; // 30 days in seconds
 
 export const metadata = {
-  title: 'LookIntoRedeem',
+  title: 'LookIntoMaxi Dapp',
   description: 'Don\'t fade liquid hex stakes bro - End stakes & redeem your HEX principle and yield. Manage your perpetual pool stakes with ease.',
-  metadataBase: new URL('https://otc.lookintomaxi.com'),
+  metadataBase: new URL('https://stake.lookintomaxi.com'),
   openGraph: {
-    title: 'LookIntoRedeem',
-    description: 'The home of perpetual pool stake redemption',
-    url: 'https://otc.lookintomaxi.com',
-    siteName: 'LookIntoRedeem',
+    title: 'LookIntoRedeem Dapp',
+    description: 'Claim your HEX here.',
+    url: 'https://stake.lookintomaxi.com',
+    siteName: 'LookIntoMaxi Dapp',
     images: [
       {
         url: '/opengraph-image.png',
