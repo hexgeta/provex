@@ -259,7 +259,7 @@ export default function StakeInterface({
                       ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
                         ? <>
                             Stake cannot be ended yet. {' '}
-                            <span className="font-mono" style={{ color: selectedPool.color }}>
+                            <span className="font-mono">
                               {timeRemaining.days > 0 && `${timeRemaining.days}d `}
                               {String(timeRemaining.hours).padStart(2, '0')}h{' '}
                               {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
