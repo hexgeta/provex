@@ -14,7 +14,7 @@ export const ConnectButton = () => {
       <button
         onClick={() => open()}
         disabled={isTransactionPending}
-        className={`px-4 md:px-8 py-2 md:py-3 rounded-full font-semibold transition-colors text-sm md:text-base ${
+        className={`px-4 md:px-8 py-2 md:py-2 rounded-md font-semibold transition-colors text-sm md:text-base ${
           isTransactionPending 
             ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
             : 'bg-white text-black hover:bg-gray-200'

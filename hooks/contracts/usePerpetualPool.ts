@@ -1,7 +1,11 @@
 import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'wagmi';
 import { Address, parseAbi } from 'viem';
 import { useState } from 'react';
-import { TEST_OVERRIDES, PoolTicker } from '@/config/perpetual-pools';
+import { PoolTicker } from '@/config/perpetual-pools';
+import { getOverrideValue } from '@/config/test-overrides';
+
+// HEX contract address on PulseChain
+const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
 
 // ABI for the Perpetual Pool contract - only including functions we need
 const PERPETUAL_POOL_ABI = parseAbi([
@@ -34,6 +38,12 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'function transfer(address recipient, uint256 amount) returns (bool)',
 ]);
 
+// ABI for HEX contract - for querying stake information
+const HEX_ABI = parseAbi([
+  'function stakeCount(address) view returns (uint256)',
+  'function stakeLists(address, uint256) view returns (uint40 stakeId, uint72 stakedHearts, uint72 stakeShares, uint16 lockedDay, uint16 stakedDays, uint16 unlockedDay, bool isAutoStake)',
+]);
+
 export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
   const { address } = useAccount();
   const publicClient = usePublicClient();
@@ -41,57 +51,73 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const [isLoading, setIsLoading] = useState(false);
 
   // Read contract state
-  const { data: stakeIsActive } = useContractRead({
+  const { data: stakeIsActiveRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_IS_ACTIVE',
   });
 
-  // Apply test override if enabled
-  const getOverriddenStakeStatus = () => {
-    if (!ticker) return stakeIsActive;
-    
-    const overrideKey = `${ticker}_STAKE_ENDED` as keyof typeof TEST_OVERRIDES;
-    const isOverrideEnabled = TEST_OVERRIDES[overrideKey];
-    
-    if (isOverrideEnabled) {
-      return false; // Override to simulate ended stake
-    }
-    
-    return stakeIsActive;
-  };
-
-  const { data: stakeEndDay } = useContractRead({
+  const { data: stakeEndDayRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_END_DAY',
   });
 
-  const { data: currentHexDay } = useContractRead({
+  const { data: stakeStartDayRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'STAKE_START_DAY',
+  });
+
+  const { data: currentHexDayRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'getHexDay',
   });
 
-  const { data: currentPeriod } = useContractRead({
+  const { data: currentPeriodRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'getCurrentPeriod',
   });
 
-  const { data: hexRedemptionRate } = useContractRead({
+  const { data: currentStakePrincipalRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'CURRENT_STAKE_PRINCIPAL',
+  });
+
+  const { data: hexRedemptionRateRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'HEX_REDEMPTION_RATE',
   });
 
-  const { data: reloadPhaseEnd } = useContractRead({
+  const { data: reloadPhaseEndRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'RELOAD_PHASE_END',
   });
 
-  const { data: userBalance, refetch: refetchBalance } = useContractRead({
+  const { data: reloadPhaseStartRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'RELOAD_PHASE_START',
+  });
+
+  const { data: reloadPhaseDurationRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'RELOAD_PHASE_DURATION',
+  });
+
+  const { data: stakeLengthRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'STAKE_LENGTH',
+  });
+
+  const { data: userBalanceRaw, refetch: refetchBalance } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'balanceOf',
@@ -99,32 +125,102 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     enabled: !!address,
   });
 
-  const { data: totalSupply } = useContractRead({
+  const { data: totalSupplyRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'totalSupply',
   });
 
-  const { data: tokenName } = useContractRead({
+  const { data: tokenNameRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'name',
   });
 
-  const { data: tokenSymbol } = useContractRead({
+  const { data: tokenSymbolRaw } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'symbol',
   });
 
-  // End stake function
-  const endStake = async (stakeIndex: bigint, stakeIdParam: number) => {
+  const { data: endStakerRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'getEndStaker',
+  });
+
+  const { data: teamContractAddressRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'TEAM_CONTRACT_ADDRESS',
+  });
+
+  const { data: decimalsRaw } = useContractRead({
+    address: contractAddress,
+    abi: PERPETUAL_POOL_ABI,
+    functionName: 'decimals',
+  });
+
+  // Query HEX contract for stake information
+  const { data: stakeCountRaw } = useContractRead({
+    address: HEX_CONTRACT_ADDRESS,
+    abi: HEX_ABI,
+    functionName: 'stakeCount',
+    args: [contractAddress],
+  });
+
+  // Query the first (and typically only) stake for the pool
+  // Most perpetual pools have their main stake at index 0
+  const { data: stakeInfoRaw } = useContractRead({
+    address: HEX_CONTRACT_ADDRESS,
+    abi: HEX_ABI,
+    functionName: 'stakeLists',
+    args: [contractAddress, 0n],
+    enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
+  });
+
+  // Apply test overrides to functional read values only
+  const stakeIsActive = getOverrideValue(ticker, 'stakeIsActive', stakeIsActiveRaw);
+  const stakeEndDay = getOverrideValue(ticker, 'stakeEndDay', stakeEndDayRaw);
+  const stakeStartDay = getOverrideValue(ticker, 'stakeStartDay', stakeStartDayRaw);
+  const currentHexDay = getOverrideValue(ticker, 'currentHexDay', currentHexDayRaw);
+  const currentPeriod = getOverrideValue(ticker, 'currentPeriod', currentPeriodRaw);
+  const currentStakePrincipal = getOverrideValue(ticker, 'currentStakePrincipal', currentStakePrincipalRaw);
+  const hexRedemptionRate = getOverrideValue(ticker, 'hexRedemptionRate', hexRedemptionRateRaw);
+  const reloadPhaseEnd = getOverrideValue(ticker, 'reloadPhaseEnd', reloadPhaseEndRaw);
+  const reloadPhaseStart = getOverrideValue(ticker, 'reloadPhaseStart', reloadPhaseStartRaw);
+  const reloadPhaseDuration = getOverrideValue(ticker, 'reloadPhaseDuration', reloadPhaseDurationRaw);
+  const stakeLength = getOverrideValue(ticker, 'stakeLength', stakeLengthRaw);
+  const userBalance = getOverrideValue(ticker, 'userBalance', userBalanceRaw);
+  const totalSupply = getOverrideValue(ticker, 'totalSupply', totalSupplyRaw);
+  const stakeCount = getOverrideValue(ticker, 'stakeCount', stakeCountRaw);
+  const stakeInfo = getOverrideValue(ticker, 'stakeInfo', stakeInfoRaw);
+  const endStaker = getOverrideValue(ticker, 'endStaker', endStakerRaw);
+  const teamContractAddress = getOverrideValue(ticker, 'teamContractAddress', teamContractAddressRaw);
+  const decimals = getOverrideValue(ticker, 'decimals', decimalsRaw);
+  
+  // These values are not overridden - always use real contract data
+  const tokenName = tokenNameRaw;
+  const tokenSymbol = tokenSymbolRaw;
+
+  // End stake function - automatically fetches stake index and ID
+  const endStake = async () => {
     if (!walletClient || !address) {
       throw new Error('Wallet not connected');
     }
 
+    if (!stakeInfo) {
+      throw new Error('Stake information not available. Please refresh and try again.');
+    }
+
     setIsLoading(true);
     try {
+      // Use index 0 (first stake) and the stakeId from the queried stake info
+      const stakeIndex = 0n;
+      const stakeIdParam = stakeInfo[0]; // First element is stakeId
+
+      console.log('Ending stake with:', { stakeIndex, stakeIdParam });
+
       const { request } = await publicClient!.simulateContract({
         address: contractAddress,
         abi: PERPETUAL_POOL_ABI,
@@ -208,17 +304,27 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   };
 
   return {
-    // Contract state (with test override applied)
-    stakeIsActive: getOverriddenStakeStatus() as boolean | undefined,
+    // Contract state (with test overrides applied when TESTING_ON = true)
+    stakeIsActive: stakeIsActive as boolean | undefined,
     stakeEndDay: stakeEndDay as bigint | undefined,
+    stakeStartDay: stakeStartDay as bigint | undefined,
     currentHexDay: currentHexDay as bigint | undefined,
     currentPeriod: currentPeriod as bigint | undefined,
+    currentStakePrincipal: currentStakePrincipal as bigint | undefined,
     hexRedemptionRate: hexRedemptionRate as bigint | undefined,
     reloadPhaseEnd: reloadPhaseEnd as bigint | undefined,
+    reloadPhaseStart: reloadPhaseStart as bigint | undefined,
+    reloadPhaseDuration: reloadPhaseDuration as bigint | undefined,
+    stakeLength: stakeLength as bigint | undefined,
     userBalance: userBalance as bigint | undefined,
     totalSupply: totalSupply as bigint | undefined,
     tokenName: tokenName as string | undefined,
     tokenSymbol: tokenSymbol as string | undefined,
+    stakeCount: stakeCount as bigint | undefined,
+    stakeInfo: stakeInfo as readonly [bigint, bigint, bigint, number, number, number, boolean] | undefined,
+    endStaker: endStaker as Address | undefined,
+    teamContractAddress: teamContractAddress as Address | undefined,
+    decimals: decimals as number | undefined,
     
     // Functions
     endStake,

@@ -18,13 +18,13 @@ export default function Home() {
     <PoolProvider>
       <main className="flex min-h-screen flex-col items-center pb-12">
         {/* Hero Section */}
-        <div className="w-full px-2 md:px-8 mt-24 mb-8 bg-black">
+        <div className="w-full px-2 md:px-8 mt-24 mb-4 bg-black">
           <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white mb-4">
-              Claim your HEX boi
+            <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">
+              MAXI Pooled Stake Front-End
             </h2>
             <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
-              End your stake and claim your tokens before the deadline
+              End MAXI stakes. Redeem HEX for your stake tokens.
             </p>
           </div>
         </div>

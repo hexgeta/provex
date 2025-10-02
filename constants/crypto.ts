@@ -226,4 +226,71 @@ export const API_ENDPOINTS = {
 // 1. Add the token to TOKEN_CONSTANTS with type: "lp" and platform: "PLSX V2" 
 // 2. The Portfolio component will automatically detect and price it
 
+// ===== PERPETUAL POOL CONFIGURATION =====
+
+export interface PerpetualPoolConfig {
+  name: string;
+  ticker: string;
+  contractAddress: string;
+  color: string;
+  gradientFrom: string;
+  gradientTo: string;
+  description: string;
+  deadlineUTC: string;
+}
+
+export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
+  TRIO: {
+    name: 'TRIO on PulseChain',
+    ticker: 'TRIO',
+    contractAddress: '0xf55cd1e399e1cc3d95303048897a680be3313308',
+    color: '#FFFFFF',
+    gradientFrom: 'from-white',
+    gradientTo: 'to-gray-200',
+    description: 'TRIO Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
+  },
+  DECI: {
+    name: 'DECI on PulseChain',
+    ticker: 'DECI',
+    contractAddress: '0x6b32022693210cd2cfc466b9ac0085de8fc34ea6',
+    color: '#C24C35',
+    gradientFrom: 'from-[#C24C35]',
+    gradientTo: 'to-red-700',
+    description: 'DECI Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
+  },
+  LUCKY: {
+    name: 'LUCKY on PulseChain',
+    ticker: 'LUCKY',
+    contractAddress: '0x6b0956258ff7bd7645aa35369b55b61b8e6d6140',
+    color: '#416F22',
+    gradientFrom: 'from-[#416F22]',
+    gradientTo: 'to-green-800',
+    description: 'LUCKY Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
+  },
+  BASE: {
+    name: 'BASE on PulseChain',
+    ticker: 'BASE',
+    contractAddress: '0xe9f84d418b008888a992ff8c6d22389c2c3504e0',
+    color: '#F09B1A',
+    gradientFrom: 'from-[#F09B1A]',
+    gradientTo: 'to-orange-600',
+    description: 'BASE Perpetual Pool',
+    deadlineUTC: '2025-10-12T00:00:00Z',
+  },
+};
+
+// Ordered pool options: DECI, LUCKY, TRIO, BASE
+// Note: MAXI will be added later with separate implementation
+export const POOL_OPTIONS = [
+  PERPETUAL_POOLS.DECI,
+  PERPETUAL_POOLS.LUCKY,
+  PERPETUAL_POOLS.TRIO,
+  PERPETUAL_POOLS.BASE,
+];
+
+export type PoolTicker = keyof typeof PERPETUAL_POOLS;
+
 
