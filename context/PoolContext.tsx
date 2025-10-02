@@ -18,7 +18,7 @@ const STAKE_END_ABI = parseAbi([
 ]);
 
 export function PoolProvider({ children }: { children: ReactNode }) {
-  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('TRIO'); // Default to TRIO
+  const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('MAXI'); // Default to MAXI
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   // Read STAKE_END_DAY from all contracts

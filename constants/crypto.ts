@@ -280,11 +280,21 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     description: 'BASE Perpetual Pool',
     deadlineUTC: '2025-10-12T00:00:00Z',
   },
+  MAXI: {
+    name: 'MAXI on PulseChain',
+    ticker: 'MAXI',
+    contractAddress: '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b',
+    color: '#3991ED',
+    gradientFrom: 'from-[#3991ED]',
+    gradientTo: 'to-blue-700',
+    description: 'MAXI Fixed Stake Pool',
+    deadlineUTC: '2037-07-16T00:00:00Z',
+  },
 };
 
-// Ordered pool options: DECI, LUCKY, TRIO, BASE
-// Note: MAXI will be added later with separate implementation
+// Ordered pool options: MAXI, DECI, LUCKY, TRIO, BASE
 export const POOL_OPTIONS = [
+  PERPETUAL_POOLS.MAXI,
   PERPETUAL_POOLS.DECI,
   PERPETUAL_POOLS.LUCKY,
   PERPETUAL_POOLS.TRIO,

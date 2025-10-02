@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 
 // Master toggle - set to true to use test overrides instead of real contract data
-export const TESTING_ON = true;
+export const TESTING_ON = false;
 
 // Test overrides for each pool - only functional read values
 export interface PoolTestOverrides {

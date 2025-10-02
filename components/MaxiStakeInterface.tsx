@@ -2,26 +2,25 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
+import { useMaxiPool } from '@/hooks/contracts/useMaxiPool';
 import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
-import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 
-interface StakeInterfaceProps {
+interface MaxiStakeInterfaceProps {
   onTransactionStart?: () => void;
   onTransactionEnd?: () => void;
   onTransactionSuccess?: (message: string, txHash?: string) => void;
   onTransactionError?: (error: string) => void;
 }
 
-export default function StakeInterface({
+export default function MaxiStakeInterface({
   onTransactionStart,
   onTransactionEnd,
   onTransactionSuccess,
   onTransactionError,
-}: StakeInterfaceProps) {
-  const { selectedPool, selectedTicker } = usePool();
+}: MaxiStakeInterfaceProps) {
+  const { selectedPool } = usePool();
   const poolBorderColor = `${selectedPool.color}80`; // 50% opacity
   
   const {
@@ -40,7 +39,7 @@ export default function StakeInterface({
     endStaker,
     endStakeTxHash,
     chain,
-  } = usePerpetualPool(selectedPool.contractAddress as `0x${string}`, selectedTicker);
+  } = useMaxiPool();
 
   const [redeemAmount, setRedeemAmount] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim'>('end');
@@ -49,53 +48,49 @@ export default function StakeInterface({
   const redeemAmountRef = useRef<HTMLInputElement>(null);
 
   // Threshold for showing detailed countdown (days)
-  // Change this number to adjust when the HH:MM:SS countdown appears
   const COUNTDOWN_THRESHOLD_DAYS = 30;
+
+  // MAXI contract address
+  const MAXI_CONTRACT_ADDRESS = '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b';
 
   // Get the correct block explorer URL based on chain
   const getBlockExplorerUrl = (address: string) => {
     if (chain?.id === 1) {
-      // Ethereum mainnet
       return `https://etherscan.io/address/${address}`;
     }
-    // Default to PulseChain (chain ID 369)
     return `https://otter.pulsechain.com/address/${address}`;
   };
 
   // Get the correct transaction URL based on chain
   const getTxUrl = (txHash: string) => {
     if (chain?.id === 1) {
-      // Ethereum mainnet
       return `https://etherscan.io/tx/${txHash}`;
     }
-    // Default to PulseChain (chain ID 369)
     return `https://otter.pulsechain.com/tx/${txHash}`;
   };
 
-  // Load redeem amount from localStorage when pool changes
+  // Load redeem amount from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && selectedTicker) {
-      const storageKey = `redeemAmount_${selectedTicker}`;
+    if (typeof window !== 'undefined') {
+      const storageKey = `redeemAmount_MAXI`;
       const savedAmount = localStorage.getItem(storageKey);
       if (savedAmount) {
         setRedeemAmount(savedAmount);
-      } else {
-        setRedeemAmount(''); // Clear if switching to a pool with no saved amount
       }
     }
-  }, [selectedTicker]);
+  }, []);
 
-  // Save redeem amount to localStorage whenever it changes
+  // Save redeem amount to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && selectedTicker) {
-      const storageKey = `redeemAmount_${selectedTicker}`;
+    if (typeof window !== 'undefined') {
+      const storageKey = `redeemAmount_MAXI`;
       if (redeemAmount) {
         localStorage.setItem(storageKey, redeemAmount);
       } else {
         localStorage.removeItem(storageKey);
       }
     }
-  }, [redeemAmount, selectedTicker]);
+  }, [redeemAmount]);
 
   // Helper function to remove commas for calculations
   const removeCommas = (value: string): string => {
@@ -106,7 +101,6 @@ export default function StakeInterface({
   const formatNumberWithCommas = (value: string): string => {
     if (!value) return '';
     
-    // Preserve trailing decimal point or zeros while typing
     if (value.endsWith('.') || value.endsWith('.0')) {
       return value;
     }
@@ -114,7 +108,6 @@ export default function StakeInterface({
     const num = parseFloat(value);
     if (isNaN(num)) return value;
     
-    // If the original value has more decimal places than toLocaleString would show, preserve them
     const decimalIndex = value.indexOf('.');
     if (decimalIndex !== -1) {
       const decimalPlaces = value.length - decimalIndex - 1;
@@ -139,20 +132,16 @@ export default function StakeInterface({
     if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
       setter(rawValue);
 
-      // Use a more reliable approach with double requestAnimationFrame
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (inputRef.current) {
-            // Calculate cursor position more intelligently
             const formattedValue = formatNumberWithCommas(rawValue);
             const originalCursorPos = input.selectionStart || 0;
             const originalValue = input.value;
 
-            // If the user is typing at the end, keep cursor at the end
             if (originalCursorPos >= originalValue.length - 1) {
               inputRef.current.setSelectionRange(formattedValue.length, formattedValue.length);
             } else {
-              // For middle positions, try to maintain relative position
               const digitsBeforeCursor = originalValue.substring(0, originalCursorPos).replace(/,/g, '').length;
               const newCursorPos = Math.min(digitsBeforeCursor, formattedValue.length);
               inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
@@ -187,9 +176,6 @@ export default function StakeInterface({
     }
 
     const updateCountdown = () => {
-      // HEX day is 86400 seconds (24 hours)
-      // Calculate the exact Unix timestamp when the stake ends
-      // HEX Day 1 started at Unix timestamp 1575331200 (Dec 3, 2019 00:00:00 UTC)
       const HEX_LAUNCH_TIMESTAMP = 1575331200;
       const SECONDS_PER_DAY = 86400;
       
@@ -210,10 +196,7 @@ export default function StakeInterface({
       setTimeRemaining({ days, hours, minutes, seconds });
     };
 
-    // Initial update
     updateCountdown();
-
-    // Update every second
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
@@ -241,7 +224,6 @@ export default function StakeInterface({
     try {
       onTransactionStart?.();
       
-      // endStake now automatically fetches stake index and ID from HEX contract
       const result = await endStake();
       
       onTransactionSuccess?.(
@@ -268,13 +250,12 @@ export default function StakeInterface({
     try {
       onTransactionStart?.();
       
-      // Convert to mini (8 decimals)
       const amountInMini = BigInt(Math.floor(parseFloat(cleanAmount) * 1e8));
       
       const result = await redeemHex(amountInMini);
       
       onTransactionSuccess?.(
-        `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol || 'tokens'} for ${selectedPool.ticker}!`,
+        `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol || 'tokens'} for MAXI!`,
         result.hash
       );
       
@@ -345,9 +326,9 @@ export default function StakeInterface({
             <div className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl">
               <h3 className="text-lg font-semibold text-white mb-2">Contract Address</h3>
               <div className="flex items-center gap-2">
-                <code className="text-sm text-gray-300 break-all">{selectedPool.contractAddress}</code>
+                <code className="text-sm text-gray-300 break-all">{MAXI_CONTRACT_ADDRESS}</code>
                 <a
-                  href={`https://otter.pulsechain.com/address/${selectedPool.contractAddress}`}
+                  href={getBlockExplorerUrl(MAXI_CONTRACT_ADDRESS)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300"
@@ -359,12 +340,12 @@ export default function StakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'end' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">End HEX Stake</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">End HEX Stake</h2>
             
             <div className="p-0 bg-gray-900/20 rounded-xl">
               <p className="text-gray-300 mb-2">
-              Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
-              Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
+                Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
+                Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
               </p>
               
               {canEndStake ? (
@@ -453,7 +434,7 @@ export default function StakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Deposit {selectedPool.ticker}. Claim HEX.</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Deposit MAXI. Claim HEX.</h2>
 
             <div className="space-y-4">
               <div>
@@ -546,4 +527,5 @@ function InfoRow({ label, value, highlight = false }: { label: string; value: st
     </div>
   );
 }
+
 
