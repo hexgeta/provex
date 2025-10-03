@@ -66,7 +66,6 @@ export function initWebGL(canvas: HTMLCanvasElement): WebGLContext | null {
       },
     };
   } catch (error) {
-    console.error('Error initializing WebGL:', error);
     return null;
   }
 }
@@ -78,16 +77,14 @@ export function createShader(gl: WebGLRenderingContext | WebGL2RenderingContext,
 
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-
+    
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('Shader compile error:', gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       return null;
     }
-
+    
     return shader;
   } catch (error) {
-    console.error('Error creating shader:', error);
     return null;
   }
 }
@@ -100,16 +97,14 @@ export function createProgram(gl: WebGLRenderingContext | WebGL2RenderingContext
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
-
+    
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
       gl.deleteProgram(program);
       return null;
     }
-
+    
     return program;
   } catch (error) {
-    console.error('Error creating program:', error);
     return null;
   }
 }
@@ -143,10 +138,9 @@ export function createTexture(gl: WebGLRenderingContext | WebGL2RenderingContext
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
-
+    
     return texture;
   } catch (error) {
-    console.error('Error creating texture:', error);
     return null;
   }
 }
@@ -158,10 +152,9 @@ export function createFramebuffer(gl: WebGLRenderingContext | WebGL2RenderingCon
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
+    
     return fbo;
   } catch (error) {
-    console.error('Error creating framebuffer:', error);
     return null;
   }
 } 

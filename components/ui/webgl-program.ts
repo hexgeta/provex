@@ -23,14 +23,12 @@ export class ProgramManager {
       this.gl.compileShader(shader);
 
       if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', this.gl.getShaderInfoLog(shader));
         this.gl.deleteShader(shader);
         return null;
       }
 
       return shader;
     } catch (error) {
-      console.error('Error creating shader:', error);
       return null;
     }
   }
@@ -45,14 +43,12 @@ export class ProgramManager {
       this.gl.linkProgram(program);
 
       if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-        console.error('Program link error:', this.gl.getProgramInfoLog(program));
         this.gl.deleteProgram(program);
         return null;
       }
 
       return program;
     } catch (error) {
-      console.error('Error creating program:', error);
       return null;
     }
   }
@@ -80,13 +76,11 @@ export class ProgramManager {
     const fragmentShader = this.createShader(this.gl.FRAGMENT_SHADER, fragmentSource);
 
     if (!vertexShader || !fragmentShader) {
-      console.error(`Failed to create shaders for ${name}`);
       return null;
     }
 
     const program = this.createProgram(vertexShader, fragmentShader);
     if (!program) {
-      console.error(`Failed to create program for ${name}`);
       return null;
     }
 

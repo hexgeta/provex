@@ -80,7 +80,6 @@ async function findBestPairAddress(contractAddress: string, chainId: number): Pr
     
     return sortedPairs[0].pairAddress;
   } catch (error) {
-    console.error(`Error finding pair for ${contractAddress}:`, error);
     return null;
   }
 }

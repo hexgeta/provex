@@ -1,13 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
 import { useTransaction } from '@/context/TransactionContext'
+import { DisclaimerDialog } from '@/components/DisclaimerDialog'
 
 export const ConnectButton = () => {
   const { isConnected, address } = useAccount()
   const { open } = useAppKit()
   const { isTransactionPending } = useTransaction()
+  const [showDisclaimer, setShowDisclaimer] = useState(false)
+
+  const handleConnectClick = () => {
+    // Check if user has accepted disclaimer
+    const hasAccepted = localStorage.getItem('disclaimer-accepted')
+    if (!hasAccepted) {
+      setShowDisclaimer(true)
+    } else {
+      open()
+    }
+  }
+
+  const handleDisclaimerAccept = () => {
+    setShowDisclaimer(false)
+    open()
+  }
 
   if (isConnected && address) {
     return (
@@ -33,11 +51,14 @@ export const ConnectButton = () => {
   }
 
   return (
-    <button
-      onClick={() => open()}
-      className="px-4 md:px-8 py-2 md:py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 transition-colors text-sm md:text-base"
-    >
-      Connect Wallet
-    </button>
+    <>
+      <DisclaimerDialog open={showDisclaimer} onAccept={handleDisclaimerAccept} />
+      <button
+        onClick={handleConnectClick}
+        className="px-4 md:px-8 py-2 md:py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 transition-colors text-sm md:text-base"
+      >
+        Connect Wallet
+      </button>
+    </>
   )
 }

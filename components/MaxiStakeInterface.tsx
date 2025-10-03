@@ -6,6 +6,7 @@ import { useMaxiPool } from '@/hooks/contracts/useMaxiPool';
 import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
+import { formatHexDayToUTCDate } from '@/utils/format';
 
 interface MaxiStakeInterfaceProps {
   activeTab: 'info' | 'end' | 'claim' | 'mint';
@@ -30,6 +31,7 @@ export default function MaxiStakeInterface({
   const {
     stakeIsActive,
     stakeEndDay,
+    stakeStartDay,
     currentHexDay,
     hexRedemptionRate,
     userBalance,
@@ -160,9 +162,9 @@ export default function MaxiStakeInterface({
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
   const daysUntilEnd = stakeEndDay && currentHexDay ? Number(stakeEndDay - currentHexDay) : 0;
 
-  // Real-time countdown when less than threshold days remaining
+  // Real-time countdown - always active when stake is active
   useEffect(() => {
-    if (!stakeEndDay || !stakeIsActive || daysUntilEnd >= COUNTDOWN_THRESHOLD_DAYS) {
+    if (!stakeEndDay || !stakeIsActive) {
       return;
     }
 
@@ -191,7 +193,7 @@ export default function MaxiStakeInterface({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [stakeEndDay, stakeIsActive, daysUntilEnd]);
+  }, [stakeEndDay, stakeIsActive]);
 
   // Format user balance for display (2 decimals)
   const formattedBalance = userBalance 
@@ -231,7 +233,6 @@ export default function MaxiStakeInterface({
         result.hash
       );
     } catch (error: any) {
-      console.error('Error ending stake:', error);
       onTransactionError?.(
         error?.message || 'Failed to end stake. Please try again.'
       );
@@ -265,7 +266,6 @@ export default function MaxiStakeInterface({
       setRedeemAmount('');
       await refetchBalance();
     } catch (error: any) {
-      console.error('Error redeeming:', error);
       onTransactionError?.(
         error?.message || 'Failed to redeem tokens. Please try again.'
       );
@@ -319,11 +319,92 @@ export default function MaxiStakeInterface({
             <InfoRow label="Pool Token" value={tokenSymbol || 'Loading...'} />
             <InfoRow label="Your Balance" value={`${formattedBalance} ${tokenSymbol || ''}`} />
             <InfoRow label="Stake Status" value={stakeIsActive ? 'Active' : 'Ended/Not Started'} />
-            <InfoRow label="Current HEX Day" value={currentHexDay ? currentHexDay.toString() : 'Loading...'} />
-            <InfoRow label="Stake End Day" value={stakeEndDay ? stakeEndDay.toString() : 'Loading...'} />
+            
+            <div className="flex justify-between items-center py-3 border-b border-gray-900">
+              <span className="text-gray-400">Stake Start Day</span>
+              <div className="flex flex-col items-end">
+                <span className="font-semibold text-white">
+                  {stakeStartDay ? formatHexDayToUTCDate(stakeStartDay) : 'Loading...'}
+                </span>
+                {stakeStartDay && (
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeStartDay.toString()}</span>
+                )}
+              </div>
+            </div>
+            
+            <InfoRow label="Current Day" value={currentHexDay ? formatHexDayToUTCDate(currentHexDay) : 'Loading...'} />
+            
+            <div className="flex justify-between items-center py-3 border-b border-gray-900">
+              <span className="text-gray-400">Stake End Day</span>
+              <div className="flex flex-col items-end">
+                <span className="font-semibold text-white">
+                  <span className="text-gray-500 text-sm mr-2">23:59 UTC</span>
+                  {stakeEndDay ? formatHexDayToUTCDate(stakeEndDay) : 'Loading...'}
+                </span>
+                {stakeEndDay && (
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeEndDay.toString()}</span>
+                )}
+              </div>
+            </div>
             
             {daysUntilEnd > 0 && (
-              <InfoRow label="Days Until End" value={daysUntilEnd.toString()} highlight />
+              <>
+                <InfoRow 
+                  label="Time Until End" 
+                  value={`${timeRemaining.days.toLocaleString('en-US')}d ${String(timeRemaining.hours).padStart(2, '0')}h ${String(timeRemaining.minutes).padStart(2, '0')}m ${String(timeRemaining.seconds).padStart(2, '0')}s`} 
+                  highlight 
+                />
+                
+                {(() => {
+                  const totalDays = timeRemaining.days;
+                  const totalHours = totalDays * 24 + timeRemaining.hours;
+                  const totalMinutes = totalHours * 60 + timeRemaining.minutes;
+                  
+                  let progressPercent = 0;
+                  let progressLabel = '';
+                  let showProgress = false;
+                  
+                  if (totalDays <= 7 && totalDays > 0) {
+                    // Show last 7 days progress (only when within 7 days)
+                    const hoursIn7Days = 7 * 24;
+                    const hoursElapsedIn7Days = hoursIn7Days - totalHours;
+                    progressPercent = (hoursElapsedIn7Days / hoursIn7Days) * 100;
+                    progressLabel = 'Last 7 Days';
+                    showProgress = true;
+                  } else if (totalDays === 0 && totalHours > 1) {
+                    // Show last 24 hours progress (only when within 24 hours)
+                    const hoursInDay = 24;
+                    const hoursElapsedInDay = hoursInDay - totalHours;
+                    progressPercent = (hoursElapsedInDay / hoursInDay) * 100;
+                    progressLabel = 'Last 24 Hours';
+                    showProgress = true;
+                  } else if (totalDays === 0 && totalHours <= 1) {
+                    // Show last hour progress (only when within 1 hour)
+                    const minutesInHour = 60;
+                    const minutesElapsedInHour = minutesInHour - totalMinutes;
+                    progressPercent = (minutesElapsedInHour / minutesInHour) * 100;
+                    progressLabel = 'Last Hour';
+                    showProgress = true;
+                  }
+                  
+                  if (!showProgress) return null;
+                  
+                  return (
+                    <div className="py-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400 text-sm">{progressLabel}</span>
+                        <span className="text-gray-400 text-sm">{progressPercent.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-800 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
             )}
             
             <div className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl">
@@ -523,10 +604,21 @@ function TabButton({ active, onClick, label, borderColor }: { active: boolean; o
 }
 
 function InfoRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  if (highlight) {
+    return (
+      <div className="flex justify-between items-center py-3 border-b border-gray-900">
+        <span className="text-gray-400">{label}</span>
+        <span className="font-semibold text-yellow-400 bg-yellow-900/20 px-3 py-2 rounded-lg">
+          {value}
+        </span>
+      </div>
+    );
+  }
+  
   return (
-    <div className={`flex justify-between items-center py-3 border-b border-gray-900 ${highlight ? 'bg-yellow-900/20 px-4 rounded-lg' : ''}`}>
+    <div className="flex justify-between items-center py-3 border-b border-gray-900">
       <span className="text-gray-400">{label}</span>
-      <span className={`font-semibold ${highlight ? 'text-yellow-400' : 'text-white'}`}>{value}</span>
+      <span className="font-semibold text-white">{value}</span>
     </div>
   );
 }

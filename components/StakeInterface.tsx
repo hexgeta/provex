@@ -7,6 +7,7 @@ import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
+import { formatHexDayToUTCDate } from '@/utils/format';
 
 interface StakeInterfaceProps {
   activeTab: 'info' | 'end' | 'claim' | 'mint';
@@ -31,6 +32,7 @@ export default function StakeInterface({
   const {
     stakeIsActive,
     stakeEndDay,
+    stakeStartDay,
     currentHexDay,
     hexRedemptionRate,
     userBalance,
@@ -38,8 +40,10 @@ export default function StakeInterface({
     tokenName,
     endStake,
     redeemHex,
+    mintHedron,
     approveHex,
     pledgeHex,
+    stakeHex,
     isLoading,
     isConnected,
     refetchBalance,
@@ -50,6 +54,8 @@ export default function StakeInterface({
     hexAllowance,
     reloadPhaseEnd,
     reloadPhaseDuration,
+    stakeInfo,
+    hasHedronMinted,
   } = usePerpetualPool(selectedPool.contractAddress as `0x${string}`, selectedTicker);
 
   const [redeemAmount, setRedeemAmount] = useState('');
@@ -62,6 +68,9 @@ export default function StakeInterface({
   // Threshold for showing detailed countdown (days)
   // Change this number to adjust when the HH:MM:SS countdown appears
   const COUNTDOWN_THRESHOLD_DAYS = 30;
+
+  // Check if we should show "Start the Stake" instead of "End the Stake"
+  const shouldShowStartStake = !stakeIsActive && currentHexDay && reloadPhaseEnd && currentHexDay > reloadPhaseEnd;
 
   // Get the correct block explorer URL based on chain
   const getBlockExplorerUrl = (address: string) => {
@@ -180,9 +189,9 @@ export default function StakeInterface({
   const canEndStake = stakeIsActive && currentHexDay && stakeEndDay && currentHexDay > stakeEndDay;
   const daysUntilEnd = stakeEndDay && currentHexDay ? Number(stakeEndDay - currentHexDay) : 0;
 
-  // Real-time countdown when less than threshold days remaining
+  // Real-time countdown - always active when stake is active
   useEffect(() => {
-    if (!stakeEndDay || !stakeIsActive || daysUntilEnd >= COUNTDOWN_THRESHOLD_DAYS) {
+    if (!stakeEndDay || !stakeIsActive) {
       return;
     }
 
@@ -218,7 +227,7 @@ export default function StakeInterface({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [stakeEndDay, stakeIsActive, daysUntilEnd]);
+  }, [stakeEndDay, stakeIsActive]);
 
   // Reload phase countdown - only when stake has ended
   useEffect(() => {
@@ -324,10 +333,60 @@ export default function StakeInterface({
         result.hash
       );
     } catch (error: any) {
-      console.error('Error ending stake:', error);
       onTransactionError?.(
         error?.message || 'Failed to end stake. Please try again.'
       );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
+  const handleStartStake = async () => {
+    try {
+      onTransactionStart?.();
+      
+      const result = await stakeHex();
+      
+      onTransactionSuccess?.(
+        'Stake started successfully! All HEX in the pool has been staked.',
+        result.hash
+      );
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to start stake. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
+  const handleMintHedron = async () => {
+    if (!stakeInfo) {
+      onTransactionError?.('Stake information not available. Please refresh and try again.');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      const stakeIndex = 0n;
+      const stakeIdParam = Number(stakeInfo[0]); // First element is stakeId
+      
+      const result = await mintHedron(stakeIndex, stakeIdParam);
+      
+      onTransactionSuccess?.(
+        'Hedron minted successfully! You can now end the stake.',
+        result.hash
+      );
+    } catch (error: any) {
+      // If error says already minted, show success message
+      if (error?.message?.includes('already') || error?.message?.includes('minted')) {
+        onTransactionSuccess?.('Hedron has already been minted for this stake.');
+      } else {
+        onTransactionError?.(
+          error?.message || 'Failed to mint Hedron. Please try again.'
+        );
+      }
     } finally {
       onTransactionEnd?.();
     }
@@ -358,7 +417,6 @@ export default function StakeInterface({
       setRedeemAmount('');
       await refetchBalance();
     } catch (error: any) {
-      console.error('Error redeeming:', error);
       onTransactionError?.(
         error?.message || 'Failed to redeem tokens. Please try again.'
       );
@@ -389,7 +447,6 @@ export default function StakeInterface({
         result.hash
       );
     } catch (error: any) {
-      console.error('Error approving HEX:', error);
       onTransactionError?.(
         error?.message || 'Failed to approve HEX. Please try again.'
       );
@@ -422,7 +479,6 @@ export default function StakeInterface({
       
       setMintAmount('');
     } catch (error: any) {
-      console.error('Error pledging HEX:', error);
       onTransactionError?.(
         error?.message || 'Failed to pledge HEX. Please try again.'
       );
@@ -452,7 +508,7 @@ export default function StakeInterface({
         <TabButton
           active={activeTab === 'end'}
           onClick={() => setActiveTab('end')}
-          label="End The Stake"
+          label={shouldShowStartStake ? "Start The Stake" : "End The Stake"}
           borderColor={poolBorderColor}
         />
         <TabButton
@@ -482,11 +538,92 @@ export default function StakeInterface({
             <InfoRow label="Pool Token" value={tokenSymbol || 'Loading...'} />
             <InfoRow label="Your Balance" value={`${formattedBalance} ${tokenSymbol || ''}`} />
             <InfoRow label="Stake Status" value={stakeIsActive ? 'Active' : 'Ended/Not Started'} />
-            <InfoRow label="Current HEX Day" value={currentHexDay ? currentHexDay.toString() : 'Loading...'} />
-            <InfoRow label="Stake End Day" value={stakeEndDay ? stakeEndDay.toString() : 'Loading...'} />
+            
+            <div className="flex justify-between items-center py-3 border-b border-gray-900">
+              <span className="text-gray-400">Stake Start Day</span>
+              <div className="flex flex-col items-end">
+                <span className="font-semibold text-white">
+                  {stakeStartDay ? formatHexDayToUTCDate(stakeStartDay) : 'Loading...'}
+                </span>
+                {stakeStartDay && (
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeStartDay.toString()}</span>
+                )}
+              </div>
+            </div>
+            
+            <InfoRow label="Current Day" value={currentHexDay ? formatHexDayToUTCDate(currentHexDay) : 'Loading...'} />
+            
+            <div className="flex justify-between items-center py-3 border-b border-gray-900">
+              <span className="text-gray-400">Stake End Day</span>
+              <div className="flex flex-col items-end">
+                <span className="font-semibold text-white">
+                  <span className="text-gray-500 text-sm mr-2">23:59 UTC</span>
+                  {stakeEndDay ? formatHexDayToUTCDate(stakeEndDay) : 'Loading...'}
+                </span>
+                {stakeEndDay && (
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeEndDay.toString()}</span>
+                )}
+              </div>
+            </div>
             
             {daysUntilEnd > 0 && (
-              <InfoRow label="Days Until End" value={daysUntilEnd.toString()} highlight />
+              <>
+                <InfoRow 
+                  label="Time Until End" 
+                  value={`${timeRemaining.days.toLocaleString('en-US')}d ${String(timeRemaining.hours).padStart(2, '0')}h ${String(timeRemaining.minutes).padStart(2, '0')}m ${String(timeRemaining.seconds).padStart(2, '0')}s`} 
+                  highlight 
+                />
+                
+                {(() => {
+                  const totalDays = timeRemaining.days;
+                  const totalHours = totalDays * 24 + timeRemaining.hours;
+                  const totalMinutes = totalHours * 60 + timeRemaining.minutes;
+                  
+                  let progressPercent = 0;
+                  let progressLabel = '';
+                  let showProgress = false;
+                  
+                  if (totalDays <= 7 && totalDays > 0) {
+                    // Show last 7 days progress (only when within 7 days)
+                    const hoursIn7Days = 7 * 24;
+                    const hoursElapsedIn7Days = hoursIn7Days - totalHours;
+                    progressPercent = (hoursElapsedIn7Days / hoursIn7Days) * 100;
+                    progressLabel = 'Last 7 Days';
+                    showProgress = true;
+                  } else if (totalDays === 0 && totalHours > 1) {
+                    // Show last 24 hours progress (only when within 24 hours)
+                    const hoursInDay = 24;
+                    const hoursElapsedInDay = hoursInDay - totalHours;
+                    progressPercent = (hoursElapsedInDay / hoursInDay) * 100;
+                    progressLabel = 'Last 24 Hours';
+                    showProgress = true;
+                  } else if (totalDays === 0 && totalHours <= 1) {
+                    // Show last hour progress (only when within 1 hour)
+                    const minutesInHour = 60;
+                    const minutesElapsedInHour = minutesInHour - totalMinutes;
+                    progressPercent = (minutesElapsedInHour / minutesInHour) * 100;
+                    progressLabel = 'Last Hour';
+                    showProgress = true;
+                  }
+                  
+                  if (!showProgress) return null;
+                  
+                  return (
+                    <div className="py-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400 text-sm">{progressLabel}</span>
+                        <span className="text-gray-400 text-sm">{progressPercent.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-800 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
             )}
             
             <div className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl">
@@ -510,8 +647,8 @@ export default function StakeInterface({
             
             <div className="p-0 bg-gray-900/20 rounded-xl">
               <p className="text-gray-300 mb-2">
-              Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
-              Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
+                Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
+                Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
               </p>
               
               {canEndStake ? (
@@ -578,12 +715,54 @@ export default function StakeInterface({
             )}
 
             {stakeIsActive && (
+              <div className="space-y-4">
+                <button
+                  onClick={handleMintHedron}
+                  disabled={!canEndStake || hasHedronMinted || isLoading}
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                    canEndStake && !hasHedronMinted && !isLoading
+                      ? 'bg-purple-500 text-white hover:bg-purple-400'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Mint Hedron'
+                  )}
+                </button>
+
+                <button
+                  onClick={handleEndStake}
+                  disabled={!canEndStake || !hasHedronMinted || isLoading}
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                    canEndStake && hasHedronMinted && !isLoading
+                      ? 'bg-white text-black hover:bg-gray-200'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'End Stake'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {shouldShowStartStake && (
               <button
-                onClick={handleEndStake}
-                disabled={!canEndStake || isLoading}
+                onClick={handleStartStake}
+                disabled={isLoading}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  canEndStake && !isLoading
-                    ? 'bg-white text-black hover:bg-gray-200'
+                  !isLoading
+                    ? 'bg-green-500 text-white hover:bg-green-400'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -593,7 +772,7 @@ export default function StakeInterface({
                     Processing...
                   </span>
                 ) : (
-                  'End Stake'
+                  'Start Stake'
                 )}
               </button>
             )}
@@ -799,10 +978,21 @@ function TabButton({ active, onClick, label, borderColor }: { active: boolean; o
 }
 
 function InfoRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  if (highlight) {
+    return (
+      <div className="flex justify-between items-center py-3 border-b border-gray-900">
+        <span className="text-gray-400">{label}</span>
+        <span className="font-semibold text-yellow-400 bg-yellow-900/20 px-3 py-2 rounded-lg">
+          {value}
+        </span>
+      </div>
+    );
+  }
+  
   return (
-    <div className={`flex justify-between items-center py-3 border-b border-gray-900 ${highlight ? 'bg-yellow-900/20 px-4 rounded-lg' : ''}`}>
+    <div className="flex justify-between items-center py-3 border-b border-gray-900">
       <span className="text-gray-400">{label}</span>
-      <span className={`font-semibold ${highlight ? 'text-yellow-400' : 'text-white'}`}>{value}</span>
+      <span className="font-semibold text-white">{value}</span>
     </div>
   );
 }

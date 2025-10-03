@@ -74,15 +74,6 @@ export function useTokenApproval(tokenAddress: Address, spenderAddress: Address,
   const isApproved = tokenAddress === '0x0000000000000000000000000000000000000000' || amount === 0n ? true : (allowance !== undefined && allowance >= amount)
 
   const approveToken = async () => {
-    console.log('approveToken called with:', {
-      tokenAddress,
-      spenderAddress,
-      amount: amount.toString(),
-      hasValidTokenAddress: tokenAddress !== '0x0000000000000000000000000000000000000000',
-      hasValidSpenderAddress: spenderAddress !== '0x0000000000000000000000000000000000000000',
-      hasValidAmount: amount > 0n
-    });
-
     if (!tokenAddress || !spenderAddress || !amount || tokenAddress === '0x0000000000000000000000000000000000000000' || amount === 0n) {
       throw new Error('Missing required parameters for approval')
     }
@@ -100,14 +91,11 @@ export function useTokenApproval(tokenAddress: Address, spenderAddress: Address,
         gas: 100000n // Standard gas limit for approval
       })
       
-      console.log('Approval transaction submitted:', txHash);
-      
       // Refetch allowance after approval
       await refetchAllowance()
       
       return txHash;
     } catch (error) {
-      console.error('Token approval failed:', error)
       throw error
     }
   }

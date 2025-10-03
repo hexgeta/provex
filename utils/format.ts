@@ -106,3 +106,29 @@ export function formatPriceSigFig(price: number, sigFigs = 3): string {
   const totalDecimals = Math.max(leadingZeros + 3, 2);
   return '$' + price.toFixed(totalDecimals);
 }
+
+/**
+ * Converts a HEX day number to a UTC date string
+ * HEX day 1 = December 3, 2019 00:00:00 UTC
+ * Format: "1 Oct 2023"
+ */
+export function formatHexDayToUTCDate(hexDay: number | bigint): string {
+  const hexDayNumber = typeof hexDay === 'bigint' ? Number(hexDay) : hexDay;
+  
+  // HEX launch date: December 3, 2019 00:00:00 UTC (HEX day 1)
+  const HEX_LAUNCH_TIMESTAMP = 1575331200000; // Dec 3, 2019 in milliseconds
+  
+  // Calculate the timestamp for the given HEX day
+  // HEX day 1 = launch date, so subtract 1 from hexDay
+  const timestamp = HEX_LAUNCH_TIMESTAMP + (hexDayNumber - 1) * 86400000; // 86400000ms = 1 day
+  
+  // Create date object and format
+  const date = new Date(timestamp);
+  
+  // Format as "1 Oct 2023"
+  const day = date.getUTCDate();
+  const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+  const year = date.getUTCFullYear();
+  
+  return `${day} ${month} ${year}`;
+}

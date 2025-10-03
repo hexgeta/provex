@@ -5,10 +5,6 @@ import { createClient } from '@supabase/supabase-js'
 // We need dynamic for query params
 export const dynamic = 'force-dynamic';
 
-// Log environment variables (masking sensitive data)
-console.log('[Historic API] Supabase URL:', process.env.SUPABASE_URL ? '✓ Found' : '✗ Missing')
-console.log('[Historic API] Supabase Anon Key:', process.env.SUPABASE_ANON_KEY ? '✓ Found' : '✗ Missing')
-
 // Only create Supabase client if environment variables are available
 let supabase: any = null;
 if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
@@ -23,20 +19,16 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol')
   const field = searchParams.get('field')
 
-  console.log('[Historic API] Request:', { symbol, field })
-
   if (!symbol || !field) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
   // Check if Supabase is available
   if (!supabase) {
-    console.log('[Historic API] Supabase not configured, returning empty data')
     return NextResponse.json({ data: null })
   }
 
   try {
-    console.log('[Historic API] Querying Supabase for:', field)
     
     // Fetch all data for this token, matching the original query
     const { data: rows, error } = await supabase
@@ -46,12 +38,10 @@ export async function GET(request: NextRequest) {
       .order('date', { ascending: true })
 
     if (error) {
-      console.error('[Historic API] Supabase Error:', error)
       throw error
     }
 
     if (!rows || rows.length === 0) {
-      console.log('[Historic API] No data found')
       return NextResponse.json({ data: null })
     }
 
@@ -62,11 +52,8 @@ export async function GET(request: NextRequest) {
     })).filter((row: any) => !isNaN(row.price))
 
     if (parsed.length === 0) {
-      console.log('[Historic API] No valid data after parsing')
       return NextResponse.json({ data: null })
     }
-
-    console.log('[Historic API] Success, returned rows:', parsed.length)
 
     // Return response with caching headers
     return new NextResponse(JSON.stringify({ data: rows }), {
@@ -77,7 +64,6 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('[Historic API] Error fetching historic prices:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

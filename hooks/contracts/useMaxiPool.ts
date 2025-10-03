@@ -181,11 +181,11 @@ export function useMaxiPool() {
               }
             }
           } catch (txError) {
-            console.error('Error fetching transaction:', txError);
+            // Silent fail
           }
         }
       } catch (error) {
-        console.error('Error fetching end stake transaction:', error);
+        // Silent fail
       }
     };
 
@@ -207,8 +207,6 @@ export function useMaxiPool() {
       const stakeIndex = 0n;
       const stakeIdParam = stakeInfo[0]; // First element is stakeId
 
-      console.log('Ending MAXI stake with:', { stakeIndex, stakeIdParam });
-
       const { request } = await publicClient!.simulateContract({
         address: MAXI_CONTRACT_ADDRESS,
         abi: MAXI_ABI,
@@ -223,7 +221,6 @@ export function useMaxiPool() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error ending MAXI stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -254,7 +251,6 @@ export function useMaxiPool() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error redeeming HEX from MAXI:', error);
       throw error;
     } finally {
       setIsLoading(false);

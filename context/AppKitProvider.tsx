@@ -12,8 +12,8 @@ const queryClient = new QueryClient()
 
 // Set up metadata
 const metadata = {
-  name: 'AgoráX - OTC Platform',
-  description: 'Over-the-counter trading platform for pooled HEX stake tokens',
+  name: 'LookIntoMaxi - Stake Redemption',
+  description: 'End MAXI stakes and redeem HEX for your stake tokens',
   url: 'https://otc.lookintomaxi.com',
   icons: ['https://otc.lookintomaxi.com/favicon.png']
 }

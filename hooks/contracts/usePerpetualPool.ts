@@ -7,6 +7,9 @@ import { getOverrideValue } from '@/config/test-overrides';
 // HEX contract address on PulseChain
 const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
 
+// Hedron contract address on PulseChain
+const HEDRON_CONTRACT_ADDRESS = '0x3819f64f282bf135d62168C1e513280dAF905e06' as Address;
+
 // ABI for the Perpetual Pool contract - only including functions we need
 const PERPETUAL_POOL_ABI = parseAbi([
   'function CURRENT_PERIOD() view returns (uint256)',
@@ -32,6 +35,7 @@ const PERPETUAL_POOL_ABI = parseAbi([
   'function getEndStaker() view returns (address)',
   'function pledgeHEX(uint256 amount)',
   'function redeemHEX(uint256 amount)',
+  'function stakeHEX()',
   'function endStakeHEX(uint256 stakeIndex, uint40 stakeIdParam)',
   'function mintHedron(uint256 stakeIndex, uint40 stakeId)',
   'function approve(address spender, uint256 amount) returns (bool)',
@@ -47,6 +51,11 @@ const HEX_ABI = parseAbi([
   'function allowance(address owner, address spender) view returns (uint256)',
   'function approve(address spender, uint256 amount) returns (bool)',
   'function decimals() view returns (uint8)',
+]);
+
+// ABI for Hedron contract - for checking minting status
+const HEDRON_ABI = parseAbi([
+  'function claimableByStake(address, uint256, uint40) view returns (uint256)',
 ]);
 
 export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
@@ -185,6 +194,15 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
   });
 
+  // Check if Hedron has been minted for this stake
+  const { data: claimableHedronRaw } = useContractRead({
+    address: HEDRON_CONTRACT_ADDRESS,
+    abi: HEDRON_ABI,
+    functionName: 'claimableByStake',
+    args: stakeInfoRaw ? [contractAddress, 0n, stakeInfoRaw[0]] : undefined,
+    enabled: !!stakeInfoRaw,
+  });
+
   // Query user's HEX balance
   const { data: hexBalanceRaw, refetch: refetchHexBalance } = useContractRead({
     address: HEX_CONTRACT_ADDRESS,
@@ -222,6 +240,11 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const endStaker = getOverrideValue(ticker, 'endStaker', endStakerRaw);
   const teamContractAddress = getOverrideValue(ticker, 'teamContractAddress', teamContractAddressRaw);
   const decimals = getOverrideValue(ticker, 'decimals', decimalsRaw);
+  
+  // Determine if Hedron has been minted
+  // If claimableHedron is 0, it means either already minted or no Hedron to mint
+  // We consider it minted if claimable is 0 (safer to assume minted than unminted)
+  const hasHedronMinted = claimableHedronRaw === 0n;
   
   // These values are not overridden - always use real contract data
   const tokenName = tokenNameRaw;
@@ -270,11 +293,10 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
             }
           } catch (txError) {
             // Skip transactions we can't fetch
-            console.error('Error fetching transaction:', txError);
           }
         }
       } catch (error) {
-        console.error('Error fetching end stake transaction:', error);
+        // Silent fail
       }
     };
 
@@ -297,8 +319,6 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       const stakeIndex = 0n;
       const stakeIdParam = stakeInfo[0]; // First element is stakeId
 
-      console.log('Ending stake with:', { stakeIndex, stakeIdParam });
-
       const { request } = await publicClient!.simulateContract({
         address: contractAddress,
         abi: PERPETUAL_POOL_ABI,
@@ -313,7 +333,6 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error ending stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -345,7 +364,6 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error redeeming HEX:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -374,7 +392,6 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error minting Hedron:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -406,7 +423,6 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error approving HEX:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -440,7 +456,34 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error pledging HEX:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const stakeHex = async () => {
+    if (!walletClient || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsLoading(true);
+    try {
+      const { request } = await publicClient!.simulateContract({
+        address: contractAddress,
+        abi: PERPETUAL_POOL_ABI,
+        functionName: 'stakeHEX',
+        args: [],
+        account: address,
+      });
+
+      const hash = await walletClient.writeContract(request);
+      
+      // Wait for transaction
+      await publicClient!.waitForTransactionReceipt({ hash });
+      
+      return { hash };
+    } catch (error: any) {
       throw error;
     } finally {
       setIsLoading(false);
@@ -472,6 +515,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     decimals: decimals as number | undefined,
     hexBalance: hexBalanceRaw as bigint | undefined,
     hexAllowance: hexAllowanceRaw as bigint | undefined,
+    hasHedronMinted: hasHedronMinted as boolean,
     
     // Functions
     endStake,
@@ -479,6 +523,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     mintHedron,
     approveHex,
     pledgeHex,
+    stakeHex,
     refetchBalance,
     refetchHexBalance,
     refetchAllowance,

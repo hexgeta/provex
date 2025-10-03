@@ -19,13 +19,6 @@ export async function fetchTransactions(
         .filter((tx: any) => {
           const isRecentTx = parseInt(tx.timeStamp) >= oneHourAgo
           const hasValue = tx.value !== '0'
-          if (isRecentTx && hasValue) {
-            console.log('Found recent ETH transaction:', {
-              hash: tx.hash,
-              time: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
-              value: tx.value
-            })
-          }
           return isRecentTx && hasValue
         })
         .map((tx: any) => ({
@@ -46,14 +39,6 @@ export async function fetchTransactions(
       const erc20Txs = erc20Data.result
         .filter((tx: any) => {
           const isRecentTx = parseInt(tx.timeStamp) >= oneHourAgo
-          if (isRecentTx) {
-            console.log('Found recent ERC20 transaction:', {
-              hash: tx.hash,
-              time: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
-              token: tx.tokenSymbol,
-              value: tx.value
-            })
-          }
           return isRecentTx
         })
         .map((tx: any) => ({
@@ -75,14 +60,6 @@ export async function fetchTransactions(
       const nftTxs = nftData.result
         .filter((tx: any) => {
           const isRecentTx = parseInt(tx.timeStamp) >= oneHourAgo
-          if (isRecentTx) {
-            console.log('Found recent NFT transaction:', {
-              hash: tx.hash,
-              time: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
-              token: tx.tokenName,
-              tokenId: tx.tokenID
-            })
-          }
           return isRecentTx
         })
         .map((tx: any) => ({
@@ -101,14 +78,6 @@ export async function fetchTransactions(
       const nft1155Txs = nft1155Data.result
         .filter((tx: any) => {
           const isRecentTx = parseInt(tx.timeStamp) >= oneHourAgo
-          if (isRecentTx) {
-            console.log('Found recent NFT 1155 transaction:', {
-              hash: tx.hash,
-              time: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
-              token: tx.tokenName,
-              tokenId: tx.tokenID
-            })
-          }
           return isRecentTx
         })
         .map((tx: any) => ({
