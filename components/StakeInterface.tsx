@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
+import { useDiamondHands } from '@/hooks/contracts/useDiamondHands';
 import { usePool } from '@/context/PoolContext';
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface StakeInterfaceProps {
   activeTab: 'info' | 'end' | 'claim' | 'mint';
@@ -17,6 +19,30 @@ interface StakeInterfaceProps {
   onTransactionSuccess?: (message: string, txHash?: string) => void;
   onTransactionError?: (error: string) => void;
 }
+
+// Diamond Hands contract addresses for each pool
+const DIAMOND_HANDS_CONTRACTS: Record<string, string> = {
+  BASE: '0x992678ad242230Dd795107Fee8B572E27083002A',
+  TRIO: '0x7F343C25a6FD8Ce5fac441Cff22be3758EbE1e04',
+  LUCKY: '0x4497f24bc4096053C3a5687A051732731b3f631B',
+  DECI: '0x196E5f240d26969CFEf464e80C6e423620cc7E40',
+};
+
+// Reward Bucket contract addresses for each pool (where penalties accumulate)
+const REWARD_BUCKET_CONTRACTS: Record<string, string> = {
+  BASE: '0x3778B2e2D6ADe902058FA4e82424F1A376a3d417',
+  TRIO: '0xD71dE2f590C59D3BEc80b5C69898AAfaa2Ab53A9',
+  LUCKY: '0xE6b296485c2b31d060A6f75D1e9fCC870997BbA3',
+  DECI: '0xFc9664af5f73d0F347e51cd213B7378b6e7ecaeb',
+};
+
+// Stake Reward Distribution contract addresses for each pool (where users claim rewards)
+const STAKE_REWARD_DISTRIBUTION_CONTRACTS: Record<string, string> = {
+  BASE: '0x4C03598b0347C571C71b440F8eBD522553A2cB1B',
+  TRIO: '0xa5DC9Ae34AB52d877a5727D106e36318AA59E50B',
+  LUCKY: '0x9f17805c3713a2cF3e710Aa7dCe5A2CFB74E9972',
+  DECI: '0x9844B2bD1e05F04A173edf6ee4Cc83d52350b664',
+};
 
 export default function StakeInterface({
   activeTab,
@@ -60,10 +86,36 @@ export default function StakeInterface({
 
   const [redeemAmount, setRedeemAmount] = useState('');
   const [mintAmount, setMintAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [lockAmount, setLockAmount] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [reloadPhaseTimeRemaining, setReloadPhaseTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const redeemAmountRef = useRef<HTMLInputElement>(null);
   const mintAmountRef = useRef<HTMLInputElement>(null);
+  const withdrawAmountRef = useRef<HTMLInputElement>(null);
+  const lockAmountRef = useRef<HTMLInputElement>(null);
+
+  // Diamond Hands hook - only if pool has a DH contract
+  const dhContractAddress = DIAMOND_HANDS_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
+  const {
+    userStakedAmount,
+    globalStakedAmount,
+    poolTokenTotalSupply,
+    currentPeriod,
+    rewardBucketAddress,
+    rewardBucketBalance,
+    stakeRewardDistributionAddress,
+    dhAllowance,
+    isLoading: isDHLoading,
+    calculatePenalty,
+    withdrawCompleted,
+    withdrawEarly,
+    approvePoolToken,
+    lockTokens,
+  } = useDiamondHands(
+    dhContractAddress || '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    selectedPool.contractAddress as `0x${string}`
+  );
 
   // Threshold for showing detailed countdown (days)
   // Change this number to adjust when the HH:MM:SS countdown appears
@@ -487,6 +539,165 @@ export default function StakeInterface({
     }
   };
 
+  const handleDHWithdraw = async () => {
+    const cleanAmount = removeCommas(withdrawAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to withdraw');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      // Convert to mini (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
+      
+      // Get the current period to determine stakeID
+      // For most cases, users will withdraw from currentPeriod or currentPeriod-1
+      const stakeID = currentPeriod || 1n;
+      
+      // Try completed withdrawal first (no penalty)
+      try {
+        const penalty = await calculatePenalty(amountInMini);
+        
+        // If penalty would be charged, show a confirmation
+        if (penalty > 0n) {
+          const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
+          const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
+          
+          if (!confirm(`Early withdrawal incurs a penalty of ${penaltyAmount} ${selectedPool.ticker}. You will receive ${willReceive} ${selectedPool.ticker}. Continue?`)) {
+            onTransactionEnd?.();
+            return;
+          }
+          
+          const result = await withdrawEarly(stakeID, amountInMini);
+          onTransactionSuccess?.(
+            `Successfully withdrew ${formatNumberWithCommas(cleanAmount)} ${selectedPool.ticker} (with penalty)`,
+            result.hash
+          );
+        } else {
+          const result = await withdrawCompleted(stakeID, amountInMini);
+          onTransactionSuccess?.(
+            `Successfully withdrew ${formatNumberWithCommas(cleanAmount)} ${selectedPool.ticker}`,
+            result.hash
+          );
+        }
+        
+        setWithdrawAmount('');
+      } catch (error: any) {
+        throw error;
+      }
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to withdraw from Diamond Hands. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
+  // Format Diamond Hands balance
+  const formattedDHBalance = userStakedAmount 
+    ? (Number(userStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+  
+  // Get full precision DH balance for MAX button
+  const getFullPrecisionDHBalance = () => {
+    if (!userStakedAmount) return '0';
+    const balanceStr = userStakedAmount.toString().padStart(9, '0');
+    const whole = balanceStr.slice(0, -8) || '0';
+    const decimal = balanceStr.slice(-8).replace(/0+$/, '');
+    return decimal ? `${whole}.${decimal}` : whole;
+  };
+
+  // Format global staked amount in DH contract
+  const formattedGlobalStaked = globalStakedAmount 
+    ? (Number(globalStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Calculate user's percentage of total staked
+  const userPercentage = userStakedAmount && globalStakedAmount && Number(globalStakedAmount) > 0
+    ? ((Number(userStakedAmount) / Number(globalStakedAmount)) * 100).toFixed(4)
+    : '0.0000';
+
+  // Calculate percentage of total supply locked in DH
+  const supplyLockedPercentage = globalStakedAmount && poolTokenTotalSupply && Number(poolTokenTotalSupply) > 0
+    ? ((Number(globalStakedAmount) / Number(poolTokenTotalSupply)) * 100).toFixed(2)
+    : '0.00';
+
+  // Format reward bucket balance
+  const formattedRewardBucket = rewardBucketBalance 
+    ? (Number(rewardBucketBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Calculate pending rewards for user (their share of reward bucket)
+  const pendingRewards = userStakedAmount && globalStakedAmount && rewardBucketBalance && Number(globalStakedAmount) > 0
+    ? ((Number(userStakedAmount) / Number(globalStakedAmount)) * (Number(rewardBucketBalance) / 1e8)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  const handleDHLock = async () => {
+    const cleanAmount = removeCommas(lockAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to lock');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      // Convert to mini (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
+      
+      const result = await lockTokens(amountInMini);
+      onTransactionSuccess?.(
+        `Successfully locked ${formatNumberWithCommas(cleanAmount)} ${selectedPool.ticker} in Diamond Hands!`,
+        result.hash
+      );
+      
+      setLockAmount('');
+      await refetchBalance();
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to lock tokens. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
+  const handleDHApprove = async () => {
+    const cleanAmount = removeCommas(lockAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to approve');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      // Convert to mini (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
+      
+      const result = await approvePoolToken(amountInMini);
+      onTransactionSuccess?.(
+        `Successfully approved ${formatNumberWithCommas(cleanAmount)} ${selectedPool.ticker} for Diamond Hands!`,
+        result.hash
+      );
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to approve tokens. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
   if (!isConnected) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -779,7 +990,144 @@ export default function StakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Burn {selectedPool.ticker}. Claim HEX.</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Burn {selectedPool.ticker}. Claim HEX.</h2>
+              
+              {/* Diamond Hands Button - Only show if pool has a DH contract */}
+              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center justify-center p-2 text-white/70 rounded-lg hover:text-white">
+                      <Gem className="w-5 h-5" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-black border-2 border-purple-500/50 max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0 rounded-xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+                        <Gem className="w-6 h-6 text-purple-400" />
+                        Unlock {selectedPool.ticker} from Diamond Hands
+                      </DialogTitle>
+
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                      {/* User's Staked Balance */}
+                      <div className="p-4 bg-gradient-to-r from-purple-900/30 to-purple-800/30 border border-purple-500/50 rounded-xl">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-300 text-sm">Your Locked Balance:</span>
+                          <span className="text-2xl font-bold text-white">
+                            {formattedDHBalance} {selectedPool.ticker}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Diamond Hands Stats Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Total Locked in DH */}
+                        <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
+                          <div className="text-xs text-gray-400 mb-1">Total in DH Contract</div>
+                          <div className="text-lg font-semibold text-white">{formattedGlobalStaked}</div>
+                          <div className="text-xs text-gray-500">{selectedPool.ticker}</div>
+                          <div className="text-xs text-purple-400 mt-1">{supplyLockedPercentage}% of total supply</div>
+                        </div>
+
+                        {/* User's Share % */}
+                        <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
+                          <div className="text-xs text-gray-400 mb-1">Your Share</div>
+                          <div className="text-lg font-semibold text-purple-400">{userPercentage}%</div>
+                          <div className="text-xs text-gray-500">of total locked</div>
+                        </div>
+
+                        {/* Reward Bucket Balance */}
+                        <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded-lg">
+                          <div className="text-xs text-amber-400 mb-1">Reward Bucket</div>
+                          <div className="text-lg font-semibold text-white">{formattedRewardBucket}</div>
+                          <div className="text-xs text-amber-500/70">{selectedPool.ticker} penalties</div>
+                        </div>
+
+                        {/* User's Pending Rewards */}
+                        <div className="p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
+                          <div className="text-xs text-green-400 mb-1">Your Pending Rewards</div>
+                          <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
+                          <div className="text-xs text-green-500/70">{selectedPool.ticker}</div>
+                        </div>
+                      </div>
+
+                      {/* Info Note about rewards */}
+                      <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+                        <p className="text-xs text-blue-300">
+                          💡 <strong>Pending rewards</strong> are your estimated share ({userPercentage}%) of the {formattedRewardBucket} {selectedPool.ticker} currently in the reward bucket from early unlock penalties.
+                        </p>
+                      </div>
+
+                      {/* Withdrawal Section */}
+                      {stakeIsActive ? (
+                        <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
+                          <p className="text-gray-400 mb-2">🔒 Unlocking Disabled</p>
+                          <p className="text-gray-500 text-sm">You cannot unlock tokens while the stake is active. Please wait until the stake ends.</p>
+                        </div>
+                      ) : userStakedAmount && Number(userStakedAmount) > 0 ? (
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white">Unlock Amount</h3>
+                          <div>
+                            <input
+                              ref={withdrawAmountRef}
+                              type="text"
+                              value={formatNumberWithCommas(withdrawAmount)}
+                              onChange={(e) => handleAmountChange(e, setWithdrawAmount, withdrawAmountRef)}
+                              placeholder="0.00"
+                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                            />
+                            
+                            {/* Balance and MAX button */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-gray-400 text-xs">
+                                Available: {formattedDHBalance} {selectedPool.ticker}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setWithdrawAmount(getFullPrecisionDHBalance())}
+                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
+                              >
+                                MAX
+                              </button>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleDHWithdraw}
+                            disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
+                            className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                              withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
+                                ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isDHLoading ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Processing...
+                              </span>
+                            ) : (
+                              'Unlock Tokens'
+                            )}
+                          </button>
+
+                          <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+                            <p className="text-xs text-yellow-300">
+                              <strong>Note:</strong> Early withdrawal incurs a penalty. Withdraw after the stake ends for full amount.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-xl text-center">
+                          <p className="text-gray-400">You have no tokens locked in Diamond Hands.</p>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -853,7 +1201,181 @@ export default function StakeInterface({
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'mint' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pledge HEX. Mint {selectedPool.ticker}.</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Pledge HEX. Mint {selectedPool.ticker}.</h2>
+              
+              {/* Diamond Hands Button - Only show if pool has a DH contract */}
+              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center justify-center p-2 text-white/70 hover:text-white">
+                      <Gem className="w-5 h-5" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-black border-2 border-purple-500/50 rounded-xl max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+                        <Gem className="w-6 h-6 text-purple-400" />
+                        Lock {selectedPool.ticker} in Diamond Hands
+                      </DialogTitle>
+
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      {/* Lock Section */}
+                      {stakeIsActive ? (
+                        <div className="space-y-3">
+                          <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
+                            <p className="text-gray-400 mb-2">🔒 Locking Disabled</p>
+                            <p className="text-gray-500 text-sm">You cannot lock tokens while the stake is active. Locking is only available during the reload phase (after stake ends).</p>
+                          </div>
+                        </div>
+                      ) : !isMintingPhaseActive ? (
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white">Lock Tokens for Next Period</h3>
+                          <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
+                            <p className="text-gray-400 mb-2">⏰ Reload Phase Ended</p>
+                            <p className="text-gray-500 text-sm">The reload phase has ended. You can no longer lock tokens for this period.</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white">Lock Tokens for Next Period</h3>
+                          <div>
+                            <input
+                              ref={lockAmountRef}
+                              type="text"
+                              value={formatNumberWithCommas(lockAmount)}
+                              onChange={(e) => handleAmountChange(e, setLockAmount, lockAmountRef)}
+                              placeholder="0.00"
+                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                            />
+                            
+                            {/* Balance and MAX button */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-gray-400 text-xs">
+                                Balance: {formattedBalance} {selectedPool.ticker}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setLockAmount(getFullPrecisionBalance())}
+                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
+                              >
+                                MAX
+                              </button>
+                          </div>
+                        </div>
+
+                          {/* Check if approval is needed */}
+                          {lockAmount && parseFloat(removeCommas(lockAmount)) > 0 && (() => {
+                            const cleanAmount = removeCommas(lockAmount);
+                            const [whole, decimal = ''] = cleanAmount.split('.');
+                            const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+                            const amountInMini = BigInt(whole + paddedDecimal);
+                            const needsApproval = !dhAllowance || dhAllowance < amountInMini;
+
+                            return needsApproval ? (
+                              <button
+                                onClick={handleDHApprove}
+                                disabled={isDHLoading}
+                                className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                                  !isDHLoading
+                                    ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                }`}
+                              >
+                                {isDHLoading ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Processing...
+                                  </span>
+                                ) : (
+                                  `Approve ${selectedPool.ticker}`
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={handleDHLock}
+                                disabled={isDHLoading}
+                                className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                                  !isDHLoading
+                                    ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                }`}
+                              >
+                                {isDHLoading ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Processing...
+                                  </span>
+                                ) : (
+                                  `Lock ${selectedPool.ticker}`
+                                )}
+                              </button>
+                            );
+                          })()}
+                      </div>
+                      )}
+
+                      {/* Withdrawal Section */}
+                      {userStakedAmount && Number(userStakedAmount) > 0 && (
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white">Withdraw Tokens</h3>
+                          <div>
+                            <input
+                              ref={withdrawAmountRef}
+                              type="text"
+                              value={formatNumberWithCommas(withdrawAmount)}
+                              onChange={(e) => handleAmountChange(e, setWithdrawAmount, withdrawAmountRef)}
+                              placeholder="0.00"
+                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                            />
+                            
+                            {/* Balance and MAX button */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-gray-400 text-xs">
+                                Available: {formattedDHBalance} {selectedPool.ticker}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setWithdrawAmount(getFullPrecisionDHBalance())}
+                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
+                              >
+                                MAX
+                              </button>
+                            </div>
+                      </div>
+
+                          <button
+                            onClick={handleDHWithdraw}
+                            disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
+                            className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                              withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
+                                ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isDHLoading ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Processing...
+                              </span>
+                            ) : (
+                              'Withdraw'
+                            )}
+                          </button>
+
+                      <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
+                        <p className="text-xs text-yellow-300">
+                              <strong>Note:</strong> Early withdrawal incurs a penalty. Withdraw after the stake ends for full amount.
+                        </p>
+                      </div>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
 
             <div className="space-y-4">
               <div>

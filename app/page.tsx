@@ -103,7 +103,7 @@ function HomeContent() {
                 Pooled Stake Redemption Front-End
               </h2>
               <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
-                End MAXI stakes. Redeem HEX for your stake tokens.
+                End pooled stakes. Redeem HEX rewards.
               </p>
               <div className="mt-8">
                 <ConnectButton />

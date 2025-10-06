@@ -9,15 +9,32 @@ const Footer = () => {
   return (
     <footer className="w-full bg-black/60 px-4 md:px-8 py-8 pb-12 md:pb-8 border-t border-[rgba(255,255,255,0.2)] relative z-[100]">
       <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Info Column */}
           <div>
             <h3 className="text-s font-semibold mb-2">
               LookIntoMaxi {CURRENT_YEAR}
             </h3>
             <p className="text-sm text-[rgb(153,153,153)]">
-              Claim your HEX boi
+              End pooled stakes
             </p>
+          </div>
+
+          {/* Staking Column */}
+          <div>
+            <h4 className="text-s font-semibold mb-2 text-white">
+              More
+            </h4>
+            <ul className="space-y-1">
+              <li>
+                <Link 
+                  href="/team" 
+                  className="text-sm text-[rgb(153,153,153)] hover:text-white transition-colors"
+                >
+                  TEAM rewards
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Legal Column */}
