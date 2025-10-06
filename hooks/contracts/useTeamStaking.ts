@@ -104,10 +104,14 @@ export function useTeamStaking() {
     return parts.join('.');
   };
 
-  // Format values
-  const formattedTeamBalance = teamBalance ? formatWithCommas(formatUnits(teamBalance, 8)) : '0';
-  const formattedUserStaked = userStaked ? formatWithCommas(formatUnits(userStaked, 8)) : '0';
-  const formattedGlobalStaked = globalStaked ? formatWithCommas(formatUnits(globalStaked, 8)) : '0';
+  // Format values with 2 decimal places for display
+  const formattedTeamBalance = teamBalance ? formatWithCommas(parseFloat(formatUnits(teamBalance, 8)).toFixed(2)) : '0.00';
+  const formattedUserStaked = userStaked ? formatWithCommas(parseFloat(formatUnits(userStaked, 8)).toFixed(2)) : '0.00';
+  const formattedGlobalStaked = globalStaked ? formatWithCommas(parseFloat(formatUnits(globalStaked, 8)).toFixed(2)) : '0.00';
+  
+  // Full precision values for MAX button (without rounding)
+  const fullPrecisionTeamBalance = teamBalance ? formatUnits(teamBalance, 8) : '0';
+  const fullPrecisionUserStaked = userStaked ? formatUnits(userStaked, 8) : '0';
 
   // Check if prepareClaim has been called for a token/period
   const checkPrepareClaimStatus = async (ticker: string, period: bigint) => {
@@ -393,6 +397,10 @@ export function useTeamStaking() {
     formattedTeamBalance,
     formattedUserStaked,
     formattedGlobalStaked,
+    
+    // Full precision values (for MAX button)
+    fullPrecisionTeamBalance,
+    fullPrecisionUserStaked,
     
     // Read functions
     checkPrepareClaimStatus,

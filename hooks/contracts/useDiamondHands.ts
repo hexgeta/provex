@@ -10,12 +10,15 @@ const DIAMOND_HANDS_ABI = parseAbi([
   'function REWARD_BUCKET_ADDRESS() view returns (address)',
   'function STAKE_REWARD_DISTRIBUTION_ADDRESS() view returns (address)',
   'function getCurrentPeriod() view returns (uint256)',
+  'function getglobalStakedTokensPerPeriod(uint256 period) view returns (uint256)',
+  'function getAddressPeriodEndTotal(address staker, uint256 period, uint256 stakeID) view returns (uint256)',
   'function earlyEndStakeToken(uint256 stakeID, uint256 amount)',
   'function endCompletedStake(uint256 stakeID, uint256 amount)',
   'function calculatePenalty(uint256 amount) view returns (uint256)',
   'function stakes(address, uint256) view returns (address staker, uint256 balance, uint256 stakeID, uint256 stake_expiry_period, bool initiated)',
   'function joinClub(uint256 amount)',
   'function getNextStakingPeriod() view returns (uint256)',
+  'function isStakingPeriod() view returns (bool)',
 ]);
 
 // Pool token ABI for approval and balance
@@ -114,6 +117,143 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     } catch (error) {
       console.error('Error fetching stake info:', error);
       return null;
+    }
+  };
+
+  // Get the active staking period (for reward calculations)
+  const getActiveStakingPeriod = async () => {
+    if (!publicClient || !currentPeriod) return null;
+
+    try {
+      const isStaking = await publicClient.readContract({
+        address: contractAddress,
+        abi: DIAMOND_HANDS_ABI,
+        functionName: 'isStakingPeriod',
+      });
+
+      // If we're in a staking period, that's the active one
+      // If we're in reload, the last period (current - 1) was the staking period
+      const activePeriod = isStaking ? currentPeriod : (currentPeriod as bigint) - 1n;
+      return activePeriod;
+    } catch (error) {
+      console.error('Error getting active staking period:', error);
+      return null;
+    }
+  };
+
+  // Get all user's stake records (for debugging)
+  const getAllUserStakes = async () => {
+    if (!publicClient || !address || !currentPeriod) return [];
+
+    try {
+      const stakes: Array<{
+        stakeID: bigint;
+        balance: bigint;
+        expiry: bigint;
+        initiated: boolean;
+      }> = [];
+
+      // Loop through all possible stakeIDs
+      const maxStakeID = (currentPeriod as bigint) + 10n;
+      
+      for (let stakeID = 0n; stakeID <= maxStakeID; stakeID++) {
+        try {
+          const stake = await publicClient.readContract({
+            address: contractAddress,
+            abi: DIAMOND_HANDS_ABI,
+            functionName: 'stakes',
+            args: [address, stakeID],
+          }) as any;
+
+          if (stake.initiated && stake.balance > 0n) {
+            stakes.push({
+              stakeID,
+              balance: stake.balance,
+              expiry: stake.stake_expiry_period,
+              initiated: stake.initiated,
+            });
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+      
+      return stakes;
+    } catch (error) {
+      console.error('Error getting all user stakes:', error);
+      return [];
+    }
+  };
+
+  // Get user's total staked amount for a specific period (across all their stakes)
+  const getUserStakedForPeriod = async (period: bigint) => {
+    if (!publicClient || !address || !currentPeriod) return 0n;
+
+    try {
+      let total = 0n;
+      console.log(`[DH] Checking user stakes for period ${period}, current period: ${currentPeriod}`);
+
+      // Loop through all possible stakeIDs (0 to current period + 10 to catch edge cases)
+      const maxStakeID = (currentPeriod as bigint) + 10n;
+      console.log(`[DH] Checking stakeIDs from 0 to ${maxStakeID}`);
+      
+      for (let stakeID = 0n; stakeID <= maxStakeID; stakeID++) {
+        try {
+          // Check if this stake exists
+          const stake = await publicClient.readContract({
+            address: contractAddress,
+            abi: DIAMOND_HANDS_ABI,
+            functionName: 'stakes',
+            args: [address, stakeID],
+          }) as any;
+
+          console.log(`[DH] StakeID ${stakeID}: initiated=${stake.initiated}, balance=${stake.balance}, expiry=${stake.stake_expiry_period}`);
+
+          // If stake exists (initiated == true), get the amount for this period
+          if (stake.initiated) {
+            console.log(`[DH] ✓ Found active stake ${stakeID}: balance=${stake.balance}, expiry=${stake.stake_expiry_period}`);
+            
+            const amount = await publicClient.readContract({
+              address: contractAddress,
+              abi: DIAMOND_HANDS_ABI,
+              functionName: 'getAddressPeriodEndTotal',
+              args: [address, period, stakeID],
+            }) as bigint;
+
+            if (amount > 0n) {
+              console.log(`[DH] ✓ StakeID ${stakeID} has ${amount} for period ${period}`);
+            }
+            total += amount;
+          }
+        } catch (error) {
+          console.log(`[DH] ✗ StakeID ${stakeID}: error or doesn't exist`);
+          continue;
+        }
+      }
+
+      console.log(`[DH] Total for period ${period}: ${total}`);
+      return total;
+    } catch (error) {
+      console.error('Error getting user staked for period:', error);
+      return 0n;
+    }
+  };
+
+  // Get global staked amount for a specific period
+  const getGlobalStakedForPeriod = async (period: bigint) => {
+    if (!publicClient) return 0n;
+
+    try {
+      const amount = await publicClient.readContract({
+        address: contractAddress,
+        abi: DIAMOND_HANDS_ABI,
+        functionName: 'getglobalStakedTokensPerPeriod',
+        args: [period],
+      });
+      return amount as bigint;
+    } catch (error) {
+      console.error('Error getting global staked for period:', error);
+      return 0n;
     }
   };
 
@@ -262,6 +402,10 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     dhAllowance,
     isLoading,
     getStakeInfo,
+    getActiveStakingPeriod,
+    getUserStakedForPeriod,
+    getGlobalStakedForPeriod,
+    getAllUserStakes,
     calculatePenalty,
     withdrawCompleted,
     withdrawEarly,

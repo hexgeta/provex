@@ -21,6 +21,8 @@ export default function TeamStakingInterface() {
     formattedTeamBalance,
     formattedUserStaked,
     formattedGlobalStaked,
+    fullPrecisionTeamBalance,
+    fullPrecisionUserStaked,
     isLoading,
     stakeTeam,
     earlyEndStake,
@@ -196,7 +198,7 @@ export default function TeamStakingInterface() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div className="bg-black border-2 border-white/20 rounded-xl p-6">
           <h3 className="text-sm text-gray-300 mb-2">Your TEAM Balance</h3>
           <p className="text-3xl font-bold text-white">{formattedTeamBalance}</p>
@@ -208,14 +210,6 @@ export default function TeamStakingInterface() {
           <p className="text-3xl font-bold text-white">{formattedUserStaked}</p>
           <p className="text-xs text-gray-400 mt-1">Currently locked</p>
         </div>
-        
-        <div className="bg-black border-2 border-white/20 rounded-xl p-6">
-          <h3 className="text-sm text-gray-300 mb-2">Current Period</h3>
-          <p className="text-3xl font-bold text-white">{currentPeriod?.toString() || '0'}</p>
-          <p className="text-xs text-gray-400 mt-1">
-            {isStakingPeriod ? 'Staking Phase' : 'Reload Phase'}
-          </p>
-        </div>
       </div>
 
       {/* Main Content Tabs */}
@@ -223,19 +217,19 @@ export default function TeamStakingInterface() {
         <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0">
           <TabsTrigger 
             value="stake" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
           >
             Stake TEAM
           </TabsTrigger>
           <TabsTrigger 
             value="unstake" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
           >
             Unstake TEAM
           </TabsTrigger>
           <TabsTrigger 
             value="rewards" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
           >
             Claim Rewards
           </TabsTrigger>
@@ -243,7 +237,7 @@ export default function TeamStakingInterface() {
 
         {/* Stake Tab */}
         <TabsContent value="stake" className="mt-0">
-          <div className="border-2 border-white rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
+          <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
             <h2 className="text-3xl font-bold text-white mb-6">Stake TEAM to Earn Rewards</h2>
             
             <div className="space-y-4">
@@ -262,7 +256,7 @@ export default function TeamStakingInterface() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setStakeAmount(removeCommas(formattedTeamBalance))}
+                    onClick={() => setStakeAmount(fullPrecisionTeamBalance)}
                     className="text-white hover:text-gray-300 text-sm font-semibold uppercase"
                   >
                     MAX
@@ -294,7 +288,7 @@ export default function TeamStakingInterface() {
 
         {/* Unstake Tab */}
         <TabsContent value="unstake" className="mt-0">
-          <div className="border-2 border-white rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
+          <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
             <h2 className="text-3xl font-bold text-white mb-6">Unstake TEAM</h2>
             
             <div className="space-y-4">
@@ -313,7 +307,7 @@ export default function TeamStakingInterface() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setUnstakeAmount(removeCommas(formattedUserStaked))}
+                    onClick={() => setUnstakeAmount(fullPrecisionUserStaked)}
                     className="text-white hover:text-gray-300 text-sm font-semibold uppercase"
                   >
                     MAX

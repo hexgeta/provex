@@ -95,6 +95,14 @@ export default function StakeInterface({
   const withdrawAmountRef = useRef<HTMLInputElement>(null);
   const lockAmountRef = useRef<HTMLInputElement>(null);
 
+  // Period-specific staking amounts for accurate reward calculations
+  const [userStakedForActivePeriod, setUserStakedForActivePeriod] = useState<bigint>(0n);
+  const [globalStakedForActivePeriod, setGlobalStakedForActivePeriod] = useState<bigint>(0n);
+  const [userStakedForNextPeriod, setUserStakedForNextPeriod] = useState<bigint>(0n);
+  const [globalStakedForNextPeriod, setGlobalStakedForNextPeriod] = useState<bigint>(0n);
+  const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, amount: string}[]>([]);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
   // Diamond Hands hook - only if pool has a DH contract
   const dhContractAddress = DIAMOND_HANDS_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
   const {
@@ -107,6 +115,10 @@ export default function StakeInterface({
     stakeRewardDistributionAddress,
     dhAllowance,
     isLoading: isDHLoading,
+    getActiveStakingPeriod,
+    getUserStakedForPeriod,
+    getGlobalStakedForPeriod,
+    getAllUserStakes,
     calculatePenalty,
     withdrawCompleted,
     withdrawEarly,
@@ -156,6 +168,107 @@ export default function StakeInterface({
       }
     }
   }, [selectedTicker]);
+
+  // Fetch period-specific staking amounts for accurate reward calculations
+  useEffect(() => {
+    const fetchPeriodAmounts = async () => {
+      if (!currentPeriod || !getActiveStakingPeriod || !getUserStakedForPeriod || !getGlobalStakedForPeriod || !getAllUserStakes) {
+        return;
+      }
+
+      const logs: string[] = [];
+
+      try {
+        const activePeriod = await getActiveStakingPeriod();
+        if (activePeriod === null) return;
+
+        logs.push(`🔍 Starting period check for ${selectedPool.ticker}`);
+        logs.push(`📅 Current Period: ${currentPeriod.toString()}`);
+        logs.push(`🔄 Active Staking Period: ${activePeriod.toString()}`);
+        logs.push('');
+
+        // Calculate next staking period (active + 2 for odd periods, active + 1 for even periods)
+        const nextStakingPeriod = (activePeriod as bigint) % 2n === 1n 
+          ? (activePeriod as bigint) + 2n  // If odd (staking), next staking is +2
+          : (activePeriod as bigint) + 1n; // If even (reload), next staking is +1
+
+        logs.push(`⏭️  Next Staking Period: ${nextStakingPeriod.toString()}`);
+        logs.push('');
+
+        const [userAmountActive, globalAmountActive, userAmountNext, globalAmountNext] = await Promise.all([
+          getUserStakedForPeriod(activePeriod),
+          getGlobalStakedForPeriod(activePeriod),
+          getUserStakedForPeriod(nextStakingPeriod),
+          getGlobalStakedForPeriod(nextStakingPeriod)
+        ]);
+
+        setUserStakedForActivePeriod(userAmountActive);
+        setGlobalStakedForActivePeriod(globalAmountActive);
+        setUserStakedForNextPeriod(userAmountNext);
+        setGlobalStakedForNextPeriod(globalAmountNext);
+
+        // DEBUG: Fetch all periods to see where tokens are committed
+        const debugPeriods = [];
+        const maxPeriod = Number(currentPeriod) + 5;
+        logs.push(`🔎 Checking all periods (0 to ${maxPeriod}):`);
+        logs.push('');
+        
+        for (let p = 0; p <= maxPeriod; p++) {
+          const amount = await getUserStakedForPeriod(BigInt(p));
+          if (amount > 0n) {
+            const formatted = (Number(amount) / 1e8).toFixed(2);
+            debugPeriods.push({
+              period: p,
+              amount: formatted
+            });
+            logs.push(`✅ Period ${p}: ${formatted} ${selectedPool.ticker}`);
+          } else {
+            logs.push(`❌ Period ${p}: No commitment`);
+          }
+        }
+        
+        logs.push('');
+        
+        // Fetch ALL stake records to see expired stakes
+        logs.push('📋 ALL STAKE RECORDS (including expired):');
+        logs.push('');
+        const allStakes = await getAllUserStakes();
+        
+        if (allStakes.length > 0) {
+          for (const stake of allStakes) {
+            const balance = (Number(stake.balance) / 1e8).toFixed(2);
+            const isExpired = stake.expiry < currentPeriod;
+            const status = isExpired ? '⏰ EXPIRED' : '✅ ACTIVE';
+            logs.push(`${status} StakeID ${stake.stakeID.toString()}: ${balance} ${selectedPool.ticker} (expires: period ${stake.expiry.toString()})`);
+          }
+        } else {
+          logs.push('No stakes found');
+        }
+        
+        logs.push('');
+        if (debugPeriods.length === 0) {
+          const dhBalance = userStakedAmount ? (Number(userStakedAmount) / 1e8).toFixed(2) : '0.00';
+          logs.push(`⚠️ NO ACTIVE COMMITMENTS in any period!`);
+          logs.push(`💎 But total DH balance shows: ${dhBalance} ${selectedPool.ticker}`);
+          logs.push('');
+          if (allStakes.length > 0) {
+            logs.push('✅ Found expired stakes above - you can withdraw them penalty-free!');
+          }
+        } else {
+          logs.push(`✅ Found ${debugPeriods.length} active period commitment(s)`);
+        }
+        
+        setAllPeriodCommitments(debugPeriods);
+        setDebugLogs(logs);
+      } catch (error) {
+        logs.push(`❌ ERROR: ${error}`);
+        setDebugLogs(logs);
+        console.error('Error fetching period amounts:', error);
+      }
+    };
+
+    fetchPeriodAmounts();
+  }, [currentPeriod, getActiveStakingPeriod, getUserStakedForPeriod, getGlobalStakedForPeriod, getAllUserStakes, selectedPool.ticker, userStakedAmount]);
 
   // Save redeem amount to localStorage whenever it changes
   useEffect(() => {
@@ -617,12 +730,12 @@ export default function StakeInterface({
     ? (Number(globalStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '0.00';
 
-  // Calculate user's percentage of total staked
-  const userPercentage = userStakedAmount && globalStakedAmount && Number(globalStakedAmount) > 0
-    ? ((Number(userStakedAmount) / Number(globalStakedAmount)) * 100).toFixed(4)
+  // Calculate user's percentage of total staked (using period-specific amounts for accuracy)
+  const userPercentage = userStakedForActivePeriod && globalStakedForActivePeriod && Number(globalStakedForActivePeriod) > 0
+    ? ((Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * 100).toFixed(4)
     : '0.0000';
 
-  // Calculate percentage of total supply locked in DH
+  // Calculate percentage of total supply locked in DH (using global amount)
   const supplyLockedPercentage = globalStakedAmount && poolTokenTotalSupply && Number(poolTokenTotalSupply) > 0
     ? ((Number(globalStakedAmount) / Number(poolTokenTotalSupply)) * 100).toFixed(2)
     : '0.00';
@@ -632,10 +745,53 @@ export default function StakeInterface({
     ? (Number(rewardBucketBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '0.00';
 
-  // Calculate pending rewards for user (their share of reward bucket)
-  const pendingRewards = userStakedAmount && globalStakedAmount && rewardBucketBalance && Number(globalStakedAmount) > 0
-    ? ((Number(userStakedAmount) / Number(globalStakedAmount)) * (Number(rewardBucketBalance) / 1e8)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // Calculate pending rewards for user (using period-specific amounts)
+  const pendingRewards = userStakedForActivePeriod && globalStakedForActivePeriod && rewardBucketBalance && Number(globalStakedForActivePeriod) > 0
+    ? ((Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * (Number(rewardBucketBalance) / 1e8)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '0.00';
+
+  // Format next period staking amounts
+  const formattedUserNextPeriod = userStakedForNextPeriod
+    ? (Number(userStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  const formattedGlobalNextPeriod = globalStakedForNextPeriod
+    ? (Number(globalStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Format current active period staking amounts
+  const formattedGlobalActivePeriod = globalStakedForActivePeriod
+    ? (Number(globalStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  const formattedUserActivePeriod = userStakedForActivePeriod
+    ? (Number(userStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Calculate APY for pending rewards (using period-specific amounts)
+  const calculateRewardsAPY = () => {
+    if (!userStakedForActivePeriod || !globalStakedForActivePeriod || !rewardBucketBalance || !stakeStartDay || !currentHexDay) {
+      return '0.00';
+    }
+
+    const userStakedNumber = Number(userStakedForActivePeriod) / 1e8;
+    const pendingRewardsNumber = (Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * (Number(rewardBucketBalance) / 1e8);
+    
+    if (userStakedNumber === 0 || pendingRewardsNumber === 0) {
+      return '0.00';
+    }
+
+    // Calculate days elapsed since stake started
+    const daysElapsed = Math.max(1, Number(currentHexDay) - Number(stakeStartDay));
+    
+    // Calculate ROI and annualize it
+    const roi = pendingRewardsNumber / userStakedNumber;
+    const annualizedAPY = (roi * (365 / daysElapsed)) * 100;
+    
+    return annualizedAPY.toFixed(2);
+  };
+
+  const rewardsAPY = calculateRewardsAPY();
 
   const handleDHLock = async () => {
     const cleanAmount = removeCommas(lockAmount);
@@ -868,8 +1024,8 @@ export default function StakeInterface({
                   <span>Stake is ready to be ended!</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-yellow-400 mb-4">
-                  <AlertCircle className="w-5 h-5" />
+                <div className="flex items-start gap-2 text-yellow-400 mb-4">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <span>
                     {stakeIsActive 
                       ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
@@ -1020,6 +1176,49 @@ export default function StakeInterface({
                         </div>
                       </div>
 
+                      {/* User's Personal Commitments */}
+                      {userStakedAmount && Number(userStakedAmount) > 0 && (
+                        <div className="p-4 bg-purple-900/20 border border-purple-700/50 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-semibold text-purple-300">💎 Your Commitments</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-purple-400 mb-1">Your Locked (Current)</div>
+                              <div className="text-base font-semibold text-white">{formattedUserActivePeriod} {selectedPool.ticker}</div>
+                              <div className="text-xs text-purple-300 mt-1">Earning rewards now</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-purple-400 mb-1">Your Locked (Next)</div>
+                              <div className="text-base font-semibold text-white">{formattedUserNextPeriod} {selectedPool.ticker}</div>
+                              <div className="text-xs text-purple-300 mt-1">Will earn next period</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* DEBUG: All Period Commitments */}
+                      {userStakedAmount && Number(userStakedAmount) > 0 && (
+                        <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl">
+                          <div className="text-sm font-semibold text-yellow-300 mb-2">
+                            🔍 DEBUG: Period Scan Results
+                          </div>
+                          {debugLogs.length > 0 ? (
+                            <div className="space-y-0.5 max-h-60 overflow-y-auto font-mono">
+                              {debugLogs.map((log, idx) => (
+                                <div key={idx} className="text-xs text-yellow-100 whitespace-pre">
+                                  {log}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-yellow-200">
+                              Loading period data...
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Diamond Hands Stats Grid */}
                       <div className="grid grid-cols-2 gap-3">
                         {/* Total Locked in DH */}
@@ -1030,11 +1229,11 @@ export default function StakeInterface({
                           <div className="text-xs text-purple-400 mt-1">{supplyLockedPercentage}% of total supply</div>
                         </div>
 
-                        {/* User's Share % */}
+                        {/* User's Share % - Current Period */}
                         <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
-                          <div className="text-xs text-gray-400 mb-1">Your Share</div>
+                          <div className="text-xs text-gray-400 mb-1">Your Share (Current)</div>
                           <div className="text-lg font-semibold text-purple-400">{userPercentage}%</div>
-                          <div className="text-xs text-gray-500">of total locked</div>
+                          <div className="text-xs text-gray-500">of active period</div>
                         </div>
 
                         {/* Reward Bucket Balance */}
@@ -1047,17 +1246,34 @@ export default function StakeInterface({
                         {/* User's Pending Rewards */}
                         <div className="p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
                           <div className="text-xs text-green-400 mb-1">Your Pending Rewards</div>
-                          <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
+                          <div className="flex items-baseline gap-2">
+                            <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
+                            <div className="text-xs text-green-400">({rewardsAPY}% APY)</div>
+                          </div>
                           <div className="text-xs text-green-500/70">{selectedPool.ticker}</div>
                         </div>
                       </div>
 
-                      {/* Info Note about rewards */}
-                      <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
-                        <p className="text-xs text-blue-300">
-                          💡 <strong>Pending rewards</strong> are your estimated share ({userPercentage}%) of the {formattedRewardBucket} {selectedPool.ticker} currently in the reward bucket from early unlock penalties.
-                        </p>
-                      </div>
+                      {/* Period Comparison - Current vs Next */}
+                      {(Number(globalStakedForActivePeriod) > 0 || Number(globalStakedForNextPeriod) > 0) && (
+                        <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-semibold text-blue-300">🔒 Period Comparison</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-blue-400 mb-1">Total Locked (Current)</div>
+                              <div className="text-base font-semibold text-white">{formattedGlobalActivePeriod} {selectedPool.ticker}</div>
+                              <div className="text-xs text-blue-300 mt-1">Currently earning rewards</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-blue-400 mb-1">Total Locked (Next)</div>
+                              <div className="text-base font-semibold text-white">{formattedGlobalNextPeriod} {selectedPool.ticker}</div>
+                              <div className="text-xs text-blue-300 mt-1">Pre-committed for next period</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Withdrawal Section */}
                       {stakeIsActive ? (
@@ -1193,8 +1409,17 @@ export default function StakeInterface({
               </button>
 
               {stakeIsActive && (
-                <p className="text-sm text-yellow-400 text-center">
-                  Redemption is only available after the stake has ended.
+                <p className="text-sm text-yellow-400 text-center flex items-start justify-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Redemption is only available after the stake ends in:{' '}
+                    <span className="font-mono">
+                      {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+                      {String(timeRemaining.hours).padStart(2, '0')}h{' '}
+                      {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
+                      {String(timeRemaining.seconds).padStart(2, '0')}s
+                    </span>
+                  </span>
                 </p>
               )}
             </div>
@@ -1315,62 +1540,6 @@ export default function StakeInterface({
                           })()}
                       </div>
                       )}
-
-                      {/* Withdrawal Section */}
-                      {userStakedAmount && Number(userStakedAmount) > 0 && (
-                        <div className="space-y-3">
-                          <h3 className="text-lg font-semibold text-white">Withdraw Tokens</h3>
-                          <div>
-                            <input
-                              ref={withdrawAmountRef}
-                              type="text"
-                              value={formatNumberWithCommas(withdrawAmount)}
-                              onChange={(e) => handleAmountChange(e, setWithdrawAmount, withdrawAmountRef)}
-                              placeholder="0.00"
-                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                            />
-                            
-                            {/* Balance and MAX button */}
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-gray-400 text-xs">
-                                Available: {formattedDHBalance} {selectedPool.ticker}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setWithdrawAmount(getFullPrecisionDHBalance())}
-                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
-                              >
-                                MAX
-                              </button>
-                            </div>
-                      </div>
-
-                          <button
-                            onClick={handleDHWithdraw}
-                            disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
-                            className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
-                              withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
-                                ? 'bg-purple-500 text-white hover:bg-purple-400'
-                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            {isDHLoading ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                Processing...
-                              </span>
-                            ) : (
-                              'Withdraw'
-                            )}
-                          </button>
-
-                      <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
-                        <p className="text-xs text-yellow-300">
-                              <strong>Note:</strong> Early withdrawal incurs a penalty. Withdraw after the stake ends for full amount.
-                        </p>
-                      </div>
-                        </div>
-                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -1471,9 +1640,23 @@ export default function StakeInterface({
               })()}
 
               {!isMintingPhaseActive && (
-                <p className="text-sm text-yellow-400 text-center">
-                  Minting is only available during the reload phase. A period of {reloadPhaseDuration ? Number(reloadPhaseDuration) : '...'} days between the stake being ended and starting once again.
-                </p>
+                <div className="text-sm text-yellow-400 text-center space-y-2">
+                  <div className="flex items-start justify-center gap-2">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <span>
+                      Minting is only available during the reload phase. A period of {reloadPhaseDuration ? Number(reloadPhaseDuration) : '...'} days between the stake being ended and starting once again.
+                    </span>
+                  </div>
+                  <div>
+                    It starts in:{' '}
+                    <span className="font-mono">
+                      {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+                      {String(timeRemaining.hours).padStart(2, '0')}h{' '}
+                      {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
+                      {String(timeRemaining.seconds).padStart(2, '0')}s
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -1518,4 +1701,5 @@ function InfoRow({ label, value, highlight = false }: { label: string; value: st
     </div>
   );
 }
+
 
