@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Address } from 'viem';
-import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 
 interface TimeLeft {
   days: number;
@@ -12,24 +10,19 @@ interface TimeLeft {
   total: number;
 }
 
-// BASE Pool address
-const BASE_POOL_ADDRESS = '0x7487fd45F9e7B8C2fA87063ba98067a20E0bdb58' as Address;
+interface TeamCountdownProps {
+  stakeEndDay?: bigint;
+  reloadPhaseEnd?: bigint;
+  stakeIsActive?: boolean;
+}
 
 // HEX day is 24 hours, starts at Unix timestamp 1575331200 (Dec 3, 2019 00:00:00 UTC)
 const HEX_LAUNCH_TIME = 1575331200;
 const DAY_IN_SECONDS = 86400;
 
-export default function TeamCountdown() {
+export default function TeamCountdown({ stakeEndDay, reloadPhaseEnd, stakeIsActive }: TeamCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 });
   const [label, setLabel] = useState<string>('');
-
-  // Use cached BASE pool data
-  const { 
-    stakeEndDay, 
-    reloadPhaseEnd, 
-    stakeIsActive,
-    currentHexDay 
-  } = usePerpetualPool(BASE_POOL_ADDRESS, 'BASE');
 
   useEffect(() => {
     // Don't start timer until we have the data

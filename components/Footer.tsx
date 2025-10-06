@@ -16,7 +16,7 @@ const Footer = () => {
               LookIntoMaxi {CURRENT_YEAR}
             </h3>
             <p className="text-sm text-[rgb(153,153,153)]">
-              End pooled stakes
+              End pooled HEX stakes
             </p>
           </div>
 

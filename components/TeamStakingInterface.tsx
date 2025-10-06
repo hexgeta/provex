@@ -3,15 +3,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { formatUnits, parseUnits, Address } from 'viem';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useTeamStaking } from '@/hooks/contracts/useTeamStaking';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { REWARD_TOKENS, RewardToken } from '@/constants/team';
-import TeamCountdown from '@/components/TeamCountdown';
+import { PERPETUAL_POOLS } from '@/constants/crypto';
 
-// BASE Pool address
-const BASE_POOL_ADDRESS = '0x7487fd45F9e7B8C2fA87063ba98067a20E0bdb58' as Address;
+// BASE Pool address (for checking stake status)
+const BASE_POOL_ADDRESS = PERPETUAL_POOLS.BASE.contractAddress as Address;
 
 export default function TeamStakingInterface() {
   const { address, isConnected } = useAccount();
@@ -36,12 +45,25 @@ export default function TeamStakingInterface() {
     checkHasClaimed,
   } = useTeamStaking();
 
-  // Use BASE pool hook to get stake status (already cached from homepage)
-  const { stakeIsActive: baseStakeIsActive } = usePerpetualPool(BASE_POOL_ADDRESS, 'BASE');
+  // Use BASE pool hook to get stake status and countdown data
+  const { 
+    stakeIsActive: baseStakeIsActive,
+    stakeStartDay,
+    stakeEndDay,
+    reloadPhaseEnd,
+    currentHexDay,
+  } = usePerpetualPool(BASE_POOL_ADDRESS, 'BASE');
 
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmount, setUnstakeAmount] = useState('');
   const [selectedClaimStakeID, setSelectedClaimStakeID] = useState('');
+  const [showEarlyUnstakeDialog, setShowEarlyUnstakeDialog] = useState(false);
+  const [earlyUnstakeDetails, setEarlyUnstakeDetails] = useState({
+    amount: '',
+    penalty: '',
+    afterPenalty: '',
+  });
+  const [stakeEndCountdown, setStakeEndCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   const stakeAmountRef = useRef<HTMLInputElement>(null);
   const unstakeAmountRef = useRef<HTMLInputElement>(null);
@@ -55,6 +77,39 @@ export default function TeamStakingInterface() {
       setSelectedClaimStakeID(currentPeriod.toString());
     }
   }, [currentPeriod, selectedClaimStakeID]);
+
+  // Countdown timer for when BASE stake ends
+  useEffect(() => {
+    if (!stakeEndDay || !baseStakeIsActive) {
+      return;
+    }
+
+    const updateCountdown = () => {
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      const stakeEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(stakeEndDay) * SECONDS_PER_DAY);
+      const now = Math.floor(Date.now() / 1000);
+      const secondsRemaining = stakeEndTimestamp - now;
+
+      if (secondsRemaining <= 0) {
+        setStakeEndCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
+      const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
+      const minutes = Math.floor((secondsRemaining % 3600) / 60);
+      const seconds = secondsRemaining % 60;
+
+      setStakeEndCountdown({ days, hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [stakeEndDay, baseStakeIsActive]);
 
   // Format number with commas
   const formatNumberWithCommas = (value: string) => {
@@ -99,21 +154,25 @@ export default function TeamStakingInterface() {
     }
   };
 
-  const handleEarlyEndStake = async () => {
+  const handleEarlyEndStake = () => {
     if (!currentStakeID || !unstakeAmount || parseFloat(unstakeAmount) <= 0) return;
     
     const penalty = parseFloat(unstakeAmount) * 0.0369;
     const afterPenalty = parseFloat(unstakeAmount) - penalty;
     
-    const confirmed = window.confirm(
-      `⚠️ EARLY UNSTAKING WARNING\n\n` +
-      `Unstaking Amount: ${formatNumberWithCommas(unstakeAmount)} TEAM\n` +
-      `Penalty (3.69%): ${penalty.toFixed(8)} TEAM\n` +
-      `You Will Receive: ${afterPenalty.toFixed(8)} TEAM\n\n` +
-      `Are you sure you want to continue?`
-    );
+    setEarlyUnstakeDetails({
+      amount: formatNumberWithCommas(unstakeAmount),
+      penalty: penalty.toFixed(8),
+      afterPenalty: afterPenalty.toFixed(8),
+    });
     
-    if (!confirmed) return;
+    setShowEarlyUnstakeDialog(true);
+  };
+
+  const confirmEarlyEndStake = async () => {
+    if (!currentStakeID || !unstakeAmount) return;
+    
+    setShowEarlyUnstakeDialog(false);
     
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
@@ -183,11 +242,6 @@ export default function TeamStakingInterface() {
 
   return (
     <>
-      {/* Header */}
-      <div className="text-center mb-8">
-        <TeamCountdown />
-      </div>
-
       {/* Period Banner */}
       {!isStakingPeriod && currentPeriod && Number(currentPeriod) > 0 && (
         <div className="mb-6 p-4 bg-black border-2 border-white/30 rounded-xl">
@@ -266,9 +320,9 @@ export default function TeamStakingInterface() {
 
               <button
                 onClick={handleStake}
-                disabled={!stakeAmount || parseFloat(stakeAmount) <= 0 || isLoading}
+                disabled={!stakeAmount || parseFloat(stakeAmount) <= 0 || isLoading || baseStakeIsActive === true}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  stakeAmount && parseFloat(stakeAmount) > 0 && !isLoading
+                  stakeAmount && parseFloat(stakeAmount) > 0 && !isLoading && baseStakeIsActive !== true
                     ? 'bg-white/10 hover:bg-white/20 text-white'
                     : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                 }`}
@@ -282,6 +336,20 @@ export default function TeamStakingInterface() {
                   'Stake TEAM'
                 )}
               </button>
+
+              {/* Show warning if BASE stake is active */}
+              {baseStakeIsActive === true && (
+                <div className="flex items-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none">
+                  <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <p className="text-sm text-center text-yellow-400">
+                    Staking is only available after the BASE stake ends in:{' '}
+                    <span className="font-mono font-semibold">
+                      {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
+                      {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -379,30 +447,23 @@ export default function TeamStakingInterface() {
                 </>
               )}
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <button
-                  onClick={handleExtend}
-                  disabled={isLoading}
-                  className="py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-700/50 disabled:text-gray-500"
-                >
-                  Extend Stake
-                </button>
-                <button
-                  onClick={handleRestake}
-                  disabled={isLoading}
-                  className="py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-700/50 disabled:text-gray-500"
-                >
-                  Restake Expired
-                </button>
-              </div>
-
-              <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
-                <p className="text-sm text-gray-300">
-                  <strong>Extend Stake:</strong> Roll your stake to the next period during the expiry window.
-                  <br />
-                  <strong>Restake Expired:</strong> Restart an expired stake for the next period.
-                </p>
-              </div>
+              {/* Show Extend during reload phase (even periods) only */}
+              {!isStakingPeriod && (
+                <>
+                  <button
+                    onClick={handleExtend}
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
+                  >
+                    Extend Stake
+                  </button>
+                  <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
+                    <p className="text-sm text-gray-300">
+                      <strong>Extend Stake:</strong> Roll your stake to the next period during the expiry window.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -420,9 +481,56 @@ export default function TeamStakingInterface() {
             getClaimableAmount={getClaimableAmount}
             checkHasClaimed={checkHasClaimed}
             isStakingPeriod={isStakingPeriod}
+            stakeEndCountdown={stakeEndCountdown}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Early Unstaking Warning Dialog */}
+      <Dialog open={showEarlyUnstakeDialog} onOpenChange={setShowEarlyUnstakeDialog}>
+        <DialogContent className="bg-black border-2 border-red-500/50 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400 text-2xl">
+              <AlertTriangle className="w-6 h-6" />
+              EARLY UNSTAKING WARNING
+            </DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300 font-medium">Unstaking Amount:</span>
+                  <span className="text-white font-bold text-lg">{earlyUnstakeDetails.amount} TEAM</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-red-300 font-medium">Penalty (3.69%):</span>
+                  <span className="text-red-400 font-bold text-lg">{earlyUnstakeDetails.penalty} TEAM</span>
+                </div>
+                <div className="h-px bg-red-500/30" />
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300 font-medium">You Will Receive:</span>
+                  <span className="text-white font-bold text-xl">{earlyUnstakeDetails.afterPenalty} TEAM</span>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm text-center">
+                Are you sure you want to continue?
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button 
+              onClick={() => setShowEarlyUnstakeDialog(false)}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmEarlyEndStake}
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50"
+            >
+              Confirm Unstake
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -439,6 +547,7 @@ function RewardsClaimSection({
   getClaimableAmount,
   checkHasClaimed,
   isStakingPeriod,
+  stakeEndCountdown,
 }: any) {
   const [prepareStatuses, setPrepareStatuses] = useState<Record<string, boolean>>({});
   const [claimableAmounts, setClaimableAmounts] = useState<Record<string, bigint>>({});
@@ -511,17 +620,23 @@ function RewardsClaimSection({
 
   if (isStakingPeriod) {
     return (
-      <div className="border-2 border-white rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
-        <p className="text-gray-300 text-center py-12">
-          <Info className="w-5 h-5 inline mr-2" />
-          Rewards can only be claimed once the BASE stake ends.
-        </p>
+      <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
+        <div className="flex items-center justify-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none">
+          <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <p className="text-sm text-yellow-400">
+            Rewards can only be claimed once the BASE stake ends in:{' '}
+            <span className="font-mono font-semibold">
+              {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
+              {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
+            </span>
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="border-2 border-white rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
+    <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
       <h2 className="text-3xl font-bold text-white mb-4">
         Pending Rewards - Period {currentPeriod}
       </h2>
