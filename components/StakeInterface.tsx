@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { useDiamondHands } from '@/hooks/contracts/useDiamondHands';
 import { usePool } from '@/context/PoolContext';
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface StakeInterfaceProps {
   activeTab: 'info' | 'end' | 'claim' | 'mint';
@@ -90,6 +91,12 @@ export default function StakeInterface({
   const [lockAmount, setLockAmount] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [reloadPhaseTimeRemaining, setReloadPhaseTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [showEarlyWithdrawDialog, setShowEarlyWithdrawDialog] = useState(false);
+  const [earlyWithdrawDetails, setEarlyWithdrawDetails] = useState({
+    amount: '',
+    penalty: '',
+    afterPenalty: '',
+  });
   const redeemAmountRef = useRef<HTMLInputElement>(null);
   const mintAmountRef = useRef<HTMLInputElement>(null);
   const withdrawAmountRef = useRef<HTMLInputElement>(null);
@@ -711,6 +718,68 @@ export default function StakeInterface({
     }
   };
 
+  const handleEarlyDHWithdraw = async () => {
+    const cleanAmount = removeCommas(withdrawAmount);
+    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
+      onTransactionError?.('Please enter a valid amount to withdraw');
+      return;
+    }
+
+    try {
+      // Convert to mini (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
+      
+      // Calculate penalty
+      const penalty = await calculatePenalty(amountInMini);
+      const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
+      const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
+      
+      // Show confirmation dialog
+      setEarlyWithdrawDetails({
+        amount: cleanAmount,
+        penalty: formatNumberWithCommas(penaltyAmount),
+        afterPenalty: formatNumberWithCommas(willReceive),
+      });
+      setShowEarlyWithdrawDialog(true);
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to calculate penalty. Please try again.'
+      );
+    }
+  };
+
+  const confirmEarlyDHWithdraw = async () => {
+    const cleanAmount = removeCommas(earlyWithdrawDetails.amount);
+    
+    try {
+      onTransactionStart?.();
+      setShowEarlyWithdrawDialog(false);
+      
+      // Convert to mini (8 decimals)
+      const [whole, decimal = ''] = cleanAmount.split('.');
+      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+      const amountInMini = BigInt(whole + paddedDecimal);
+      
+      const stakeID = currentPeriod || 1n;
+      const result = await withdrawEarly(stakeID, amountInMini);
+      
+      onTransactionSuccess?.(
+        `Successfully withdrew ${formatNumberWithCommas(cleanAmount)} ${selectedPool.ticker} (with penalty)`,
+        result.hash
+      );
+      
+      setWithdrawAmount('');
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to withdraw from Diamond Hands. Please try again.'
+      );
+    } finally {
+      onTransactionEnd?.();
+    }
+  };
+
   // Format Diamond Hands balance
   const formattedDHBalance = userStakedAmount 
     ? (Number(userStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -750,23 +819,35 @@ export default function StakeInterface({
     ? ((Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * (Number(rewardBucketBalance) / 1e8)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '0.00';
 
-  // Format next period staking amounts
-  const formattedUserNextPeriod = userStakedForNextPeriod
-    ? (Number(userStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+  // Format next period staking amounts (memoized to prevent flashing)
+  const formattedUserNextPeriod = useMemo(() =>
+    userStakedForNextPeriod
+      ? (Number(userStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00',
+    [userStakedForNextPeriod]
+  );
 
-  const formattedGlobalNextPeriod = globalStakedForNextPeriod
-    ? (Number(globalStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+  const formattedGlobalNextPeriod = useMemo(() =>
+    globalStakedForNextPeriod
+      ? (Number(globalStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00',
+    [globalStakedForNextPeriod]
+  );
 
-  // Format current active period staking amounts
-  const formattedGlobalActivePeriod = globalStakedForActivePeriod
-    ? (Number(globalStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+  // Format current active period staking amounts (memoized to prevent flashing)
+  const formattedGlobalActivePeriod = useMemo(() => 
+    globalStakedForActivePeriod
+      ? (Number(globalStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00',
+    [globalStakedForActivePeriod]
+  );
 
-  const formattedUserActivePeriod = userStakedForActivePeriod
-    ? (Number(userStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+  const formattedUserActivePeriod = useMemo(() =>
+    userStakedForActivePeriod
+      ? (Number(userStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00',
+    [userStakedForActivePeriod]
+  );
 
   // Calculate APY for pending rewards (using period-specific amounts)
   const calculateRewardsAPY = () => {
@@ -1182,17 +1263,25 @@ export default function StakeInterface({
                           <div className="flex items-center justify-between mb-2">
                             <div className="text-sm font-semibold text-purple-300">💎 Your Commitments</div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-4 mb-3">
                             <div>
                               <div className="text-xs text-purple-400 mb-1">Your Locked (Current)</div>
                               <div className="text-base font-semibold text-white">{formattedUserActivePeriod} {selectedPool.ticker}</div>
-                              <div className="text-xs text-purple-300 mt-1">Earning rewards now</div>
                             </div>
                             <div>
                               <div className="text-xs text-purple-400 mb-1">Your Locked (Next)</div>
                               <div className="text-base font-semibold text-white">{formattedUserNextPeriod} {selectedPool.ticker}</div>
-                              <div className="text-xs text-purple-300 mt-1">Will earn next period</div>
                             </div>
+                          </div>
+                          
+                          {/* User's Pending Rewards */}
+                          <div className="p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
+                            <div className="text-xs text-green-400 mb-1">Your Pending Rewards</div>
+                            <div className="flex items-baseline gap-2">
+                              <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
+                              <div className="text-xs text-green-400">({rewardsAPY}% APY)</div>
+                            </div>
+                            <div className="text-xs text-green-500/70">{selectedPool.ticker}</div>
                           </div>
                         </div>
                       )}
@@ -1220,7 +1309,7 @@ export default function StakeInterface({
                       )}
 
                       {/* Diamond Hands Stats Grid */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         {/* Total Locked in DH */}
                         <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
                           <div className="text-xs text-gray-400 mb-1">Total in DH Contract</div>
@@ -1241,16 +1330,6 @@ export default function StakeInterface({
                           <div className="text-xs text-amber-400 mb-1">Reward Bucket</div>
                           <div className="text-lg font-semibold text-white">{formattedRewardBucket}</div>
                           <div className="text-xs text-amber-500/70">{selectedPool.ticker} penalties</div>
-                        </div>
-
-                        {/* User's Pending Rewards */}
-                        <div className="p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
-                          <div className="text-xs text-green-400 mb-1">Your Pending Rewards</div>
-                          <div className="flex items-baseline gap-2">
-                            <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
-                            <div className="text-xs text-green-400">({rewardsAPY}% APY)</div>
-                          </div>
-                          <div className="text-xs text-green-500/70">{selectedPool.ticker}</div>
                         </div>
                       </div>
 
@@ -1276,12 +1355,7 @@ export default function StakeInterface({
                       )}
 
                       {/* Withdrawal Section */}
-                      {stakeIsActive ? (
-                        <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
-                          <p className="text-gray-400 mb-2">🔒 Unlocking Disabled</p>
-                          <p className="text-gray-500 text-sm">You cannot unlock tokens while the stake is active. Please wait until the stake ends.</p>
-                        </div>
-                      ) : userStakedAmount && Number(userStakedAmount) > 0 ? (
+                      {userStakedAmount && Number(userStakedAmount) > 0 ? (
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold text-white">Unlock Amount</h3>
                           <div>
@@ -1309,30 +1383,61 @@ export default function StakeInterface({
                             </div>
                           </div>
 
-                          <button
-                            onClick={handleDHWithdraw}
-                            disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
-                            className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
-                              withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
-                                ? 'bg-purple-500 text-white hover:bg-purple-400'
-                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            {isDHLoading ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                Processing...
-                              </span>
-                            ) : (
-                              'Unlock Tokens'
-                            )}
-                          </button>
+                          {stakeIsActive ? (
+                            <>
+                              <button
+                                onClick={handleEarlyDHWithdraw}
+                                disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
+                                className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                                  withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
+                                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50'
+                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed border-2 border-gray-700/50'
+                                }`}
+                              >
+                                {isDHLoading ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Processing...
+                                  </span>
+                                ) : (
+                                  '⚠️ Early Unlock (with Penalty)'
+                                )}
+                              </button>
 
-                          <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
-                            <p className="text-xs text-yellow-300">
-                              <strong>Note:</strong> Early withdrawal incurs a penalty. Withdraw after the stake ends for full amount.
-                            </p>
-                          </div>
+                              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+                                <p className="text-xs text-red-400 font-semibold">
+                                  ⚠️ Stake is still active. Early unlocking incurs a penalty. Wait for the stake to end to unlock without penalty.
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={handleDHWithdraw}
+                                disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
+                                className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
+                                  withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
+                                    ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                }`}
+                              >
+                                {isDHLoading ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Processing...
+                                  </span>
+                                ) : (
+                                  'Unlock Tokens'
+                                )}
+                              </button>
+
+                              <div className="p-3 bg-white/5 border border-white/20 rounded-xl">
+                                <p className="text-xs text-gray-300">
+                                  ✅ Stake has ended. You can now unlock without penalty.
+                                </p>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-xl text-center">
@@ -1451,7 +1556,7 @@ export default function StakeInterface({
                         <div className="space-y-3">
                           <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
                             <p className="text-gray-400 mb-2">🔒 Locking Disabled</p>
-                            <p className="text-gray-500 text-sm">You cannot lock tokens while the stake is active. Locking is only available during the reload phase (after stake ends).</p>
+                            <p className="text-gray-500 text-sm">You cannot lock tokens during a stake on this front-end. You'll have to wait until the stake ends to lock tokens for the next period.</p>
                           </div>
                         </div>
                       ) : !isMintingPhaseActive ? (
@@ -1662,6 +1767,60 @@ export default function StakeInterface({
           </div>
         </div>
       </div>
+
+      {/* Early Withdraw Confirmation Dialog */}
+      <Dialog open={showEarlyWithdrawDialog} onOpenChange={setShowEarlyWithdrawDialog}>
+        <DialogContent className="bg-black border-2 border-red-500/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="w-6 h-6" />
+              Confirm Early Unlock
+            </DialogTitle>
+            <DialogDescription className="text-gray-300">
+              You are about to unlock tokens while the stake is still active. This will incur a penalty.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Unlock Amount:</span>
+                <span className="text-white font-semibold">{earlyWithdrawDetails.amount} {selectedPool.ticker}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-red-400">Penalty:</span>
+                <span className="text-red-400 font-semibold">-{earlyWithdrawDetails.penalty} {selectedPool.ticker}</span>
+              </div>
+              <div className="border-t border-red-500/30 pt-3 flex justify-between">
+                <span className="text-white font-semibold">You Will Receive:</span>
+                <span className="text-white font-bold text-lg">{earlyWithdrawDetails.afterPenalty} {selectedPool.ticker}</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <p className="text-sm text-yellow-400">
+                💡 <strong>Tip:</strong> Wait for the stake to end to unlock without any penalty and receive the full amount.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEarlyWithdrawDialog(false)}
+              className="flex-1 bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmEarlyDHWithdraw}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+            >
+              Confirm Early Unlock
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

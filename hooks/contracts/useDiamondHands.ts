@@ -165,12 +165,17 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
             args: [address, stakeID],
           }) as any;
 
-          if (stake.initiated && stake.balance > 0n) {
+          // Contract returns array: [staker, balance, stakeID, expiry, initiated]
+          const initiated = stake[4];
+          const balance = stake[1];
+          const expiry = stake[3];
+
+          if (initiated && balance > 0n) {
             stakes.push({
               stakeID,
-              balance: stake.balance,
-              expiry: stake.stake_expiry_period,
-              initiated: stake.initiated,
+              balance: balance,
+              expiry: expiry,
+              initiated: initiated,
             });
           }
         } catch (error) {
@@ -191,11 +196,9 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
 
     try {
       let total = 0n;
-      console.log(`[DH] Checking user stakes for period ${period}, current period: ${currentPeriod}`);
 
       // Loop through all possible stakeIDs (0 to current period + 10 to catch edge cases)
       const maxStakeID = (currentPeriod as bigint) + 10n;
-      console.log(`[DH] Checking stakeIDs from 0 to ${maxStakeID}`);
       
       for (let stakeID = 0n; stakeID <= maxStakeID; stakeID++) {
         try {
@@ -207,12 +210,11 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
             args: [address, stakeID],
           }) as any;
 
-          console.log(`[DH] StakeID ${stakeID}: initiated=${stake.initiated}, balance=${stake.balance}, expiry=${stake.stake_expiry_period}`);
+          // Contract returns array: [staker, balance, stakeID, expiry, initiated]
+          const initiated = stake[4];
 
           // If stake exists (initiated == true), get the amount for this period
-          if (stake.initiated) {
-            console.log(`[DH] ✓ Found active stake ${stakeID}: balance=${stake.balance}, expiry=${stake.stake_expiry_period}`);
-            
+          if (initiated) {
             const amount = await publicClient.readContract({
               address: contractAddress,
               abi: DIAMOND_HANDS_ABI,
@@ -220,18 +222,13 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
               args: [address, period, stakeID],
             }) as bigint;
 
-            if (amount > 0n) {
-              console.log(`[DH] ✓ StakeID ${stakeID} has ${amount} for period ${period}`);
-            }
             total += amount;
           }
         } catch (error) {
-          console.log(`[DH] ✗ StakeID ${stakeID}: error or doesn't exist`);
           continue;
         }
       }
 
-      console.log(`[DH] Total for period ${period}: ${total}`);
       return total;
     } catch (error) {
       console.error('Error getting user staked for period:', error);
