@@ -237,6 +237,7 @@ export interface PerpetualPoolConfig {
   gradientTo: string;
   description: string;
   deadlineUTC: string;
+  stakeLengthDays: number;
 }
 
 export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
@@ -249,6 +250,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientTo: 'to-gray-200',
     description: 'TRIO Perpetual Pool',
     deadlineUTC: '2025-10-12T00:00:00Z',
+    stakeLengthDays: 1111,
   },
   DECI: {
     name: 'DECI on PulseChain',
@@ -259,6 +261,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientTo: 'to-red-700',
     description: 'DECI Perpetual Pool',
     deadlineUTC: '2025-10-12T00:00:00Z',
+    stakeLengthDays: 3696,
   },
   LUCKY: {
     name: 'LUCKY on PulseChain',
@@ -269,6 +272,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientTo: 'to-green-800',
     description: 'LUCKY Perpetual Pool',
     deadlineUTC: '2025-10-12T00:00:00Z',
+    stakeLengthDays: 2555,
   },
   BASE: {
     name: 'BASE on PulseChain',
@@ -279,6 +283,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientTo: 'to-orange-600',
     description: 'BASE Perpetual Pool',
     deadlineUTC: '2025-10-12T00:00:00Z',
+    stakeLengthDays: 369,
   },
   MAXI: {
     name: 'MAXI on PulseChain',
@@ -289,6 +294,7 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
     gradientTo: 'to-blue-700',
     description: 'MAXI Fixed Stake Pool',
     deadlineUTC: '2037-07-16T00:00:00Z',
+    stakeLengthDays: 5555,
   },
 };
 

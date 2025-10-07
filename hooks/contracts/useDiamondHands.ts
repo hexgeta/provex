@@ -27,7 +27,9 @@ const POOL_TOKEN_ABI = parseAbi([
   'function allowance(address owner, address spender) view returns (uint256)',
   'function balanceOf(address account) view returns (uint256)',
   'function totalSupply() view returns (uint256)',
+  'function STAKE_LENGTH() view returns (uint256)',
 ]);
+
 
 export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Address) {
   const { address } = useAccount();

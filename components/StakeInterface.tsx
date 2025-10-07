@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { useDiamondHands } from '@/hooks/contracts/useDiamondHands';
 import { usePool } from '@/context/PoolContext';
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle, Lock } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
@@ -94,6 +94,8 @@ export default function StakeInterface({
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [reloadPhaseTimeRemaining, setReloadPhaseTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showEarlyWithdrawDialog, setShowEarlyWithdrawDialog] = useState(false);
+  const [dhUnlockDialogOpen, setDhUnlockDialogOpen] = useState(false);
+  const [dhLockDialogOpen, setDhLockDialogOpen] = useState(false);
   const [earlyWithdrawDetails, setEarlyWithdrawDetails] = useState({
     amount: '',
     penalty: '',
@@ -629,9 +631,22 @@ export default function StakeInterface({
       const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
       const amountInMini = BigInt(whole + paddedDecimal);
       
-      // Get the current period to determine stakeID
-      // For most cases, users will withdraw from currentPeriod or currentPeriod-1
-      const stakeID = currentPeriod || 1n;
+      // Determine the correct stakeID based on where user has funds
+      let stakeID: bigint;
+      if (currentPeriod) {
+        // Check if user has funds in next period
+        if (Number(userStakedForNextPeriod) > 0) {
+          // Calculate next staking period
+          stakeID = currentPeriod % 2n === 1n 
+            ? currentPeriod + 2n  // If odd (staking period), next staking is +2
+            : currentPeriod + 1n; // If even (reload period), next staking is +1
+        } else {
+          // Use current period if they have funds there
+          stakeID = currentPeriod;
+        }
+      } else {
+        stakeID = 1n;
+      }
       
       // Try completed withdrawal first (no penalty)
       try {
@@ -661,6 +676,7 @@ export default function StakeInterface({
         }
         
         setWithdrawAmount('');
+        setDhUnlockDialogOpen(false); // Close dialog to show success toast
       } catch (error: any) {
         throw error;
       }
@@ -686,13 +702,15 @@ export default function StakeInterface({
       const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
       const amountInMini = BigInt(whole + paddedDecimal);
       
-      // Calculate penalty
-      const penalty = await calculatePenalty(amountInMini);
+      // Calculate penalty - FLAT 20% for all Diamond Hands pools
+      // penalty = amount / 5 (which is 20%)
+      const penalty = amountInMini / 5n;
+      
       const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
       const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
       
-      // Calculate penalty percentage
-      const penaltyPercentage = ((Number(penalty) / Number(amountInMini)) * 100).toFixed(2);
+      // Penalty percentage is always 20%
+      const penaltyPercentage = '20.00';
       
       // Show confirmation dialog
       setEarlyWithdrawDetails({
@@ -721,7 +739,24 @@ export default function StakeInterface({
       const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
       const amountInMini = BigInt(whole + paddedDecimal);
       
-      const stakeID = currentPeriod || 1n;
+      // Determine the correct stakeID based on where user has funds
+      // If user has funds in "next period", use next period as stakeID
+      let stakeID: bigint;
+      if (currentPeriod) {
+        // Check if user has funds in next period
+        if (Number(userStakedForNextPeriod) > 0) {
+          // Calculate next staking period
+          stakeID = currentPeriod % 2n === 1n 
+            ? currentPeriod + 2n  // If odd (staking period), next staking is +2
+            : currentPeriod + 1n; // If even (reload period), next staking is +1
+        } else {
+          // Use current period if they have funds there
+          stakeID = currentPeriod;
+        }
+      } else {
+        stakeID = 1n;
+      }
+      
       const result = await withdrawEarly(stakeID, amountInMini);
       
       onTransactionSuccess?.(
@@ -730,6 +765,7 @@ export default function StakeInterface({
       );
       
       setWithdrawAmount('');
+      setDhUnlockDialogOpen(false); // Close dialog to show success toast
     } catch (error: any) {
       onTransactionError?.(
         error?.message || 'Failed to withdraw from Diamond Hands. Please try again.'
@@ -860,6 +896,7 @@ export default function StakeInterface({
       );
       
       setLockAmount('');
+      setDhLockDialogOpen(false); // Close dialog to show success toast
       await refetchBalance();
     } catch (error: any) {
       onTransactionError?.(
@@ -1194,9 +1231,9 @@ export default function StakeInterface({
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-white">Burn {selectedPool.ticker}. Claim HEX.</h2>
               
-              {/* Diamond Hands Button - Only show if pool has a DH contract */}
-              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
-                <Dialog>
+              {/* Diamond Hands Button - Only show if pool has a DH contract AND user has tokens locked */}
+              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && userStakedAmount && Number(userStakedAmount) > 0 && (
+                <Dialog open={dhUnlockDialogOpen} onOpenChange={setDhUnlockDialogOpen}>
                   <DialogTrigger asChild>
                     <button className="flex items-center justify-center p-2 text-white/70 rounded-lg hover:text-white">
                       <Gem className="w-5 h-5" />
@@ -1467,7 +1504,7 @@ export default function StakeInterface({
               
               {/* Diamond Hands Button - Only show if pool has a DH contract */}
               {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
-                <Dialog>
+                <Dialog open={dhLockDialogOpen} onOpenChange={setDhLockDialogOpen}>
                   <DialogTrigger asChild>
                     <button className="flex items-center justify-center p-2 text-white/70 hover:text-white">
                       <Gem className="w-5 h-5" />
@@ -1483,14 +1520,15 @@ export default function StakeInterface({
                     </DialogHeader>
                     <div className="space-y-4 mt-4">
                       {/* Lock Section */}
-                      {stakeIsActive ? (
+                      {/* TESTING: Disabled stake checks to allow locking anytime */}
+                      {false && stakeIsActive ? (
                         <div className="space-y-3">
                           <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
                             <p className="text-gray-400 mb-2">🔒 Locking Disabled</p>
                             <p className="text-gray-500 text-sm">You cannot lock tokens during a stake on this front-end. You'll have to wait until the stake ends to lock tokens for the next period.</p>
                           </div>
                         </div>
-                      ) : !isMintingPhaseActive ? (
+                      ) : false && !isMintingPhaseActive ? (
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold text-white">Lock Tokens for Next Period</h3>
                           <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl text-center">
@@ -1527,21 +1565,26 @@ export default function StakeInterface({
                         </div>
 
                           {/* Check if approval is needed */}
-                          {lockAmount && parseFloat(removeCommas(lockAmount)) > 0 && (() => {
-                            const cleanAmount = removeCommas(lockAmount);
-                            const [whole, decimal = ''] = cleanAmount.split('.');
-                            const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
-                            const amountInMini = BigInt(whole + paddedDecimal);
-                            const needsApproval = !dhAllowance || dhAllowance < amountInMini;
+                          {(() => {
+                            const hasValidAmount = lockAmount && parseFloat(removeCommas(lockAmount)) > 0;
+                            let needsApproval = false;
+                            
+                            if (hasValidAmount) {
+                              const cleanAmount = removeCommas(lockAmount);
+                              const [whole, decimal = ''] = cleanAmount.split('.');
+                              const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
+                              const amountInMini = BigInt(whole + paddedDecimal);
+                              needsApproval = !dhAllowance || dhAllowance < amountInMini;
+                            }
 
                             return needsApproval ? (
                               <button
                                 onClick={handleDHApprove}
-                                disabled={isDHLoading}
+                                disabled={isDHLoading || !hasValidAmount}
                                 className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
-                                  !isDHLoading
-                                    ? 'bg-yellow-500 text-black hover:bg-yellow-400'
-                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                  !isDHLoading && hasValidAmount
+                                    ? 'bg-white text-black hover:bg-gray-100'
+                                    : 'bg-white text-black cursor-not-allowed opacity-50'
                                 }`}
                               >
                                 {isDHLoading ? (
@@ -1556,11 +1599,11 @@ export default function StakeInterface({
                             ) : (
                               <button
                                 onClick={handleDHLock}
-                                disabled={isDHLoading}
+                                disabled={isDHLoading || !hasValidAmount}
                                 className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
-                                  !isDHLoading
+                                  !isDHLoading && hasValidAmount
                                     ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
-                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-black cursor-not-allowed'
                                 }`}
                               >
                                 {isDHLoading ? (
@@ -1569,7 +1612,10 @@ export default function StakeInterface({
                                     Processing...
                                   </span>
                                 ) : (
-                                  `Lock ${selectedPool.ticker}`
+                                  <span className="flex items-center justify-center gap-2">
+                                    <Lock className="w-5 h-5" />
+                                    Lock {selectedPool.ticker}
+                                  </span>
                                 )}
                               </button>
                             );
@@ -1640,7 +1686,7 @@ export default function StakeInterface({
                     disabled={isLoading || !isMintingPhaseActive}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                       !isLoading && isMintingPhaseActive
-                        ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                        ? 'bg-white text-black hover:bg-gray-100'
                         : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                     }`}
                   >
@@ -1714,7 +1760,7 @@ export default function StakeInterface({
               Confirm Early Unlock
             </DialogTitle>
             <DialogDescription className="text-gray-300">
-              You are about to unlock tokens while the stake is still active. This will incur a penalty.
+              You are about to unlock tokens from Diamond Hands while the stake is still active. This will incur a penalty.
             </DialogDescription>
           </DialogHeader>
 
