@@ -9,7 +9,9 @@ import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle } 
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { Button } from '@/components/ui/button';
 
 interface StakeInterfaceProps {
@@ -95,6 +97,7 @@ export default function StakeInterface({
   const [earlyWithdrawDetails, setEarlyWithdrawDetails] = useState({
     amount: '',
     penalty: '',
+    penaltyPercentage: '',
     afterPenalty: '',
   });
   const redeemAmountRef = useRef<HTMLInputElement>(null);
@@ -109,6 +112,7 @@ export default function StakeInterface({
   const [globalStakedForNextPeriod, setGlobalStakedForNextPeriod] = useState<bigint>(0n);
   const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, amount: string}[]>([]);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [loadedDataPool, setLoadedDataPool] = useState<string>(''); // Track which pool the data is for
 
   // Diamond Hands hook - only if pool has a DH contract
   const dhContractAddress = DIAMOND_HANDS_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
@@ -176,31 +180,34 @@ export default function StakeInterface({
     }
   }, [selectedTicker]);
 
+  // Reset period-specific data when pool changes to prevent showing stale data
+  useEffect(() => {
+    setUserStakedForActivePeriod(0n);
+    setGlobalStakedForActivePeriod(0n);
+    setUserStakedForNextPeriod(0n);
+    setGlobalStakedForNextPeriod(0n);
+    setAllPeriodCommitments([]);
+    setDebugLogs([]);
+    setLoadedDataPool(''); // Mark data as invalid
+  }, [selectedTicker, dhContractAddress]);
+
   // Fetch period-specific staking amounts for accurate reward calculations
   useEffect(() => {
     const fetchPeriodAmounts = async () => {
-      if (!currentPeriod || !getActiveStakingPeriod || !getUserStakedForPeriod || !getGlobalStakedForPeriod || !getAllUserStakes) {
+      if (!currentPeriod || !getActiveStakingPeriod || !getUserStakedForPeriod || !getGlobalStakedForPeriod) {
         return;
       }
 
-      const logs: string[] = [];
+      const poolTicker = selectedPool.ticker; // Capture current pool
 
       try {
         const activePeriod = await getActiveStakingPeriod();
         if (activePeriod === null) return;
 
-        logs.push(`🔍 Starting period check for ${selectedPool.ticker}`);
-        logs.push(`📅 Current Period: ${currentPeriod.toString()}`);
-        logs.push(`🔄 Active Staking Period: ${activePeriod.toString()}`);
-        logs.push('');
-
         // Calculate next staking period (active + 2 for odd periods, active + 1 for even periods)
         const nextStakingPeriod = (activePeriod as bigint) % 2n === 1n 
           ? (activePeriod as bigint) + 2n  // If odd (staking), next staking is +2
           : (activePeriod as bigint) + 1n; // If even (reload), next staking is +1
-
-        logs.push(`⏭️  Next Staking Period: ${nextStakingPeriod.toString()}`);
-        logs.push('');
 
         const [userAmountActive, globalAmountActive, userAmountNext, globalAmountNext] = await Promise.all([
           getUserStakedForPeriod(activePeriod),
@@ -209,73 +216,21 @@ export default function StakeInterface({
           getGlobalStakedForPeriod(nextStakingPeriod)
         ]);
 
-        setUserStakedForActivePeriod(userAmountActive);
-        setGlobalStakedForActivePeriod(globalAmountActive);
-        setUserStakedForNextPeriod(userAmountNext);
-        setGlobalStakedForNextPeriod(globalAmountNext);
-
-        // DEBUG: Fetch all periods to see where tokens are committed
-        const debugPeriods = [];
-        const maxPeriod = Number(currentPeriod) + 5;
-        logs.push(`🔎 Checking all periods (0 to ${maxPeriod}):`);
-        logs.push('');
-        
-        for (let p = 0; p <= maxPeriod; p++) {
-          const amount = await getUserStakedForPeriod(BigInt(p));
-          if (amount > 0n) {
-            const formatted = (Number(amount) / 1e8).toFixed(2);
-            debugPeriods.push({
-              period: p,
-              amount: formatted
-            });
-            logs.push(`✅ Period ${p}: ${formatted} ${selectedPool.ticker}`);
-          } else {
-            logs.push(`❌ Period ${p}: No commitment`);
-          }
+        // Only update if we're still on the same pool
+        if (poolTicker === selectedPool.ticker) {
+          setUserStakedForActivePeriod(userAmountActive);
+          setGlobalStakedForActivePeriod(globalAmountActive);
+          setUserStakedForNextPeriod(userAmountNext);
+          setGlobalStakedForNextPeriod(globalAmountNext);
+          setLoadedDataPool(poolTicker); // Mark data as valid for this pool
         }
-        
-        logs.push('');
-        
-        // Fetch ALL stake records to see expired stakes
-        logs.push('📋 ALL STAKE RECORDS (including expired):');
-        logs.push('');
-        const allStakes = await getAllUserStakes();
-        
-        if (allStakes.length > 0) {
-          for (const stake of allStakes) {
-            const balance = (Number(stake.balance) / 1e8).toFixed(2);
-            const isExpired = stake.expiry < currentPeriod;
-            const status = isExpired ? '⏰ EXPIRED' : '✅ ACTIVE';
-            logs.push(`${status} StakeID ${stake.stakeID.toString()}: ${balance} ${selectedPool.ticker} (expires: period ${stake.expiry.toString()})`);
-          }
-        } else {
-          logs.push('No stakes found');
-        }
-        
-        logs.push('');
-        if (debugPeriods.length === 0) {
-          const dhBalance = userStakedAmount ? (Number(userStakedAmount) / 1e8).toFixed(2) : '0.00';
-          logs.push(`⚠️ NO ACTIVE COMMITMENTS in any period!`);
-          logs.push(`💎 But total DH balance shows: ${dhBalance} ${selectedPool.ticker}`);
-          logs.push('');
-          if (allStakes.length > 0) {
-            logs.push('✅ Found expired stakes above - you can withdraw them penalty-free!');
-          }
-        } else {
-          logs.push(`✅ Found ${debugPeriods.length} active period commitment(s)`);
-        }
-        
-        setAllPeriodCommitments(debugPeriods);
-        setDebugLogs(logs);
       } catch (error) {
-        logs.push(`❌ ERROR: ${error}`);
-        setDebugLogs(logs);
         console.error('Error fetching period amounts:', error);
       }
     };
 
     fetchPeriodAmounts();
-  }, [currentPeriod, getActiveStakingPeriod, getUserStakedForPeriod, getGlobalStakedForPeriod, getAllUserStakes, selectedPool.ticker, userStakedAmount]);
+  }, [currentPeriod, getActiveStakingPeriod, getUserStakedForPeriod, getGlobalStakedForPeriod, selectedPool.ticker]);
 
   // Save redeem amount to localStorage whenever it changes
   useEffect(() => {
@@ -736,10 +691,14 @@ export default function StakeInterface({
       const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
       const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
       
+      // Calculate penalty percentage
+      const penaltyPercentage = ((Number(penalty) / Number(amountInMini)) * 100).toFixed(2);
+      
       // Show confirmation dialog
       setEarlyWithdrawDetails({
         amount: cleanAmount,
         penalty: formatNumberWithCommas(penaltyAmount),
+        penaltyPercentage: penaltyPercentage,
         afterPenalty: formatNumberWithCommas(willReceive),
       });
       setShowEarlyWithdrawDialog(true);
@@ -812,6 +771,11 @@ export default function StakeInterface({
   // Format reward bucket balance
   const formattedRewardBucket = rewardBucketBalance 
     ? (Number(rewardBucketBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Calculate reward bucket percentage of total in DH contract
+  const rewardBucketPercentage = rewardBucketBalance && globalStakedAmount && Number(globalStakedAmount) > 0
+    ? ((Number(rewardBucketBalance) / Number(globalStakedAmount)) * 100).toFixed(2)
     : '0.00';
 
   // Calculate pending rewards for user (using period-specific amounts)
@@ -1169,7 +1133,7 @@ export default function StakeInterface({
                   disabled={!canEndStake || hasHedronMinted || isLoading}
                   className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                     canEndStake && !hasHedronMinted && !isLoading
-                      ? 'bg-purple-500 text-white hover:bg-purple-400'
+                      ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
                       : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   }`}
                 >
@@ -1238,17 +1202,17 @@ export default function StakeInterface({
                       <Gem className="w-5 h-5" />
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="bg-black border-2 border-purple-500/50 max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0 rounded-xl">
+                  <DialogContent className="bg-black border-2 border-[#2D82F3]/50 max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0 rounded-xl">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                        <Gem className="w-6 h-6 text-purple-400" />
+                        <Gem className="w-6 h-6 text-[#3D92FF]" />
                         Unlock {selectedPool.ticker} from Diamond Hands
                       </DialogTitle>
 
                     </DialogHeader>
                     <div className="space-y-4 mt-2">
                       {/* User's Staked Balance */}
-                      <div className="p-4 bg-gradient-to-r from-purple-900/30 to-purple-800/30 border border-purple-500/50 rounded-xl">
+                      <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-xl">
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300 text-sm">Your Locked Balance:</span>
                           <span className="text-2xl font-bold text-white">
@@ -1258,24 +1222,25 @@ export default function StakeInterface({
                       </div>
 
                       {/* User's Personal Commitments */}
-                      {userStakedAmount && Number(userStakedAmount) > 0 && (
-                        <div className="p-4 bg-purple-900/20 border border-purple-700/50 rounded-xl">
+                      {userStakedAmount && Number(userStakedAmount) > 0 && loadedDataPool === selectedTicker && (
+                        <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-xl transition-opacity duration-500 opacity-0 animate-[fadeIn_0.5s_ease-in-out_forwards]">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-semibold text-purple-300">💎 Your Commitments</div>
+                            <div className="text-md font-semibold text-blue-300">Your Commitments</div>
                           </div>
                           <div className="grid grid-cols-2 gap-4 mb-3">
                             <div>
-                              <div className="text-xs text-purple-400 mb-1">Your Locked (Current)</div>
+                              <div className="text-xs text-[#3D92FF] mb-1">Your Locked (Current)</div>
                               <div className="text-base font-semibold text-white">{formattedUserActivePeriod} {selectedPool.ticker}</div>
+                              <div className="text-xs text-[#5DA5FF] mt-1">{userPercentage}% of pool</div>
                             </div>
                             <div>
-                              <div className="text-xs text-purple-400 mb-1">Your Locked (Next)</div>
+                              <div className="text-xs text-[#3D92FF] mb-1">Your Locked (Next)</div>
                               <div className="text-base font-semibold text-white">{formattedUserNextPeriod} {selectedPool.ticker}</div>
                             </div>
                           </div>
                           
                           {/* User's Pending Rewards */}
-                          <div className="p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
+                          <div className="p-3 bg-green-800/20 rounded-lg">
                             <div className="text-xs text-green-400 mb-1">Your Pending Rewards</div>
                             <div className="flex items-baseline gap-2">
                               <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
@@ -1286,69 +1251,35 @@ export default function StakeInterface({
                         </div>
                       )}
 
-                      {/* DEBUG: All Period Commitments */}
-                      {userStakedAmount && Number(userStakedAmount) > 0 && (
-                        <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl">
-                          <div className="text-sm font-semibold text-yellow-300 mb-2">
-                            🔍 DEBUG: Period Scan Results
-                          </div>
-                          {debugLogs.length > 0 ? (
-                            <div className="space-y-0.5 max-h-60 overflow-y-auto font-mono">
-                              {debugLogs.map((log, idx) => (
-                                <div key={idx} className="text-xs text-yellow-100 whitespace-pre">
-                                  {log}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-yellow-200">
-                              Loading period data...
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Diamond Hands Stats Grid */}
-                      <div className="grid grid-cols-3 gap-3">
-                        {/* Total Locked in DH */}
-                        <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
-                          <div className="text-xs text-gray-400 mb-1">Total in DH Contract</div>
-                          <div className="text-lg font-semibold text-white">{formattedGlobalStaked}</div>
-                          <div className="text-xs text-gray-500">{selectedPool.ticker}</div>
-                          <div className="text-xs text-purple-400 mt-1">{supplyLockedPercentage}% of total supply</div>
-                        </div>
-
-                        {/* User's Share % - Current Period */}
-                        <div className="p-3 bg-gray-900/50 border border-gray-700/50 rounded-lg">
-                          <div className="text-xs text-gray-400 mb-1">Your Share (Current)</div>
-                          <div className="text-lg font-semibold text-purple-400">{userPercentage}%</div>
-                          <div className="text-xs text-gray-500">of active period</div>
-                        </div>
-
-                        {/* Reward Bucket Balance */}
-                        <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded-lg">
-                          <div className="text-xs text-amber-400 mb-1">Reward Bucket</div>
-                          <div className="text-lg font-semibold text-white">{formattedRewardBucket}</div>
-                          <div className="text-xs text-amber-500/70">{selectedPool.ticker} penalties</div>
-                        </div>
-                      </div>
-
                       {/* Period Comparison - Current vs Next */}
-                      {(Number(globalStakedForActivePeriod) > 0 || Number(globalStakedForNextPeriod) > 0) && (
-                        <div className="p-4 bg-blue-900/20 border border-blue-700/50 rounded-xl">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-semibold text-blue-300">🔒 Period Comparison</div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs text-blue-400 mb-1">Total Locked (Current)</div>
-                              <div className="text-base font-semibold text-white">{formattedGlobalActivePeriod} {selectedPool.ticker}</div>
-                              <div className="text-xs text-blue-300 mt-1">Currently earning rewards</div>
+                      {(Number(globalStakedForActivePeriod) > 0 || Number(globalStakedForNextPeriod) > 0) && loadedDataPool === selectedTicker && (
+                        <div className="p-4 bg-purple-900/30 border border-purple-700/30 rounded-xl space-y-4 transition-opacity duration-500 opacity-0 animate-[fadeIn_0.5s_ease-in-out_forwards]">
+                          <div>
+                            <div className="text-md font-semibold text-purple-300 mb-3">Contract Stats</div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-xs text-purple-400 mb-1">Total in DH Contract</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalStaked} {selectedPool.ticker}</div>
+                                <div className="text-xs text-purple-300/70 mt-1">{supplyLockedPercentage}% of total supply</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-purple-400 mb-1">Reward Bucket</div>
+                                <div className="text-base font-semibold text-white">{formattedRewardBucket} {selectedPool.ticker}</div>
+                                <div className="text-xs text-purple-300/70 mt-1">{rewardBucketPercentage}% of total in DH</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-blue-400 mb-1">Total Locked (Next)</div>
-                              <div className="text-base font-semibold text-white">{formattedGlobalNextPeriod} {selectedPool.ticker}</div>
-                              <div className="text-xs text-blue-300 mt-1">Pre-committed for next period</div>
+                          </div>
+                          
+                          <div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-xs text-purple-400 mb-1">Total Comitted (Current Period)</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalActivePeriod} {selectedPool.ticker}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-purple-400 mb-1">Total Comitted (Next Period)</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalNextPeriod} {selectedPool.ticker}</div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1365,7 +1296,7 @@ export default function StakeInterface({
                               value={formatNumberWithCommas(withdrawAmount)}
                               onChange={(e) => handleAmountChange(e, setWithdrawAmount, withdrawAmountRef)}
                               placeholder="0.00"
-                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                              className="w-full bg-black border border-white/20 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-white"
                             />
                             
                             {/* Balance and MAX button */}
@@ -1376,7 +1307,7 @@ export default function StakeInterface({
                               <button
                                 type="button"
                                 onClick={() => setWithdrawAmount(getFullPrecisionDHBalance())}
-                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
+                                className="text-[#3D92FF] hover:text-[#5DA5FF] text-xs font-medium transition-colors"
                               >
                                 MAX
                               </button>
@@ -1406,7 +1337,7 @@ export default function StakeInterface({
 
                               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
                                 <p className="text-xs text-red-400 font-semibold">
-                                  ⚠️ Stake is still active. Early unlocking incurs a penalty. Wait for the stake to end to unlock without penalty.
+                                  ⚠️ Stake is still active. End with no penalty & with rewards in: <span className="font-mono">{timeRemaining.days > 0 && `${timeRemaining.days}d `}{String(timeRemaining.hours).padStart(2, '0')}h {String(timeRemaining.minutes).padStart(2, '0')}m {String(timeRemaining.seconds).padStart(2, '0')}s</span>
                                 </p>
                               </div>
                             </>
@@ -1417,7 +1348,7 @@ export default function StakeInterface({
                                 disabled={!withdrawAmount || parseFloat(removeCommas(withdrawAmount)) <= 0 || isDHLoading}
                                 className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
                                   withdrawAmount && parseFloat(removeCommas(withdrawAmount)) > 0 && !isDHLoading
-                                    ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                    ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
                                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                 }`}
                               >
@@ -1542,10 +1473,10 @@ export default function StakeInterface({
                       <Gem className="w-5 h-5" />
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="bg-black border-2 border-purple-500/50 rounded-xl max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0">
+                  <DialogContent className="bg-black border-2 border-[#2D82F3]/50 rounded-xl max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                        <Gem className="w-6 h-6 text-purple-400" />
+                        <Gem className="w-6 h-6 text-[#3D92FF]" />
                         Lock {selectedPool.ticker} in Diamond Hands
                       </DialogTitle>
 
@@ -1577,7 +1508,7 @@ export default function StakeInterface({
                               value={formatNumberWithCommas(lockAmount)}
                               onChange={(e) => handleAmountChange(e, setLockAmount, lockAmountRef)}
                               placeholder="0.00"
-                              className="w-full bg-black border border-purple-500/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                              className="w-full bg-black border border-[#2D82F3]/50 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#3D92FF]"
                             />
                             
                             {/* Balance and MAX button */}
@@ -1588,7 +1519,7 @@ export default function StakeInterface({
                               <button
                                 type="button"
                                 onClick={() => setLockAmount(getFullPrecisionBalance())}
-                                className="text-purple-400 hover:text-purple-300 text-xs font-medium transition-colors"
+                                className="text-[#3D92FF] hover:text-[#5DA5FF] text-xs font-medium transition-colors"
                               >
                                 MAX
                               </button>
@@ -1628,7 +1559,7 @@ export default function StakeInterface({
                                 disabled={isDHLoading}
                                 className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
                                   !isDHLoading
-                                    ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                    ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
                                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                 }`}
                               >
@@ -1770,7 +1701,13 @@ export default function StakeInterface({
 
       {/* Early Withdraw Confirmation Dialog */}
       <Dialog open={showEarlyWithdrawDialog} onOpenChange={setShowEarlyWithdrawDialog}>
-        <DialogContent className="bg-black border-2 border-red-500/50">
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[10000] bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-[10001] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border-2 border-red-500/50 bg-black p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg">
+            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none">
+              <Cross2Icon className="h-4 w-4 text-white" />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <AlertTriangle className="w-6 h-6" />
@@ -1789,18 +1726,14 @@ export default function StakeInterface({
               </div>
               <div className="flex justify-between">
                 <span className="text-red-400">Penalty:</span>
-                <span className="text-red-400 font-semibold">-{earlyWithdrawDetails.penalty} {selectedPool.ticker}</span>
+                <span className="text-red-400 font-semibold">
+                  -{earlyWithdrawDetails.penalty} {selectedPool.ticker} <span className="text-xs text-red-400/80">({earlyWithdrawDetails.penaltyPercentage}%)</span>
+                </span>
               </div>
               <div className="border-t border-red-500/30 pt-3 flex justify-between">
                 <span className="text-white font-semibold">You Will Receive:</span>
                 <span className="text-white font-bold text-lg">{earlyWithdrawDetails.afterPenalty} {selectedPool.ticker}</span>
               </div>
-            </div>
-
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <p className="text-sm text-yellow-400">
-                💡 <strong>Tip:</strong> Wait for the stake to end to unlock without any penalty and receive the full amount.
-              </p>
             </div>
           </div>
 
@@ -1808,7 +1741,7 @@ export default function StakeInterface({
             <Button
               variant="outline"
               onClick={() => setShowEarlyWithdrawDialog(false)}
-              className="flex-1 bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
+              className="flex-1 bg-gray-800 hover:bg-gray-700 text-white hover:text-white border-gray-600"
             >
               Cancel
             </Button>
@@ -1819,7 +1752,8 @@ export default function StakeInterface({
               Confirm Early Unlock
             </Button>
           </DialogFooter>
-        </DialogContent>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
       </Dialog>
     </div>
   );
