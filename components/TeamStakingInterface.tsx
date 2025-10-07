@@ -19,11 +19,12 @@ import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { REWARD_TOKENS, RewardToken } from '@/constants/team';
 import { PERPETUAL_POOLS } from '@/constants/crypto';
 
-// BASE Pool address (for checking stake status)
-const BASE_POOL_ADDRESS = PERPETUAL_POOLS.BASE3.contractAddress as Address;
-
 export default function TeamStakingInterface() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
+  
+  // Get the correct BASE pool based on chain (BASE3 for PulseChain, eBASE3 for Ethereum)
+  const BASE_POOL = chain?.id === 1 ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3;
+  const BASE_POOL_ADDRESS = BASE_POOL.contractAddress as Address;
   const {
     currentPeriod,
     isStakingPeriod,
@@ -85,8 +86,8 @@ export default function TeamStakingInterface() {
     }
 
     const updateCountdown = () => {
-      // Use hardcoded deadline from PERPETUAL_POOLS config for BASE3
-      const deadline = new Date(PERPETUAL_POOLS.BASE3.deadlineUTC);
+      // Use hardcoded deadline from PERPETUAL_POOLS config (BASE3 or eBASE3 based on chain)
+      const deadline = new Date(BASE_POOL.deadlineUTC);
       const now = new Date();
       const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
 

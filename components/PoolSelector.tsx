@@ -1,11 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useAccount } from 'wagmi';
 import { usePool } from '@/context/PoolContext';
-import { POOL_OPTIONS, PoolTicker } from '@/config/perpetual-pools';
+import { getPoolOptionsForChain, PoolTicker, PerpetualPoolConfig } from '@/config/perpetual-pools';
+import { formatTickerName } from '@/utils/format';
 
 export default function PoolSelector() {
+  const { chain } = useAccount();
   const { selectedTicker, setSelectedTicker, selectedPool } = usePool();
+  const poolOptions = getPoolOptionsForChain(chain?.id);
 
   // Inactive buttons use the selected pool's color
   const getInactiveTextStyle = () => {
@@ -19,7 +23,7 @@ export default function PoolSelector() {
           className="flex items-center bg-black border-2 rounded-full relative w-full p-1"
           style={{ borderColor: `${selectedPool.color}80` }}
         >
-          {POOL_OPTIONS.map((pool) => {
+          {poolOptions.map((pool: PerpetualPoolConfig) => {
             const isSelected = selectedTicker === pool.ticker;
             return (
               <button
@@ -27,7 +31,7 @@ export default function PoolSelector() {
                 onClick={() => setSelectedTicker(pool.ticker as PoolTicker)}
                 className={`flex-1 px-4 md:px-6 py-2 md:py-2 rounded-full text-sm md:text-base font-bold transition-colors duration-200 relative z-10 whitespace-nowrap ${
                   isSelected
-                    ? pool.ticker === 'TRIO' ? 'text-black' : 'text-white'
+                    ? pool.ticker === 'TRIO' || pool.ticker === 'eTRIO' ? 'text-black' : 'text-white'
                     : ''
                 }`}
                 style={!isSelected ? getInactiveTextStyle() : undefined}
@@ -47,7 +51,7 @@ export default function PoolSelector() {
                     }}
                   />
                 )}
-                {pool.ticker}
+                {formatTickerName(pool.ticker)}
               </button>
             );
           })}

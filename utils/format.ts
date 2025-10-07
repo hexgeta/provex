@@ -132,3 +132,20 @@ export function formatHexDayToUTCDate(hexDay: number | bigint): string {
   
   return `${day} ${month} ${year}`;
 }
+
+/**
+ * Format ticker name for display
+ * - Removes 'e' prefix for Ethereum tokens (eTRIO -> TRIO)
+ * - Removes trailing numbers from BASE tokens (BASE3 -> BASE)
+ */
+export function formatTickerName(ticker: string): string {
+  // Remove 'e' prefix for Ethereum tokens
+  let formatted = ticker.startsWith('e') ? ticker.substring(1) : ticker;
+  
+  // Remove trailing numbers from BASE tokens
+  if (formatted.startsWith('BASE')) {
+    formatted = 'BASE';
+  }
+  
+  return formatted;
+}

@@ -270,8 +270,12 @@ export const TOKEN_CONSTANTS = [{
   tokenSupply: 70668766.59912861,
   tshares: 2939.965758095464,
   stakeStartDate: new Date('2024-10-26'),
-  stakeEndDate: '2025-10-30T00:00:00.000Z', // HEX Day 2159 + 2 days for practical conversion
+  stakeEndDate: '2025-10-30T00:00:00.000Z', // HEX Day 2157 + 2 days for practical conversion
   totalStakedDays: 369,
+  color: '#F09B1A',
+  gradientFrom: 'from-[#F09B1A]',
+  gradientTo: 'to-orange-600',
+  description: 'BASE Perpetual Pool',
   pair: {
     pairAddress: '0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85',
     chain: 'ethereum'
@@ -399,9 +403,9 @@ export interface PerpetualPoolConfig {
 }
 
 // Derive PERPETUAL_POOLS from TOKEN_CONSTANTS to ensure single source of truth
-// Note: Using BASE3, not BASE (always use the highest numbered cycle)
+// Note: Includes both BASE3 (PulseChain) and eBASE3 (Ethereum) - always use the highest numbered cycle
 const perpetualPoolTokens = TOKEN_CONSTANTS.filter(token => 
-  ['MAXI', 'DECI', 'LUCKY', 'TRIO', 'BASE3'].includes(token.ticker) && 
+  ['MAXI', 'DECI', 'LUCKY', 'TRIO', 'BASE3', 'eBASE3'].includes(token.ticker) && 
   token.color && 
   token.totalStakedDays
 );
@@ -424,7 +428,19 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = perpetualPoo
   return acc;
 }, {} as Record<string, PerpetualPoolConfig>);
 
-// Ordered pool options: MAXI, DECI, LUCKY, TRIO, BASE3 (current cycle)
+// Helper function to get the correct pool options based on current chain
+export function getPoolOptionsForChain(chainId: number | undefined) {
+  const isEthereum = chainId === 1;
+  return [
+    PERPETUAL_POOLS.MAXI,
+    PERPETUAL_POOLS.DECI,
+    PERPETUAL_POOLS.LUCKY,
+    PERPETUAL_POOLS.TRIO,
+    isEthereum ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3,
+  ];
+}
+
+// Default pool options: MAXI, DECI, LUCKY, TRIO, BASE3 (PulseChain)
 export const POOL_OPTIONS = [
   PERPETUAL_POOLS.MAXI,
   PERPETUAL_POOLS.DECI,

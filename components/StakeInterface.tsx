@@ -8,7 +8,7 @@ import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle, Lock } from 'lucide-react';
 import { formatEther, parseUnits } from 'viem';
 import { ConnectButton } from './ConnectButton';
-import { formatHexDayToUTCDate } from '@/utils/format';
+import { formatHexDayToUTCDate, formatTickerName } from '@/utils/format';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
@@ -26,25 +26,37 @@ interface StakeInterfaceProps {
 // Diamond Hands contract addresses for each pool
 const DIAMOND_HANDS_CONTRACTS: Record<string, string> = {
   BASE3: '0x992678ad242230Dd795107Fee8B572E27083002A',
+  eBASE3: '0x992678ad242230Dd795107Fee8B572E27083002A', // Same contract on Ethereum (fork)
   TRIO: '0x7F343C25a6FD8Ce5fac441Cff22be3758EbE1e04',
+  eTRIO: '0x7F343C25a6FD8Ce5fac441Cff22be3758EbE1e04', // Same contract on Ethereum (fork)
   LUCKY: '0x4497f24bc4096053C3a5687A051732731b3f631B',
+  eLUCKY: '0x4497f24bc4096053C3a5687A051732731b3f631B', // Same contract on Ethereum (fork)
   DECI: '0x196E5f240d26969CFEf464e80C6e423620cc7E40',
+  eDECI: '0x196E5f240d26969CFEf464e80C6e423620cc7E40', // Same contract on Ethereum (fork)
 };
 
 // Reward Bucket contract addresses for each pool (where penalties accumulate)
 const REWARD_BUCKET_CONTRACTS: Record<string, string> = {
   BASE3: '0x3778B2e2D6ADe902058FA4e82424F1A376a3d417',
+  eBASE3: '0x3778B2e2D6ADe902058FA4e82424F1A376a3d417', // Same contract on Ethereum (fork)
   TRIO: '0xD71dE2f590C59D3BEc80b5C69898AAfaa2Ab53A9',
+  eTRIO: '0xD71dE2f590C59D3BEc80b5C69898AAfaa2Ab53A9', // Same contract on Ethereum (fork)
   LUCKY: '0xE6b296485c2b31d060A6f75D1e9fCC870997BbA3',
+  eLUCKY: '0xE6b296485c2b31d060A6f75D1e9fCC870997BbA3', // Same contract on Ethereum (fork)
   DECI: '0xFc9664af5f73d0F347e51cd213B7378b6e7ecaeb',
+  eDECI: '0xFc9664af5f73d0F347e51cd213B7378b6e7ecaeb', // Same contract on Ethereum (fork)
 };
 
 // Stake Reward Distribution contract addresses for each pool (where users claim rewards)
 const STAKE_REWARD_DISTRIBUTION_CONTRACTS: Record<string, string> = {
   BASE3: '0x4C03598b0347C571C71b440F8eBD522553A2cB1B',
+  eBASE3: '0x4C03598b0347C571C71b440F8eBD522553A2cB1B', // Same contract on Ethereum (fork)
   TRIO: '0xa5DC9Ae34AB52d877a5727D106e36318AA59E50B',
+  eTRIO: '0xa5DC9Ae34AB52d877a5727D106e36318AA59E50B', // Same contract on Ethereum (fork)
   LUCKY: '0x9f17805c3713a2cF3e710Aa7dCe5A2CFB74E9972',
+  eLUCKY: '0x9f17805c3713a2cF3e710Aa7dCe5A2CFB74E9972', // Same contract on Ethereum (fork)
   DECI: '0x9844B2bD1e05F04A173edf6ee4Cc83d52350b664',
+  eDECI: '0x9844B2bD1e05F04A173edf6ee4Cc83d52350b664', // Same contract on Ethereum (fork)
 };
 
 export default function StakeInterface({
@@ -534,7 +546,7 @@ export default function StakeInterface({
       const result = await redeemHex(amountInMini);
       
       onTransactionSuccess?.(
-        `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol || 'tokens'} for ${selectedPool.ticker}!`,
+        `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol ? formatTickerName(tokenSymbol) : 'tokens'} for ${formatTickerName(selectedPool.ticker)}!`,
         result.hash
       );
       
@@ -597,7 +609,7 @@ export default function StakeInterface({
       const result = await pledgeHex(amountInHearts);
       
       onTransactionSuccess?.(
-        `Successfully pledged ${formatNumberWithCommas(cleanAmount)} HEX and minted ${calculateMintableTokens(cleanAmount)} ${tokenSymbol}!`,
+        `Successfully pledged ${formatNumberWithCommas(cleanAmount)} HEX and minted ${calculateMintableTokens(cleanAmount)} ${tokenSymbol ? formatTickerName(tokenSymbol) : ''}!`,
         result.hash
       );
       
@@ -979,8 +991,8 @@ export default function StakeInterface({
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pool Information</h2>
             
             <InfoRow label="Pool Name" value={tokenName || 'Loading...'} />
-            <InfoRow label="Pool Token" value={tokenSymbol || 'Loading...'} />
-            <InfoRow label="Your Balance" value={`${formattedBalance} ${tokenSymbol || ''}`} />
+            <InfoRow label="Pool Token" value={tokenSymbol ? formatTickerName(tokenSymbol) : 'Loading...'} />
+            <InfoRow label="Your Balance" value={`${formattedBalance} ${tokenSymbol ? formatTickerName(tokenSymbol) : ''}`} />
             <InfoRow label="Stake Status" value={stakeIsActive ? 'Active' : 'Ended/Not Started'} />
             
             <div className="flex justify-between items-center py-3 border-b border-gray-900">
@@ -1232,7 +1244,7 @@ export default function StakeInterface({
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Burn {selectedPool.ticker}. Claim HEX.</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Burn {formatTickerName(selectedPool.ticker)}. Claim HEX.</h2>
               
               {/* Diamond Hands Button - Only show if pool has a DH contract AND user has tokens locked */}
               {DIAMOND_HANDS_CONTRACTS[selectedTicker] && userStakedAmount && Number(userStakedAmount) > 0 && (
@@ -1246,7 +1258,7 @@ export default function StakeInterface({
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
                         <Gem className="w-6 h-6 text-[#3D92FF]" />
-                        Unlock {selectedPool.ticker} from Diamond Hands
+                        Unlock {formatTickerName(selectedPool.ticker)} from Diamond Hands
                       </DialogTitle>
 
                     </DialogHeader>
@@ -1256,7 +1268,7 @@ export default function StakeInterface({
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300 text-sm">Your Locked Balance:</span>
                           <span className="text-2xl font-bold text-white">
-                            {formattedDHBalance} {selectedPool.ticker}
+                            {formattedDHBalance} {formatTickerName(selectedPool.ticker)}
                           </span>
                         </div>
                       </div>
@@ -1270,12 +1282,12 @@ export default function StakeInterface({
                           <div className="grid grid-cols-2 gap-4 mb-3">
                             <div>
                               <div className="text-xs text-[#3D92FF] mb-1">Your Locked (Current)</div>
-                              <div className="text-base font-semibold text-white">{formattedUserActivePeriod} {selectedPool.ticker}</div>
+                              <div className="text-base font-semibold text-white">{formattedUserActivePeriod} {formatTickerName(selectedPool.ticker)}</div>
                               <div className="text-xs text-[#5DA5FF] mt-1">{userPercentage}% of pool</div>
                             </div>
                             <div>
                               <div className="text-xs text-[#3D92FF] mb-1">Your Locked (Next)</div>
-                              <div className="text-base font-semibold text-white">{formattedUserNextPeriod} {selectedPool.ticker}</div>
+                              <div className="text-base font-semibold text-white">{formattedUserNextPeriod} {formatTickerName(selectedPool.ticker)}</div>
                             </div>
                           </div>
                           
@@ -1286,7 +1298,7 @@ export default function StakeInterface({
                               <div className="text-lg font-semibold text-green-300">{pendingRewards}</div>
                               <div className="text-xs text-green-400">({rewardsAPY}% APY)</div>
                             </div>
-                            <div className="text-xs text-green-500/70">{selectedPool.ticker}</div>
+                            <div className="text-xs text-green-500/70">{formatTickerName(selectedPool.ticker)}</div>
                           </div>
                         </div>
                       )}
@@ -1299,12 +1311,12 @@ export default function StakeInterface({
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <div className="text-xs text-purple-400 mb-1">Total in DH Contract</div>
-                                <div className="text-base font-semibold text-white">{formattedGlobalStaked} {selectedPool.ticker}</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalStaked} {formatTickerName(selectedPool.ticker)}</div>
                                 <div className="text-xs text-purple-300/70 mt-1">{supplyLockedPercentage}% of total supply</div>
                               </div>
                               <div>
                                 <div className="text-xs text-purple-400 mb-1">Reward Bucket</div>
-                                <div className="text-base font-semibold text-white">{formattedRewardBucket} {selectedPool.ticker}</div>
+                                <div className="text-base font-semibold text-white">{formattedRewardBucket} {formatTickerName(selectedPool.ticker)}</div>
                                 <div className="text-xs text-purple-300/70 mt-1">{rewardBucketPercentage}% of total in DH</div>
                               </div>
                             </div>
@@ -1314,11 +1326,11 @@ export default function StakeInterface({
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <div className="text-xs text-purple-400 mb-1">Total Comitted (Current Period)</div>
-                                <div className="text-base font-semibold text-white">{formattedGlobalActivePeriod} {selectedPool.ticker}</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalActivePeriod} {formatTickerName(selectedPool.ticker)}</div>
                               </div>
                               <div>
                                 <div className="text-xs text-purple-400 mb-1">Total Comitted (Next Period)</div>
-                                <div className="text-base font-semibold text-white">{formattedGlobalNextPeriod} {selectedPool.ticker}</div>
+                                <div className="text-base font-semibold text-white">{formattedGlobalNextPeriod} {formatTickerName(selectedPool.ticker)}</div>
                               </div>
                             </div>
                           </div>
@@ -1342,7 +1354,7 @@ export default function StakeInterface({
                             {/* Balance and MAX button */}
                             <div className="flex items-center gap-2 mt-2">
                               <span className="text-gray-400 text-xs">
-                                Available: {formattedDHBalance} {selectedPool.ticker}
+                                Available: {formattedDHBalance} {formatTickerName(selectedPool.ticker)}
                               </span>
                               <button
                                 type="button"
@@ -1435,7 +1447,7 @@ export default function StakeInterface({
                 {/* Balance and MAX button */}
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-gray-400 text-xs">
-                    Balance: {formattedBalance} {tokenSymbol || ''}
+                    Balance: {formattedBalance} {tokenSymbol ? formatTickerName(tokenSymbol) : ''}
                   </span>
                   <button
                     type="button"
@@ -1503,7 +1515,7 @@ export default function StakeInterface({
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'mint' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Pledge HEX. Mint {selectedPool.ticker}.</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Pledge HEX. Mint {formatTickerName(selectedPool.ticker)}.</h2>
               
               {/* Diamond Hands Button - Only show if pool has a DH contract */}
               {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
@@ -1517,7 +1529,7 @@ export default function StakeInterface({
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
                         <Gem className="w-6 h-6 text-[#3D92FF]" />
-                        Lock {selectedPool.ticker} in Diamond Hands
+                        Lock {formatTickerName(selectedPool.ticker)} in Diamond Hands
                       </DialogTitle>
 
                     </DialogHeader>
@@ -1555,7 +1567,7 @@ export default function StakeInterface({
                             {/* Balance and MAX button */}
                             <div className="flex items-center gap-2 mt-2">
                               <span className="text-gray-400 text-xs">
-                                Balance: {formattedBalance} {selectedPool.ticker}
+                                Balance: {formattedBalance} {formatTickerName(selectedPool.ticker)}
                               </span>
                               <button
                                 type="button"
@@ -1596,7 +1608,7 @@ export default function StakeInterface({
                                     Processing...
                                   </span>
                                 ) : (
-                                  `Approve ${selectedPool.ticker}`
+                                  `Approve ${formatTickerName(selectedPool.ticker)}`
                                 )}
                               </button>
                             ) : (
@@ -1617,7 +1629,7 @@ export default function StakeInterface({
                                 ) : (
                                   <span className="flex items-center justify-center gap-2">
                                     <Lock className="w-5 h-5" />
-                                    Lock {selectedPool.ticker}
+                                    Lock {formatTickerName(selectedPool.ticker)}
                                   </span>
                                 )}
                               </button>
@@ -1661,7 +1673,7 @@ export default function StakeInterface({
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">
-                    {calculateMintableTokens(mintAmount)} {tokenSymbol}
+                    {calculateMintableTokens(mintAmount)} {tokenSymbol ? formatTickerName(tokenSymbol) : ''}
                   </p>
                 </div>
               )}
@@ -1686,7 +1698,7 @@ export default function StakeInterface({
                       disabled
                       className="w-full py-4 rounded-xl font-semibold text-lg bg-gray-700 text-gray-400 cursor-not-allowed"
                     >
-                      Mint {tokenSymbol}
+                      Mint {tokenSymbol ? formatTickerName(tokenSymbol) : ''}
                     </button>
                   );
                 }
@@ -1732,7 +1744,7 @@ export default function StakeInterface({
                         Processing...
                       </span>
                     ) : (
-                      `Mint ${tokenSymbol}`
+                      `Mint ${tokenSymbol ? formatTickerName(tokenSymbol) : ''}`
                     )}
                   </button>
                 );
@@ -1785,17 +1797,17 @@ export default function StakeInterface({
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-400">Unlock Amount:</span>
-                <span className="text-white font-semibold">{earlyWithdrawDetails.amount} {selectedPool.ticker}</span>
+                <span className="text-white font-semibold">{earlyWithdrawDetails.amount} {formatTickerName(selectedPool.ticker)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-red-400">Penalty:</span>
                 <span className="text-red-400 font-semibold">
-                  -{earlyWithdrawDetails.penalty} {selectedPool.ticker} <span className="text-xs text-red-400/80">({earlyWithdrawDetails.penaltyPercentage}%)</span>
+                  -{earlyWithdrawDetails.penalty} {formatTickerName(selectedPool.ticker)} <span className="text-xs text-red-400/80">({earlyWithdrawDetails.penaltyPercentage}%)</span>
                 </span>
               </div>
               <div className="border-t border-red-500/30 pt-3 flex justify-between">
                 <span className="text-white font-semibold">You Will Receive:</span>
-                <span className="text-white font-bold text-lg">{earlyWithdrawDetails.afterPenalty} {selectedPool.ticker}</span>
+                <span className="text-white font-bold text-lg">{earlyWithdrawDetails.afterPenalty} {formatTickerName(selectedPool.ticker)}</span>
               </div>
             </div>
           </div>
