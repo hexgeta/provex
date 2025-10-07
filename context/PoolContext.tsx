@@ -1,8 +1,6 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useContractRead } from 'wagmi';
-import { parseAbi } from 'viem';
 import { PERPETUAL_POOLS, PerpetualPoolConfig, PoolTicker } from '@/config/perpetual-pools';
 
 interface PoolContextType {
@@ -13,60 +11,29 @@ interface PoolContextType {
 
 const PoolContext = createContext<PoolContextType | undefined>(undefined);
 
-const STAKE_END_ABI = parseAbi([
-  'function STAKE_END_DAY() view returns (uint256)',
-]);
-
 export function PoolProvider({ children }: { children: ReactNode }) {
   const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('MAXI'); // Default to MAXI
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
-  // Read STAKE_END_DAY from all contracts
-  const { data: trioEndDay } = useContractRead({
-    address: PERPETUAL_POOLS.TRIO.contractAddress,
-    abi: STAKE_END_ABI,
-    functionName: 'STAKE_END_DAY',
-  });
-
-  const { data: deciEndDay } = useContractRead({
-    address: PERPETUAL_POOLS.DECI.contractAddress,
-    abi: STAKE_END_ABI,
-    functionName: 'STAKE_END_DAY',
-  });
-
-  const { data: luckyEndDay } = useContractRead({
-    address: PERPETUAL_POOLS.LUCKY.contractAddress,
-    abi: STAKE_END_ABI,
-    functionName: 'STAKE_END_DAY',
-  });
-
-  const { data: baseEndDay } = useContractRead({
-    address: PERPETUAL_POOLS.BASE.contractAddress,
-    abi: STAKE_END_ABI,
-    functionName: 'STAKE_END_DAY',
-  });
-
-  // Auto-select pool ending soonest once all data is loaded
+  // Auto-select pool ending soonest using hardcoded deadlineUTC values
   useEffect(() => {
     if (hasAutoSelected) return;
     
-    if (trioEndDay && deciEndDay && luckyEndDay && baseEndDay) {
-      const pools = [
-        { ticker: 'TRIO' as PoolTicker, endDay: trioEndDay },
-        { ticker: 'DECI' as PoolTicker, endDay: deciEndDay },
-        { ticker: 'LUCKY' as PoolTicker, endDay: luckyEndDay },
-        { ticker: 'BASE' as PoolTicker, endDay: baseEndDay },
-      ];
+    const pools = [
+      { ticker: 'TRIO' as PoolTicker, deadline: new Date(PERPETUAL_POOLS.TRIO.deadlineUTC).getTime() },
+      { ticker: 'DECI' as PoolTicker, deadline: new Date(PERPETUAL_POOLS.DECI.deadlineUTC).getTime() },
+      { ticker: 'LUCKY' as PoolTicker, deadline: new Date(PERPETUAL_POOLS.LUCKY.deadlineUTC).getTime() },
+      { ticker: 'BASE3' as PoolTicker, deadline: new Date(PERPETUAL_POOLS.BASE3.deadlineUTC).getTime() },
+    ];
 
-      // Find pool with smallest end day (ends soonest)
-      const soonestPool = pools.reduce((prev, curr) => 
-        curr.endDay < prev.endDay ? curr : prev
-      );
+    // Find pool with earliest deadline (ends soonest)
+    const soonestPool = pools.reduce((prev, curr) => 
+      curr.deadline < prev.deadline ? curr : prev
+    );
 
-      setSelectedTicker(soonestPool.ticker);
-      setHasAutoSelected(true);
-    }
-  }, [trioEndDay, deciEndDay, luckyEndDay, baseEndDay, hasAutoSelected]);
+    setSelectedTicker(soonestPool.ticker);
+    setHasAutoSelected(true);
+  }, [hasAutoSelected]);
 
   const value = {
     selectedPool: PERPETUAL_POOLS[selectedTicker],

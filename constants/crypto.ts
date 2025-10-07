@@ -12,8 +12,26 @@ export interface TokenConfig {
   type?: "lp" | "token"
   platform?: string
   hardcodedPrice?: number
+  stakeType?: 'rolling' | 'fixed'
+  launchDate?: Date
+  stakePrinciple?: number
+  tokenSupply?: number
+  tshares?: number
+  stakeStartDate?: Date | string
+  stakeEndDate?: Date | string
+  totalStakedDays?: number
+  color?: string
+  gradientFrom?: string
+  gradientTo?: string
+  description?: string
+  pair?: {
+    pairAddress: string
+    chain: string
+  }
 }
 
+// NOTE: stakeEndDate values are HEX Day + 2 days for practical conversion
+// This accounts for when stakes can actually end in practice
 export const TOKEN_CONSTANTS = [{
   chain: 369,
   a: "0x000000000000000000000000000000000000dEaD",
@@ -52,67 +70,6 @@ export const TOKEN_CONSTANTS = [{
   origin: [369, "0x0"]
 }, {
   chain: 369,
-  a: "0x02dcdd04e3f455d838cd1249292c58f3b79e3c3c",
-  dexs: ["0x29d66D5900Eb0d629E1e6946195520065A6c5aeE"],
-  ticker: "weWETH",
-  decimals: 18,
-  name: "Wrapped WETH from Eth",
-  origin: [1, "0x0"]
-}, {
-  chain: 369,
-  a: "0xda073388422065fe8d3b5921ec2ae475bae57bed",
-  dexs: ["0xe9f84d418b008888a992ff8c6d22389c2c3504e0"],
-  ticker: "weBASE",
-  decimals: 8,
-  name: "Wrapped BASE from Eth",
-  origin: [1, "0xe9f84d418b008888a992ff8c6d22389c2c3504e0"],
-  supply: 70668766.59912861,
-  stakeType: 'rolling',
-  launchDate: new Date('2024-10-26'),
-  stakePrinciple: 88475347.99948653,
-  tokenSupply: 70668766.59912861,
-  tshares: 2939.965758095464,
-  stakeStartDate: new Date('2024-10-26'),
-  stakeEndDate: new Date('2025-10-30'),
-  totalStakedDays: 369
-}, {
-  chain: 369,
-  a: "0x0f3c6134f4022d85127476bc4d3787860e5c5569",
-  dexs: "0x518b8CE0C7CE74a85774814fBFac7ADCDf702b2C",
-  ticker: "weTRIO",
-  decimals: 8,
-  name: "Wrapped TRIO from Eth",
-  origin: [1, "0xf55cd1e399e1cc3d95303048897a680be3313308"],
-  supply: 69617911.47775
-}, {
-  chain: 369,
-  a: "0x8924f56df76ca9e7babb53489d7bef4fb7caff19",
-  dexs: ["0x6b0956258ff7bd7645aa35369b55b61b8e6d6140"],
-  ticker: "weLUCKY",
-  decimals: 8,
-  name: "Wrapped LUCKY from Eth",
-  origin: [1, "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140"],
-  supply: 74985501.67671512
-}, {
-  chain: 369,
-  a: "0x189a3ca3cc1337e85c7bc0a43b8d3457fd5aae89",
-  dexs: "0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e",
-  ticker: "weDECI",
-  decimals: 8,
-  name: "Wrapped DECI from Eth",
-  origin: [1, "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6"],
-  supply: 565991987.7294711
-}, {
-  chain: 369,
-  a: "0x352511c9bc5d47dbc122883ed9353e987d10a3ba",
-  dexs: "0x90b629cbbefc1efcae0b4cb027a51f0e0c3dcd76",
-  ticker: "weMAXI",
-  decimals: 8,
-  name: "Wrapped MAXI from Eth",
-  origin: [1, "0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b"],
-  supply: 274546065
-}, {
-  chain: 369,
   a: "0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b",
   dexs: "0xbfb22cc394c53c14dc8a5840a246dfdd2f7b2507",
   ticker: "MAXI",
@@ -125,8 +82,12 @@ export const TOKEN_CONSTANTS = [{
   stakePrinciple: 294323603.76679647,
   tokenSupply: 274546065,
   stakeStartDate: new Date('2022-05-01'),
-  stakeEndDate: new Date('2037-07-16'),
+  stakeEndDate: '2037-07-17T00:00:00.000Z', // HEX Day 6435 + 2 days for practical conversion
   totalStakedDays: 5555,
+  color: '#3991ED',
+  gradientFrom: 'from-[#3991ED]',
+  gradientTo: 'to-blue-700',
+  description: 'MAXI Fixed Stake Pool',
 }, {
   chain: 369,
   a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
@@ -141,8 +102,12 @@ export const TOKEN_CONSTANTS = [{
   tokenSupply: 565991987.7294711,
   tshares: 71337.83,
   stakeStartDate: new Date('2022-09-27'),
-  stakeEndDate: new Date('2032-11-09'),
+  stakeEndDate: '2032-11-10T00:00:00.000Z', // HEX Day 4725 + 2 days for practical conversion
   totalStakedDays: 3696,
+  color: '#C24C35',
+  gradientFrom: 'from-[#C24C35]',
+  gradientTo: 'to-red-700',
+  description: 'DECI Perpetual Pool',
   pair: {
       pairAddress: '0x969af590981bb9d19ff38638fa3bd88aed13603a',
       chain: 'pulsechain'
@@ -161,8 +126,12 @@ export const TOKEN_CONSTANTS = [{
   tokenSupply: 74985501.67671512,
   tshares: 7524.68,
   stakeStartDate: new Date('2022-09-27'),
-  stakeEndDate: new Date('2029-09-25'),
+  stakeEndDate: '2029-09-26T00:00:00.000Z', // HEX Day 3584 + 2 days for practical conversion
   totalStakedDays: 2555,
+  color: '#416F22',
+  gradientFrom: 'from-[#416F22]',
+  gradientTo: 'to-green-800',
+  description: 'LUCKY Perpetual Pool',
   pair: {
       pairAddress: '0x52d4b3f479537a15d0b37b6cdbdb2634cc78525e',
       chain: 'pulsechain'
@@ -181,23 +150,212 @@ export const TOKEN_CONSTANTS = [{
   tokenSupply: 69617911.47775,
   tshares: 4698.32,
   stakeStartDate: new Date('2022-09-27'),
-  stakeEndDate: new Date('2025-10-12'),
+  stakeEndDate: '2025-10-13T00:00:00.000Z', // HEX Day 2140 + 2 days for practical conversion
   totalStakedDays: 1111,
+  color: '#FFFFFF',
+  gradientFrom: 'from-white',
+  gradientTo: 'to-gray-200',
+  description: 'TRIO Perpetual Pool',
 }, {
   chain: 369,
   a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
-  ticker: "BASE",
+  ticker: "BASE3",
   decimals: 8,
   name: "BASE on PulseChain",
   supply: 54165743.289,
+  stakeType: 'rolling',
   launchDate: new Date('2024-09-23'),
   stakePrinciple: 67444991.8094404,
   tokenSupply: 54165743.289,
   tshares: 2232.801612927137,
   stakeStartDate: new Date('2024-09-23'),
-  stakeEndDate: new Date('2025-10-27'),
-  totalStakedDays: 369
+  stakeEndDate: '2025-10-27T00:00:00.000Z', // HEX Day 2154 + 2 days for practical conversion
+  totalStakedDays: 369,
+  color: '#F09B1A',
+  gradientFrom: 'from-[#F09B1A]',
+  gradientTo: 'to-orange-600',
+  description: 'BASE Perpetual Pool'
+}, {
+  chain: 369,
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
+  ticker: "BASE1",
+  decimals: 8,
+  name: "BASE Cycle 1 on PulseChain",
+  supply: 100033101,
+  stakeType: 'rolling',
+  launchDate: new Date('2022-09-27'),
+  stakePrinciple: 100033101,
+  tokenSupply: 100033101,
+  tshares: 5107.53,
+  stakeStartDate: new Date('2022-09-27'),
+  stakeEndDate: new Date('2023-10-01'),
+  totalStakedDays: 369,
+  pair: {
+    pairAddress: '0xb39490b46d02146f59e80c6061bb3e56b824d672',
+    chain: 'pulsechain'
+  }
+}, {
+  chain: 369,
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
+  ticker: "BASE2",
+  decimals: 8,
+  name: "BASE Cycle 2 on PulseChain",
+  supply: 97197332,
+  stakeType: 'rolling',
+  launchDate: new Date('2023-10-10'),
+  stakePrinciple: 109163369.06540806,
+  tokenSupply: 97197332,
+  tshares: 4532.11,
+  stakeStartDate: new Date('2023-10-10'),
+  stakeEndDate: new Date('2024-10-13'),
+  totalStakedDays: 369,
+  pair: {
+    pairAddress: '0xb39490b46d02146f59e80c6061bb3e56b824d672',
+    chain: 'pulsechain'
+  }
+}, {
+  chain: 1,
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
+  ticker: "eBASE1",
+  decimals: 8,
+  name: "BASE Cycle 1 on Ethereum",
+  supply: 100033101,
+  stakeType: 'rolling',
+  launchDate: new Date('2022-09-27'),
+  stakePrinciple: 100033101,
+  tokenSupply: 100033101,
+  tshares: 5107.53,
+  stakeStartDate: new Date('2022-09-27'),
+  stakeEndDate: new Date('2023-10-01'),
+  totalStakedDays: 369,
+  pair: {
+    pairAddress: '0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
+  ticker: "eBASE2",
+  decimals: 8,
+  name: "BASE Cycle 2 on Ethereum",
+  supply: 84316269,
+  stakeType: 'rolling',
+  launchDate: new Date('2023-10-10'),
+  stakePrinciple: 94725486.32257561,
+  tokenSupply: 84316269,
+  tshares: 3917.41,
+  stakeStartDate: new Date('2023-10-10'),
+  stakeEndDate: new Date('2024-10-13'),
+  totalStakedDays: 369,
+  pair: {
+    pairAddress: '0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
+  ticker: "eBASE3",
+  decimals: 8,
+  name: "BASE Cycle 3 on Ethereum",
+  supply: 70668766.59912861,
+  stakeType: 'rolling',
+  launchDate: new Date('2024-10-26'),
+  stakePrinciple: 88475347.99948653,
+  tokenSupply: 70668766.59912861,
+  tshares: 2939.965758095464,
+  stakeStartDate: new Date('2024-10-26'),
+  stakeEndDate: '2025-10-30T00:00:00.000Z', // HEX Day 2159 + 2 days for practical conversion
+  totalStakedDays: 369,
+  pair: {
+    pairAddress: '0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0xf55cd1e399e1cc3d95303048897a680be3313308",
+  dexs: "0xda72b9e219d87ea31b4a1929640d9e960362470d",
+  ticker: "eTRIO",
+  decimals: 8,
+  name: "TRIO on Ethereum",
+  supply: 69617911.47775,
+  stakeType: 'rolling',
+  launchDate: new Date('2022-09-27'),
+  stakePrinciple: 69617911.47775,
+  tokenSupply: 69617911.47775,
+  tshares: 4698.32,
+  stakeStartDate: new Date('2022-09-27'),
+  stakeEndDate: '2025-10-13T00:00:00.000Z', // HEX Day 2140 + 2 days for practical conversion
+  totalStakedDays: 1111,
+  pair: {
+    pairAddress: '0xda72b9e219d87ea31b4a1929640d9e960362470d',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140",
+  dexs: "0x7327325e5F41d4c1922a9DFc87d8a3b3F1ae5C1F",
+  ticker: "eLUCKY",
+  decimals: 8,
+  name: "LUCKY on Ethereum",
+  supply: 74985501.67671512,
+  stakeType: 'rolling',
+  launchDate: new Date('2022-09-27'),
+  stakePrinciple: 74985501.67671512,
+  tokenSupply: 74985501.67671512,
+  tshares: 7524.68,
+  stakeStartDate: new Date('2022-09-27'),
+  stakeEndDate: '2029-09-26T00:00:00.000Z', // HEX Day 3584 + 2 days for practical conversion
+  totalStakedDays: 2555,
+  pair: {
+    pairAddress: '0x7327325e5F41d4c1922a9DFc87d8a3b3F1ae5C1F',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
+  dexs: "0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e",
+  ticker: "eDECI",
+  decimals: 8,
+  name: "DECI on Ethereum",
+  supply: 565991987.7294711,
+  stakeType: 'rolling',
+  launchDate: new Date('2022-09-27'),
+  stakePrinciple: 565991987.7294711,
+  tokenSupply: 565991987.7294711,
+  tshares: 71337.83,
+  stakeStartDate: new Date('2022-09-27'),
+  stakeEndDate: '2032-11-10T00:00:00.000Z', // HEX Day 4725 + 2 days for practical conversion
+  totalStakedDays: 3696,
+  pair: {
+    pairAddress: '0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e',
+    chain: 'ethereum'
+  }
+}, {
+  chain: 1,
+  a: "0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b",
+  dexs: "0xFD309d27B4cb4F5C869ee53E5D0fCc5654d3bb01",
+  ticker: "eMAXI",
+  decimals: 8,
+  name: "MAXI on Ethereum",
+  supply: 274546065,
+  stakeType: 'fixed',
+  launchDate: new Date('2022-05-01'),
+  tshares: 42104.43801001704,
+  stakePrinciple: 294323603.76679647,
+  tokenSupply: 274546065,
+  stakeStartDate: new Date('2022-05-01'),
+  stakeEndDate: '2037-07-17T00:00:00.000Z', // HEX Day 6435 + 2 days for practical conversion
+  totalStakedDays: 5555,
+  pair: {
+    pairAddress: '0xFD309d27B4cb4F5C869ee53E5D0fCc5654d3bb01',
+    chain: 'ethereum'
+  }
 }, {
   chain: 369,
   a: "0xb7c9e99da8a857ce576a830a9c19312114d9de02",
@@ -240,71 +398,39 @@ export interface PerpetualPoolConfig {
   stakeLengthDays: number;
 }
 
-export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = {
-  TRIO: {
-    name: 'TRIO on PulseChain',
-    ticker: 'TRIO',
-    contractAddress: '0xf55cd1e399e1cc3d95303048897a680be3313308',
-    color: '#FFFFFF',
-    gradientFrom: 'from-white',
-    gradientTo: 'to-gray-200',
-    description: 'TRIO Perpetual Pool',
-    deadlineUTC: '2025-10-12T00:00:00Z',
-    stakeLengthDays: 1111,
-  },
-  DECI: {
-    name: 'DECI on PulseChain',
-    ticker: 'DECI',
-    contractAddress: '0x6b32022693210cd2cfc466b9ac0085de8fc34ea6',
-    color: '#C24C35',
-    gradientFrom: 'from-[#C24C35]',
-    gradientTo: 'to-red-700',
-    description: 'DECI Perpetual Pool',
-    deadlineUTC: '2025-10-12T00:00:00Z',
-    stakeLengthDays: 3696,
-  },
-  LUCKY: {
-    name: 'LUCKY on PulseChain',
-    ticker: 'LUCKY',
-    contractAddress: '0x6b0956258ff7bd7645aa35369b55b61b8e6d6140',
-    color: '#416F22',
-    gradientFrom: 'from-[#416F22]',
-    gradientTo: 'to-green-800',
-    description: 'LUCKY Perpetual Pool',
-    deadlineUTC: '2025-10-12T00:00:00Z',
-    stakeLengthDays: 2555,
-  },
-  BASE: {
-    name: 'BASE on PulseChain',
-    ticker: 'BASE',
-    contractAddress: '0xe9f84d418b008888a992ff8c6d22389c2c3504e0',
-    color: '#F09B1A',
-    gradientFrom: 'from-[#F09B1A]',
-    gradientTo: 'to-orange-600',
-    description: 'BASE Perpetual Pool',
-    deadlineUTC: '2025-10-12T00:00:00Z',
-    stakeLengthDays: 369,
-  },
-  MAXI: {
-    name: 'MAXI on PulseChain',
-    ticker: 'MAXI',
-    contractAddress: '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b',
-    color: '#3991ED',
-    gradientFrom: 'from-[#3991ED]',
-    gradientTo: 'to-blue-700',
-    description: 'MAXI Fixed Stake Pool',
-    deadlineUTC: '2037-07-16T00:00:00Z',
-    stakeLengthDays: 5555,
-  },
-};
+// Derive PERPETUAL_POOLS from TOKEN_CONSTANTS to ensure single source of truth
+// Note: Using BASE3, not BASE (always use the highest numbered cycle)
+const perpetualPoolTokens = TOKEN_CONSTANTS.filter(token => 
+  ['MAXI', 'DECI', 'LUCKY', 'TRIO', 'BASE3'].includes(token.ticker) && 
+  token.color && 
+  token.totalStakedDays
+);
 
-// Ordered pool options: MAXI, DECI, LUCKY, TRIO, BASE
+export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = perpetualPoolTokens.reduce((acc, token) => {
+  const endDate = token.stakeEndDate as string | Date;
+  const deadlineUTC = typeof endDate === 'string' ? endDate : (endDate as Date).toISOString();
+  
+  acc[token.ticker] = {
+    name: token.name,
+    ticker: token.ticker,
+    contractAddress: token.a,
+    color: token.color!,
+    gradientFrom: token.gradientFrom!,
+    gradientTo: token.gradientTo!,
+    description: token.description!,
+    deadlineUTC,
+    stakeLengthDays: token.totalStakedDays!,
+  };
+  return acc;
+}, {} as Record<string, PerpetualPoolConfig>);
+
+// Ordered pool options: MAXI, DECI, LUCKY, TRIO, BASE3 (current cycle)
 export const POOL_OPTIONS = [
   PERPETUAL_POOLS.MAXI,
   PERPETUAL_POOLS.DECI,
   PERPETUAL_POOLS.LUCKY,
   PERPETUAL_POOLS.TRIO,
-  PERPETUAL_POOLS.BASE,
+  PERPETUAL_POOLS.BASE3,
 ];
 
 export type PoolTicker = keyof typeof PERPETUAL_POOLS;

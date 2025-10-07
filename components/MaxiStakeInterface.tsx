@@ -164,23 +164,22 @@ export default function MaxiStakeInterface({
 
   // Real-time countdown - always active when stake is active
   useEffect(() => {
-    if (!stakeEndDay || !stakeIsActive) {
+    if (!stakeIsActive) {
       return;
     }
 
     const updateCountdown = () => {
-      const HEX_LAUNCH_TIMESTAMP = 1575331200;
-      const SECONDS_PER_DAY = 86400;
-      
-      const stakeEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(stakeEndDay) * SECONDS_PER_DAY);
-      const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = stakeEndTimestamp - now;
+      // Use hardcoded deadline from PERPETUAL_POOLS config
+      const deadline = new Date(selectedPool.deadlineUTC);
+      const now = new Date();
+      const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
 
       if (secondsRemaining <= 0) {
         setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
+      const SECONDS_PER_DAY = 86400;
       const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
       const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
       const minutes = Math.floor((secondsRemaining % 3600) / 60);
@@ -193,7 +192,7 @@ export default function MaxiStakeInterface({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [stakeEndDay, stakeIsActive]);
+  }, [selectedPool.deadlineUTC, stakeIsActive]);
 
   // Format user balance for display (2 decimals)
   const formattedBalance = userBalance 
@@ -339,10 +338,18 @@ export default function MaxiStakeInterface({
               <div className="flex flex-col items-end">
                 <span className="font-semibold text-white">
                   <span className="text-gray-500 text-sm mr-2">23:59 UTC</span>
-                  {stakeEndDay ? formatHexDayToUTCDate(stakeEndDay) : 'Loading...'}
+                  {(() => {
+                    // Subtract 1 minute to show 23:59 of the day before
+                    const deadline = new Date(selectedPool.deadlineUTC);
+                    deadline.setMinutes(deadline.getMinutes() - 1);
+                    const day = deadline.getUTCDate();
+                    const month = deadline.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+                    const year = deadline.getUTCFullYear();
+                    return `${day} ${month} ${year}`;
+                  })()}
                 </span>
                 {stakeEndDay && (
-                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeEndDay.toString()}</span>
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {(Number(stakeEndDay) + 2).toString()}</span>
                 )}
               </div>
             </div>

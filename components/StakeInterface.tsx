@@ -25,7 +25,7 @@ interface StakeInterfaceProps {
 
 // Diamond Hands contract addresses for each pool
 const DIAMOND_HANDS_CONTRACTS: Record<string, string> = {
-  BASE: '0x992678ad242230Dd795107Fee8B572E27083002A',
+  BASE3: '0x992678ad242230Dd795107Fee8B572E27083002A',
   TRIO: '0x7F343C25a6FD8Ce5fac441Cff22be3758EbE1e04',
   LUCKY: '0x4497f24bc4096053C3a5687A051732731b3f631B',
   DECI: '0x196E5f240d26969CFEf464e80C6e423620cc7E40',
@@ -33,7 +33,7 @@ const DIAMOND_HANDS_CONTRACTS: Record<string, string> = {
 
 // Reward Bucket contract addresses for each pool (where penalties accumulate)
 const REWARD_BUCKET_CONTRACTS: Record<string, string> = {
-  BASE: '0x3778B2e2D6ADe902058FA4e82424F1A376a3d417',
+  BASE3: '0x3778B2e2D6ADe902058FA4e82424F1A376a3d417',
   TRIO: '0xD71dE2f590C59D3BEc80b5C69898AAfaa2Ab53A9',
   LUCKY: '0xE6b296485c2b31d060A6f75D1e9fCC870997BbA3',
   DECI: '0xFc9664af5f73d0F347e51cd213B7378b6e7ecaeb',
@@ -41,7 +41,7 @@ const REWARD_BUCKET_CONTRACTS: Record<string, string> = {
 
 // Stake Reward Distribution contract addresses for each pool (where users claim rewards)
 const STAKE_REWARD_DISTRIBUTION_CONTRACTS: Record<string, string> = {
-  BASE: '0x4C03598b0347C571C71b440F8eBD522553A2cB1B',
+  BASE3: '0x4C03598b0347C571C71b440F8eBD522553A2cB1B',
   TRIO: '0xa5DC9Ae34AB52d877a5727D106e36318AA59E50B',
   LUCKY: '0x9f17805c3713a2cF3e710Aa7dCe5A2CFB74E9972',
   DECI: '0x9844B2bD1e05F04A173edf6ee4Cc83d52350b664',
@@ -320,27 +320,22 @@ export default function StakeInterface({
 
   // Real-time countdown - always active when stake is active
   useEffect(() => {
-    if (!stakeEndDay || !stakeIsActive) {
+    if (!stakeIsActive) {
       return;
     }
 
     const updateCountdown = () => {
-      // HEX day is 86400 seconds (24 hours)
-      // Calculate the exact Unix timestamp when the stake ends
-      // HEX Day 1 started at Unix timestamp 1575331200 (Dec 3, 2019 00:00:00 UTC)
-      // Stake ends at UTC midnight (00:00:00) at the START of the end day
-      const HEX_LAUNCH_TIMESTAMP = 1575331200;
-      const SECONDS_PER_DAY = 86400;
-      
-      const stakeEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(stakeEndDay) * SECONDS_PER_DAY);
-      const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = stakeEndTimestamp - now;
+      // Use hardcoded deadline from PERPETUAL_POOLS config
+      const deadline = new Date(selectedPool.deadlineUTC);
+      const now = new Date();
+      const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
 
       if (secondsRemaining <= 0) {
         setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
+      const SECONDS_PER_DAY = 86400;
       const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
       const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
       const minutes = Math.floor((secondsRemaining % 3600) / 60);
@@ -356,7 +351,7 @@ export default function StakeInterface({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [stakeEndDay, stakeIsActive]);
+  }, [selectedPool.deadlineUTC, stakeIsActive]);
 
   // Reload phase countdown - only when stake has ended
   useEffect(() => {
@@ -1007,10 +1002,18 @@ export default function StakeInterface({
               <div className="flex flex-col items-end">
                 <span className="font-semibold text-white">
                   <span className="text-gray-500 text-sm mr-2">23:59 UTC</span>
-                  {stakeEndDay ? formatHexDayToUTCDate(stakeEndDay) : 'Loading...'}
+                  {(() => {
+                    // Subtract 1 minute to show 23:59 of the day before
+                    const deadline = new Date(selectedPool.deadlineUTC);
+                    deadline.setMinutes(deadline.getMinutes() - 1);
+                    const day = deadline.getUTCDate();
+                    const month = deadline.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+                    const year = deadline.getUTCFullYear();
+                    return `${day} ${month} ${year}`;
+                  })()}
                 </span>
                 {stakeEndDay && (
-                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeEndDay.toString()}</span>
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {(Number(stakeEndDay) + 2).toString()}</span>
                 )}
               </div>
             </div>
@@ -1673,7 +1676,21 @@ export default function StakeInterface({
               )}
 
               {/* Check if approval is needed */}
-              {mintAmount && parseFloat(removeCommas(mintAmount)) > 0 && (() => {
+              {(() => {
+                const hasAmount = mintAmount && parseFloat(removeCommas(mintAmount)) > 0;
+                
+                if (!hasAmount) {
+                  // Show disabled button when no amount entered
+                  return (
+                    <button
+                      disabled
+                      className="w-full py-4 rounded-xl font-semibold text-lg bg-gray-700 text-gray-400 cursor-not-allowed"
+                    >
+                      Mint {tokenSymbol}
+                    </button>
+                  );
+                }
+
                 const cleanAmount = removeCommas(mintAmount);
                 const [whole, decimal = ''] = cleanAmount.split('.');
                 const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);

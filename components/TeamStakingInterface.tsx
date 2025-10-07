@@ -20,7 +20,7 @@ import { REWARD_TOKENS, RewardToken } from '@/constants/team';
 import { PERPETUAL_POOLS } from '@/constants/crypto';
 
 // BASE Pool address (for checking stake status)
-const BASE_POOL_ADDRESS = PERPETUAL_POOLS.BASE.contractAddress as Address;
+const BASE_POOL_ADDRESS = PERPETUAL_POOLS.BASE3.contractAddress as Address;
 
 export default function TeamStakingInterface() {
   const { address, isConnected } = useAccount();
@@ -80,23 +80,22 @@ export default function TeamStakingInterface() {
 
   // Countdown timer for when BASE stake ends
   useEffect(() => {
-    if (!stakeEndDay || !baseStakeIsActive) {
+    if (!baseStakeIsActive) {
       return;
     }
 
     const updateCountdown = () => {
-      const HEX_LAUNCH_TIMESTAMP = 1575331200;
-      const SECONDS_PER_DAY = 86400;
-      
-      const stakeEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(stakeEndDay) * SECONDS_PER_DAY);
-      const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = stakeEndTimestamp - now;
+      // Use hardcoded deadline from PERPETUAL_POOLS config for BASE3
+      const deadline = new Date(PERPETUAL_POOLS.BASE3.deadlineUTC);
+      const now = new Date();
+      const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
 
       if (secondsRemaining <= 0) {
         setStakeEndCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
+      const SECONDS_PER_DAY = 86400;
       const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
       const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
       const minutes = Math.floor((secondsRemaining % 3600) / 60);
@@ -109,7 +108,7 @@ export default function TeamStakingInterface() {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [stakeEndDay, baseStakeIsActive]);
+  }, [baseStakeIsActive]);
 
   // Format number with commas
   const formatNumberWithCommas = (value: string) => {
