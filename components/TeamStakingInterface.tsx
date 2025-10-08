@@ -76,6 +76,18 @@ export default function TeamStakingInterface() {
   const [selectedPeriodFullPrecision, setSelectedPeriodFullPrecision] = useState('0');
   const [stakesLoaded, setStakesLoaded] = useState(false);
   
+  // Rewards data state - moved to main component for background loading
+  const [periodRewardsData, setPeriodRewardsData] = useState<Record<number, {
+    prepareStatuses: Record<string, boolean>;
+    claimableAmounts: Record<string, bigint>;
+    claimedStatuses: Record<string, boolean>;
+    totalClaimable: number;
+    hasAnyRewards: boolean;
+  }>>({});
+  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
+  const [selectedClaimPeriod, setSelectedClaimPeriod] = useState<number | null>(null);
+  const [rewardsLoaded, setRewardsLoaded] = useState(false);
+  
   const stakeAmountRef = useRef<HTMLInputElement>(null);
   const unstakeAmountRef = useRef<HTMLInputElement>(null);
 
@@ -172,7 +184,77 @@ export default function TeamStakingInterface() {
     setAllPeriodCommitments([]);
     setSelectedStakePeriod(null);
     setUnstakeAmountsByPeriod({});
+    setRewardsLoaded(false);
+    setPeriodRewardsData({});
+    setSelectedClaimPeriod(null);
   }, [address, chain?.id]);
+
+  // Load rewards data in background after stakes are loaded
+  useEffect(() => {
+    const loadAllRewardsData = async () => {
+      if (!allPeriodCommitments || allPeriodCommitments.length === 0 || rewardsLoaded) return;
+      if (!checkPrepareClaimStatus || !getClaimableAmount || !checkHasClaimed) return;
+
+      setIsLoadingRewards(true);
+      const newPeriodData: Record<number, any> = {};
+
+      for (const commitment of allPeriodCommitments) {
+        const period = BigInt(commitment.period);
+        const stakeID = BigInt(commitment.period);
+
+        const prepareStatuses: Record<string, boolean> = {};
+        const claimableAmounts: Record<string, bigint> = {};
+        const claimedStatuses: Record<string, boolean> = {};
+        let totalClaimable = 0;
+
+        for (const token of REWARD_TOKENS) {
+          try {
+            const isPrepared = await checkPrepareClaimStatus(token, period);
+            prepareStatuses[token] = Boolean(isPrepared);
+
+            if (isPrepared) {
+              const { amount } = await getClaimableAmount(period, token, stakeID);
+              claimableAmounts[token] = amount;
+
+              const hasClaimed = await checkHasClaimed(period, token, stakeID);
+              claimedStatuses[token] = Boolean(hasClaimed);
+
+              if (amount > 0n && !hasClaimed) {
+                totalClaimable += parseFloat(formatUnits(amount, 8));
+              }
+            }
+          } catch (error) {
+            console.error(`Error loading ${token} for period ${commitment.period}:`, error);
+          }
+        }
+
+        newPeriodData[commitment.period] = {
+          prepareStatuses,
+          claimableAmounts,
+          claimedStatuses,
+          totalClaimable,
+          hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
+        };
+      }
+
+      setPeriodRewardsData(newPeriodData);
+      setIsLoadingRewards(false);
+      setRewardsLoaded(true);
+
+      // Auto-select first period with rewards, or most recent expired period
+      if (!selectedClaimPeriod && allPeriodCommitments.length > 0) {
+        const periodWithRewards = allPeriodCommitments.find((c: any) =>
+          newPeriodData[c.period]?.hasAnyRewards
+        );
+        const expiredPeriod = allPeriodCommitments.find((c: any) => c.status === 'expired');
+        const defaultPeriod = periodWithRewards || expiredPeriod || allPeriodCommitments[0];
+        setSelectedClaimPeriod(defaultPeriod.period);
+        setSelectedClaimStakeID(defaultPeriod.period.toString());
+      }
+    };
+
+    loadAllRewardsData();
+  }, [allPeriodCommitments, checkPrepareClaimStatus, getClaimableAmount, checkHasClaimed, rewardsLoaded, selectedClaimPeriod]);
 
   // Update selected period balance when selection changes
   useEffect(() => {
@@ -184,6 +266,13 @@ export default function TeamStakingInterface() {
       }
     }
   }, [selectedStakePeriod, allPeriodCommitments]);
+
+  // Update selected claim stake ID when claim period changes
+  useEffect(() => {
+    if (selectedClaimPeriod !== null) {
+      setSelectedClaimStakeID(selectedClaimPeriod.toString());
+    }
+  }, [selectedClaimPeriod]);
 
   // Countdown timer for when BASE stake ends
   useEffect(() => {
@@ -668,14 +757,16 @@ export default function TeamStakingInterface() {
             currentPeriod={completedPeriod}
             actualCurrentPeriod={currentPeriod}
             allPeriodCommitments={allPeriodCommitments}
+            periodRewardsData={periodRewardsData}
+            isLoadingRewards={isLoadingRewards}
+            selectedClaimPeriod={selectedClaimPeriod}
+            setSelectedClaimPeriod={setSelectedClaimPeriod}
+            setRewardsLoaded={setRewardsLoaded}
             selectedClaimStakeID={selectedClaimStakeID}
             setSelectedClaimStakeID={setSelectedClaimStakeID}
             isLoading={isLoading}
             prepareClaim={prepareClaim}
             claimRewards={claimRewards}
-            checkPrepareClaimStatus={checkPrepareClaimStatus}
-            getClaimableAmount={getClaimableAmount}
-            checkHasClaimed={checkHasClaimed}
             isStakingPeriod={isStakingPeriod}
             stakeEndCountdown={stakeEndCountdown}
           />
@@ -736,160 +827,57 @@ function RewardsClaimSection({
   currentPeriod,
   actualCurrentPeriod,
   allPeriodCommitments,
+  periodRewardsData,
+  isLoadingRewards,
+  selectedClaimPeriod,
+  setSelectedClaimPeriod,
+  setRewardsLoaded,
   selectedClaimStakeID,
   setSelectedClaimStakeID,
   isLoading,
   prepareClaim,
   claimRewards,
-  checkPrepareClaimStatus,
-  getClaimableAmount,
-  checkHasClaimed,
   isStakingPeriod,
   stakeEndCountdown,
 }: any) {
-  const [periodRewardsData, setPeriodRewardsData] = useState<Record<number, {
-    prepareStatuses: Record<string, boolean>;
-    claimableAmounts: Record<string, bigint>;
-    claimedStatuses: Record<string, boolean>;
-    totalClaimable: number;
-    hasAnyRewards: boolean;
-  }>>({});
   const [loadingToken, setLoadingToken] = useState<string | null>(null);
-  const [isLoadingPeriods, setIsLoadingPeriods] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
-  const [rewardsLoaded, setRewardsLoaded] = useState(false);
 
-  // Load rewards data for all periods - only once
-  useEffect(() => {
-    const loadAllPeriodsData = async () => {
-      if (!allPeriodCommitments || allPeriodCommitments.length === 0 || rewardsLoaded) return;
-      
-      setIsLoadingPeriods(true);
-      const newPeriodData: Record<number, any> = {};
-      
-      for (const commitment of allPeriodCommitments) {
-        const period = BigInt(commitment.period);
-        const stakeID = BigInt(commitment.period);
-        
-        const prepareStatuses: Record<string, boolean> = {};
-        const claimableAmounts: Record<string, bigint> = {};
-        const claimedStatuses: Record<string, boolean> = {};
-        let totalClaimable = 0;
-        
-        for (const token of REWARD_TOKENS) {
-          try {
-            const isPrepared = await checkPrepareClaimStatus(token, period);
-            prepareStatuses[token] = isPrepared;
-            
-            if (isPrepared) {
-              const { amount } = await getClaimableAmount(period, token, stakeID);
-              claimableAmounts[token] = amount;
-              
-              const hasClaimed = await checkHasClaimed(period, token, stakeID);
-              claimedStatuses[token] = hasClaimed;
-              
-              if (amount > 0n && !hasClaimed) {
-                totalClaimable += parseFloat(formatUnits(amount, 8));
-              }
-            }
-          } catch (error) {
-            console.error(`Error loading ${token} for period ${commitment.period}:`, error);
-          }
-        }
-        
-        newPeriodData[commitment.period] = {
-          prepareStatuses,
-          claimableAmounts,
-          claimedStatuses,
-          totalClaimable,
-          hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
-        };
-      }
-      
-      setPeriodRewardsData(newPeriodData);
-      setIsLoadingPeriods(false);
-      setRewardsLoaded(true);
-      
-      // Auto-select first period with rewards, or most recent expired period
-      if (!selectedPeriod && allPeriodCommitments.length > 0) {
-        const periodWithRewards = allPeriodCommitments.find((c: any) => 
-          newPeriodData[c.period]?.hasAnyRewards
-        );
-        const expiredPeriod = allPeriodCommitments.find((c: any) => c.status === 'expired');
-        const defaultPeriod = periodWithRewards || expiredPeriod || allPeriodCommitments[0];
-        setSelectedPeriod(defaultPeriod.period);
-        setSelectedClaimStakeID(defaultPeriod.period.toString());
-      }
-    };
-    
-    loadAllPeriodsData();
-  }, [allPeriodCommitments, checkPrepareClaimStatus, getClaimableAmount, checkHasClaimed, rewardsLoaded]);
-
-  // Reset rewards loaded flag when commitments change
-  useEffect(() => {
-    setRewardsLoaded(false);
-    setPeriodRewardsData({});
-    setSelectedPeriod(null);
-  }, [allPeriodCommitments]);
-
-  // Update selected claim stake ID when period changes
-  useEffect(() => {
-    if (selectedPeriod !== null) {
-      setSelectedClaimStakeID(selectedPeriod.toString());
-    }
-  }, [selectedPeriod]);
-
-  const currentPeriodData = selectedPeriod !== null ? periodRewardsData[selectedPeriod] : null;
-
-  const reloadPeriodData = async () => {
-    if (!selectedPeriod || !allPeriodCommitments) return;
-    
-    const period = BigInt(selectedPeriod);
-    const stakeID = BigInt(selectedPeriod);
-    
-    const prepareStatuses: Record<string, boolean> = {};
-    const claimableAmounts: Record<string, bigint> = {};
-    const claimedStatuses: Record<string, boolean> = {};
-    let totalClaimable = 0;
-    
-    for (const token of REWARD_TOKENS) {
-      try {
-        const isPrepared = await checkPrepareClaimStatus(token, period);
-        prepareStatuses[token] = isPrepared;
-        
-        if (isPrepared) {
-          const { amount } = await getClaimableAmount(period, token, stakeID);
-          claimableAmounts[token] = amount;
-          
-          const hasClaimed = await checkHasClaimed(period, token, stakeID);
-          claimedStatuses[token] = hasClaimed;
-          
-          if (amount > 0n && !hasClaimed) {
-            totalClaimable += parseFloat(formatUnits(amount, 8));
-          }
-        }
-      } catch (error) {
-        console.error(`Error loading ${token}:`, error);
-      }
-    }
-    
-    setPeriodRewardsData(prev => ({
-      ...prev,
-      [selectedPeriod]: {
-        prepareStatuses,
-        claimableAmounts,
-        claimedStatuses,
-        totalClaimable,
-        hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
-      }
-    }));
+  // Format number with commas
+  const formatNumberWithCommas = (value: string) => {
+    const parts = value.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
   };
+
+  // Format reward amount with smart decimal places
+  const formatRewardAmount = (value: string) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) return '0';
+    
+    let formatted: string;
+    if (num >= 10) {
+      // For numbers >= 10, show 2 decimal places
+      formatted = num.toFixed(2);
+    } else if (num >= 1) {
+      // For numbers >= 1, show 4 decimal places
+      formatted = num.toFixed(4);
+    } else if (num > 0) {
+      // For small numbers, show up to 8 decimal places, removing trailing zeros
+      formatted = num.toFixed(8).replace(/\.?0+$/, '');
+    } else {
+      formatted = '0';
+    }
+    
+    return formatNumberWithCommas(formatted);
+  };
+
+  const currentPeriodData = selectedClaimPeriod !== null ? periodRewardsData[selectedClaimPeriod] : null;
 
   const handlePrepareClaim = async (ticker: string) => {
     setLoadingToken(ticker);
     try {
       await prepareClaim(ticker);
-      await reloadPeriodData();
+      setRewardsLoaded(false); // Trigger refetch
       alert(`Successfully prepared ${ticker} rewards!`);
     } catch (error: any) {
       console.error('Prepare claim error:', error);
@@ -900,13 +888,13 @@ function RewardsClaimSection({
   };
 
   const handleClaim = async (ticker: string) => {
-    if (!selectedPeriod) return;
+    if (!selectedClaimPeriod) return;
     setLoadingToken(ticker);
     try {
-      const period = BigInt(selectedPeriod);
-      const stakeID = BigInt(selectedPeriod);
+      const period = BigInt(selectedClaimPeriod);
+      const stakeID = BigInt(selectedClaimPeriod);
       await claimRewards(period, ticker, stakeID);
-      await reloadPeriodData();
+      setRewardsLoaded(false); // Trigger refetch
       alert(`Successfully claimed ${ticker} rewards!`);
     } catch (error: any) {
       console.error('Claim error:', error);
@@ -926,7 +914,7 @@ function RewardsClaimSection({
       </div>
 
       {/* Period Selection */}
-      {isLoadingPeriods ? (
+      {isLoadingRewards ? (
         <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
           <p className="text-sm text-gray-400 text-center">
             <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
@@ -942,7 +930,7 @@ function RewardsClaimSection({
           
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {allPeriodCommitments.map(({ period, stakeNumber, status }: any) => {
-              const isSelected = selectedPeriod === period;
+              const isSelected = selectedClaimPeriod === period;
               const periodData = periodRewardsData[period];
               const totalClaimable = periodData?.totalClaimable || 0;
               const hasAnyRewards = periodData?.hasAnyRewards || false;
@@ -961,11 +949,11 @@ function RewardsClaimSection({
                       type="radio"
                       name="selectedPeriod"
                       checked={isSelected}
-                      onChange={() => setSelectedPeriod(period)}
+                      onChange={() => setSelectedClaimPeriod(period)}
                       className="w-4 h-4 accent-green-400 cursor-pointer"
                     />
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300 font-medium">Stake {stakeNumber} (Period {period})</span>
+                      <span className="text-sm text-gray-300 font-medium">Stake {stakeNumber}</span>
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         status === 'active' ? 'bg-green-500/20 text-green-300' :
                         status === 'pending' ? 'bg-blue-500/20 text-blue-300' :
@@ -978,7 +966,7 @@ function RewardsClaimSection({
                   <div className="text-sm">
                     {hasAnyRewards ? (
                       <span className="text-white font-semibold">
-                        {totalClaimable > 0 ? `${totalClaimable.toFixed(2)} to claim` : 'Claimed ✓'}
+                        {totalClaimable > 0 ? `${formatRewardAmount(totalClaimable.toString())} to claim` : 'Claimed ✓'}
                       </span>
                     ) : (
                       <span className="text-gray-500">No rewards yet</span>
@@ -998,10 +986,10 @@ function RewardsClaimSection({
       )}
 
       {/* Rewards for Selected Period */}
-      {selectedPeriod && currentPeriodData && (
+      {selectedClaimPeriod && currentPeriodData && (
         <>
           {/* Info Banner for Active Period */}
-          {isStakingPeriod && allPeriodCommitments.find((c: any) => c.period === selectedPeriod)?.status === 'active' && (
+          {isStakingPeriod && allPeriodCommitments.find((c: any) => c.period === selectedClaimPeriod)?.status === 'active' && (
             <div className="flex items-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
               <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
               <p className="text-sm text-yellow-400">
@@ -1021,7 +1009,14 @@ function RewardsClaimSection({
             </h3>
             
             <div className="space-y-2">
-              {REWARD_TOKENS.map((token) => {
+              {REWARD_TOKENS.filter((token) => {
+                const amount = currentPeriodData.claimableAmounts[token] || 0n;
+                const hasClaimed = currentPeriodData.claimedStatuses[token];
+                const isPrepared = currentPeriodData.prepareStatuses[token];
+                
+                // Only show if: has claimable rewards or has been claimed
+                return (isPrepared && amount > 0n) || hasClaimed;
+              }).map((token) => {
                 const amount = currentPeriodData.claimableAmounts[token] || 0n;
                 const hasClaimed = currentPeriodData.claimedStatuses[token];
                 const isPrepared = currentPeriodData.prepareStatuses[token];
@@ -1036,11 +1031,6 @@ function RewardsClaimSection({
                 if (hasClaimed) {
                   buttonText = 'Claimed ✓';
                   buttonClass = 'bg-green-500/20 text-green-400 cursor-not-allowed';
-                } else if (!isPrepared) {
-                  buttonText = 'Prepare';
-                  buttonAction = () => handlePrepareClaim(token);
-                  canInteract = true;
-                  buttonClass = 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/40';
                 } else if (amount > 0n) {
                   buttonText = 'Claim';
                   buttonAction = () => handleClaim(token);
@@ -1056,11 +1046,8 @@ function RewardsClaimSection({
                     <div>
                       <span className="font-semibold text-white text-lg">{token}</span>
                       <span className="text-sm text-gray-400 ml-3">
-                        {isPrepared && amount > 0n ? formatUnits(amount, 8) : '0'}
+                        {amount > 0n ? formatRewardAmount(formatUnits(amount, 8)) : '0'}
                       </span>
-                      {!isPrepared && (
-                        <span className="ml-2 text-xs text-yellow-400">(Not prepared)</span>
-                      )}
                     </div>
                     
                     <button
@@ -1077,6 +1064,17 @@ function RewardsClaimSection({
                   </div>
                 );
               })}
+              
+              {REWARD_TOKENS.filter((token) => {
+                const amount = currentPeriodData.claimableAmounts[token] || 0n;
+                const hasClaimed = currentPeriodData.claimedStatuses[token];
+                const isPrepared = currentPeriodData.prepareStatuses[token];
+                return (isPrepared && amount > 0n) || hasClaimed;
+              }).length === 0 && (
+                <div className="p-4 bg-white/5 border border-white/20 rounded-lg text-center">
+                  <p className="text-sm text-gray-400">No rewards available for this period yet.</p>
+                </div>
+              )}
             </div>
           </div>
         </>
