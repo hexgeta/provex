@@ -1695,9 +1695,10 @@ export default function StakeInterface({
                               <div className="text-md font-semibold text-purple-300 mb-3">Contract Stats</div>
                               <div>
                                 <div className="text-xs text-purple-400 mb-1">Total in DH Contract</div>
-                                <div className="text-base font-semibold text-white">{formattedGlobalStaked} {formatTickerName(selectedPool.ticker)}</div>
-                                <div className="text-xs text-purple-300/70 mt-1">{supplyLockedPercentage}% of total supply</div>
+                                <div className="text-base font-semibold text-white">
+                                  {formattedGlobalStaked} {formatTickerName(selectedPool.ticker)} <span className="text-xs text-purple-300/70">({supplyLockedPercentage}% of supply)</span>
                           </div>
+                                </div>
                         </div>
                       )}
 
@@ -1744,12 +1745,12 @@ export default function StakeInterface({
                                         displayRewards !== '0.00' ? 'text-green-400' : 'text-gray-500'
                                       }`}>
                                         {displayRewards}
-                                      </div>
+                        </div>
                                       <div className={`text-center font-semibold ${
                                         apy !== '0.00' ? 'text-yellow-400' : 'text-gray-500'
                                       }`}>
                                         {apy}%
-                                      </div>
+                      </div>
                                       <div className="text-center">
                                         <span className={`text-[10px] ${
                                           status === 'active' ? 'text-purple-400' :
@@ -1758,8 +1759,8 @@ export default function StakeInterface({
                                         }`}>
                                           {status === 'active' ? 'Active' : status === 'pending' ? 'Pre-committed' : 'Expired'}
                                         </span>
-                                      </div>
-                                    </div>
+                          </div>
+                            </div>
                                   );
                                 })}
                             </div>
@@ -1834,12 +1835,6 @@ export default function StakeInterface({
                                   )}
                                 </button>
 
-                                <div className="p-3 bg-white/5 border border-white/20 rounded-xl">
-                                  <p className="text-xs text-gray-300">
-                                    ✅ Stake has ended. You can withdraw your principal & claim rewards without penalty.
-                                  </p>
-                                </div>
-
                                 {/* Rewards Section - Always show for expired stakes */}
                                 <div className="space-y-3">
                                   {/* Claimable Rewards - Show if > 0 and not claimed */}
@@ -1891,6 +1886,13 @@ export default function StakeInterface({
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Success Message */}
+                                <div className="p-3 bg-white/5 border border-white/20 rounded-xl">
+                                  <p className="text-xs text-gray-300">
+                                    ✅ Stake has ended. You can withdraw your principal & claim rewards for this period without penalty.
+                                  </p>
+                                </div>
                               </>
                             )}
 
@@ -1918,7 +1920,13 @@ export default function StakeInterface({
 
                               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
                                 <p className="text-xs text-red-400 font-semibold">
-                                    ⚠️ Stake is currently active. Exiting early will incur a 20% penalty. Wait for the stake to end to claim your rewards and principal without penalty.
+                                    ⚠️ Stake is currently active. Exiting early will incur a 20% penalty.
+                                </p>
+                                <p className="text-xs text-red-300 mt-2">
+                                  Time remaining: {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+                                  {String(timeRemaining.hours).padStart(2, '0')}h{' '}
+                                  {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
+                                  {String(timeRemaining.seconds).padStart(2, '0')}s
                                 </p>
                               </div>
                             </>
@@ -1948,7 +1956,7 @@ export default function StakeInterface({
 
                                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
                                   <p className="text-xs text-yellow-400 font-semibold">
-                                    ⚠️ This stake is pre-committed for a future period. Exiting early will incur a 20% penalty. These tokens are locked until the committed staking period completes fully. You cannot claim them penalty-free at the start of the period.
+                                    ⚠️ This stake is pre-committed for a future period. Exiting early will incur a 20% penalty.
                                 </p>
                               </div>
                             </>
@@ -2058,10 +2066,10 @@ export default function StakeInterface({
                       <Gem className="w-5 h-5" />
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="bg-black border-2 border-[#2D82F3]/50 rounded-xl max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0">
+                  <DialogContent className="bg-[#07111d] border-2 border-[#2D82F3]/30 rounded-xl max-h-[90vh] overflow-y-auto [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0 [&>button]:focus:outline-none [&>button]:focus-visible:ring-0">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                        <Gem className="w-6 h-6 text-gray-400" />
+                        <Gem className="w-6 h-6 text-white" />
                         Lock {formatTickerName(selectedPool.ticker)} in Diamond Hands
                       </DialogTitle>
 
