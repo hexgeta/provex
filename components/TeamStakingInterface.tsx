@@ -16,11 +16,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTeamStaking } from '@/hooks/contracts/useTeamStaking';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
-import { REWARD_TOKENS, RewardToken } from '@/constants/team';
+import { REWARD_TOKENS, RewardToken, REWARD_TOKEN_ADDRESSES } from '@/constants/team';
 import { PERPETUAL_POOLS } from '@/constants/crypto';
+import { useTokenPrices } from '@/hooks/crypto/useTokenPrices';
 
 export default function TeamStakingInterface() {
   const { address, isConnected, chain } = useAccount();
+  
+  // Fetch token prices for all reward tokens
+  const rewardTokenAddresses = Object.values(REWARD_TOKEN_ADDRESSES);
+  const { prices: tokenPrices } = useTokenPrices(rewardTokenAddresses);
   
   // Get the correct BASE pool based on chain (BASE3 for PulseChain, eBASE3 for Ethereum)
   const BASE_POOL = chain?.id === 1 ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3;
@@ -476,37 +481,72 @@ export default function TeamStakingInterface() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div className="bg-black border-2 border-white/50 rounded-xl p-6">
           <h3 className="text-sm text-gray-300 mb-2">Liquid TEAM Balance</h3>
-          <p className="text-3xl font-bold text-white">{formattedTeamBalance}</p>
-          <p className="text-xs text-gray-400 mt-1">Available to stake</p>
+          {(() => {
+            const teamTokenAddress = REWARD_TOKEN_ADDRESSES.TEAM;
+            const teamPrice = tokenPrices?.[teamTokenAddress]?.price || 0;
+            const teamAmount = parseFloat(fullPrecisionTeamBalance || '0');
+            const usdValue = teamAmount * teamPrice;
+            const formattedUSD = usdValue >= 1 
+              ? `$${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : usdValue > 0 
+              ? `$${usdValue.toFixed(4)}`
+              : '$0.00';
+            
+            return (
+              <>
+                <p className="text-3xl font-bold text-white">{formattedUSD}</p>
+                <p className="text-sm text-gray-400 mt-1">{formattedTeamBalance}</p>
+              </>
+            );
+          })()}
         </div>
         
         <div className="bg-black border-2 border-white/50 rounded-xl p-6">
           <h3 className="text-sm text-gray-300 mb-2">Your Total Staked TEAM</h3>
-          <p className="text-3xl font-bold text-white">{formattedUserStaked}</p>
-          <p className="text-xs text-gray-400 mt-1">Currently locked</p>
+          {(() => {
+            const teamTokenAddress = REWARD_TOKEN_ADDRESSES.TEAM;
+            const teamPrice = tokenPrices?.[teamTokenAddress]?.price || 0;
+            const teamAmount = parseFloat(fullPrecisionUserStaked || '0');
+            const usdValue = teamAmount * teamPrice;
+            const formattedUSD = usdValue >= 1 
+              ? `$${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : usdValue > 0 
+              ? `$${usdValue.toFixed(4)}`
+              : '$0.00';
+            
+            return (
+              <>
+                <p className="text-3xl font-bold text-white">{formattedUSD}</p>
+                <p className="text-sm text-gray-400 mt-1">{formattedUserStaked}</p>
+              </>
+            );
+          })()}
         </div>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="stake" className="w-full">
-        <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0">
+        <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0 text-[10px] sm:text-2xl">
           <TabsTrigger 
             value="stake" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
-            Stake TEAM
+            <span className="sm:hidden">Stake</span>
+            <span className="hidden sm:inline">Stake TEAM</span>
           </TabsTrigger>
           <TabsTrigger 
             value="unstake" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
-            Unstake TEAM
+            <span className="sm:hidden">Unstake</span>
+            <span className="hidden sm:inline">Unstake TEAM</span>
           </TabsTrigger>
           <TabsTrigger 
             value="rewards" 
-            className="text-base px-8 py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10"
+            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
-            Claim Rewards
+            <span className="sm:hidden">Claim</span>
+            <span className="hidden sm:inline">Claim Rewards</span>
           </TabsTrigger>
         </TabsList>
 
@@ -560,9 +600,9 @@ export default function TeamStakingInterface() {
 
               {/* Show warning if BASE stake is active */}
               {baseStakeIsActive === true && (
-                <div className="flex items-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none">
+                <div className="flex items-start gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none leading-5">
                   <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-                  <p className="text-sm text-center text-yellow-400">
+                  <p className="text-sm text-center text-yellow-400 leading-5">
                     Staking is only available after the BASE stake ends in:{' '}
                     <span className="font-mono font-semibold">
                       {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
@@ -769,6 +809,7 @@ export default function TeamStakingInterface() {
             claimRewards={claimRewards}
             isStakingPeriod={isStakingPeriod}
             stakeEndCountdown={stakeEndCountdown}
+            tokenPrices={tokenPrices}
           />
         </TabsContent>
       </Tabs>
@@ -839,6 +880,7 @@ function RewardsClaimSection({
   claimRewards,
   isStakingPeriod,
   stakeEndCountdown,
+  tokenPrices,
 }: any) {
   const [loadingToken, setLoadingToken] = useState<string | null>(null);
 
@@ -869,6 +911,21 @@ function RewardsClaimSection({
     }
     
     return formatNumberWithCommas(formatted);
+  };
+
+  // Calculate USD value for a token
+  const calculateUSDValue = (token: string, amount: bigint): string => {
+    const tokenAddress = REWARD_TOKEN_ADDRESSES[token as RewardToken];
+    const price = tokenPrices?.[tokenAddress]?.price || 0;
+    const tokenAmount = parseFloat(formatUnits(amount, 8));
+    const usdValue = tokenAmount * price;
+    
+    if (usdValue >= 1) {
+      return `$${formatNumberWithCommas(usdValue.toFixed(2))}`;
+    } else if (usdValue > 0) {
+      return `$${usdValue.toFixed(4)}`;
+    }
+    return '$0.00';
   };
 
   const currentPeriodData = selectedClaimPeriod !== null ? periodRewardsData[selectedClaimPeriod] : null;
@@ -904,14 +961,14 @@ function RewardsClaimSection({
     }
   };
 
-  return (
+    return (
     <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5 space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-white mb-2">Claim Rewards</h2>
         <p className="text-gray-400 text-sm">
           Claim your earned rewards from completed staking periods
-        </p>
-      </div>
+          </p>
+        </div>
 
       {/* Period Selection */}
       {isLoadingRewards ? (
@@ -960,13 +1017,13 @@ function RewardsClaimSection({
                         'bg-gray-500/20 text-gray-400'
                       }`}>
                         {status === 'active' ? 'Active' : status === 'pending' ? 'Future' : 'Completed'}
-                      </span>
-                    </div>
+                    </span>
                   </div>
+                </div>
                   <div className="text-sm">
                     {hasAnyRewards ? (
                       <span className="text-white font-semibold">
-                        {totalClaimable > 0 ? `${formatRewardAmount(totalClaimable.toString())} to claim` : 'Claimed ✓'}
+                        {totalClaimable > 0 ? 'Rewards to claim' : 'Claimed ✓'}
                       </span>
                     ) : (
                       <span className="text-gray-500">No rewards yet</span>
@@ -990,33 +1047,44 @@ function RewardsClaimSection({
         <>
           {/* Info Banner for Active Period */}
           {isStakingPeriod && allPeriodCommitments.find((c: any) => c.period === selectedClaimPeriod)?.status === 'active' && (
-            <div className="flex items-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+            <div className="flex items-start gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg leading-5">
               <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-              <p className="text-sm text-yellow-400">
+              <p className="text-sm text-yellow-400 leading-5">
                 Current staking period rewards will be available after the period ends in:{' '}
                 <span className="font-mono font-semibold">
                   {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
                   {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
                 </span>
-              </p>
-            </div>
+          </p>
+        </div>
           )}
 
-          {/* Rewards Section */}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3">
-              Your Rewards
-            </h3>
-            
-            <div className="space-y-2">
-              {REWARD_TOKENS.filter((token) => {
-                const amount = currentPeriodData.claimableAmounts[token] || 0n;
-                const hasClaimed = currentPeriodData.claimedStatuses[token];
-                const isPrepared = currentPeriodData.prepareStatuses[token];
-                
-                // Only show if: has claimable rewards or has been claimed
-                return (isPrepared && amount > 0n) || hasClaimed;
-              }).map((token) => {
+          {/* Rewards Section - Only show if there are rewards */}
+          {(() => {
+            const hasRewards = REWARD_TOKENS.some((token) => {
+              const amount = currentPeriodData.claimableAmounts[token] || 0n;
+              const hasClaimed = currentPeriodData.claimedStatuses[token];
+              const isPrepared = currentPeriodData.prepareStatuses[token];
+              return (isPrepared && amount > 0n) || hasClaimed;
+            });
+
+            if (!hasRewards) return null;
+
+            return (
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-3">
+                  Your Rewards
+          </h3>
+          
+          <div className="space-y-2">
+                  {REWARD_TOKENS.filter((token) => {
+                    const amount = currentPeriodData.claimableAmounts[token] || 0n;
+                    const hasClaimed = currentPeriodData.claimedStatuses[token];
+                    const isPrepared = currentPeriodData.prepareStatuses[token];
+                    
+                    // Only show if: has claimable rewards or has been claimed
+                    return (isPrepared && amount > 0n) || hasClaimed;
+                  }).map((token) => {
                 const amount = currentPeriodData.claimableAmounts[token] || 0n;
                 const hasClaimed = currentPeriodData.claimedStatuses[token];
                 const isPrepared = currentPeriodData.prepareStatuses[token];
@@ -1037,20 +1105,27 @@ function RewardsClaimSection({
                   canInteract = true;
                   buttonClass = 'bg-white/10 text-white hover:bg-white/20';
                 }
-                
-                return (
-                  <div
-                    key={token}
-                    className="flex items-center justify-between p-4 bg-black border-2 border-white/20 rounded-lg"
-                  >
-                    <div>
-                      <span className="font-semibold text-white text-lg">{token}</span>
-                      <span className="text-sm text-gray-400 ml-3">
-                        {amount > 0n ? formatRewardAmount(formatUnits(amount, 8)) : '0'}
-                      </span>
-                    </div>
-                    
-                    <button
+              
+              return (
+                <div
+                  key={token}
+                  className="flex items-center justify-between p-4 bg-black border-2 border-white/20 rounded-lg"
+                >
+                    <div className="flex items-start gap-3">
+                    <span className="font-semibold text-white text-lg">{token}</span>
+                      <div className="flex flex-col">
+                        {amount > 0n && (
+                          <div className="text-xl font-semibold text-white">
+                            {calculateUSDValue(token, amount)}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-400">
+                          {amount > 0n ? formatRewardAmount(formatUnits(amount, 8)) : '0'}
+                        </div>
+                      </div>
+                  </div>
+                  
+                  <button
                       onClick={buttonAction || undefined}
                       disabled={!canInteract || isLoadingThisToken}
                       className={`px-6 py-2 rounded-lg font-medium transition-all ${buttonClass}`}
@@ -1059,24 +1134,15 @@ function RewardsClaimSection({
                         <Loader2 className="w-5 h-5 animate-spin text-white" />
                       ) : (
                         buttonText
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-              
-              {REWARD_TOKENS.filter((token) => {
-                const amount = currentPeriodData.claimableAmounts[token] || 0n;
-                const hasClaimed = currentPeriodData.claimedStatuses[token];
-                const isPrepared = currentPeriodData.prepareStatuses[token];
-                return (isPrepared && amount > 0n) || hasClaimed;
-              }).length === 0 && (
-                <div className="p-4 bg-white/5 border border-white/20 rounded-lg text-center">
-                  <p className="text-sm text-gray-400">No rewards available for this period yet.</p>
+                    )}
+                  </button>
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
+        </div>
+            );
+          })()}
         </>
       )}
     </div>

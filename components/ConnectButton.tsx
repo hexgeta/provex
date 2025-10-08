@@ -32,7 +32,7 @@ export const ConnectButton = () => {
       <button
         onClick={() => open()}
         disabled={isTransactionPending}
-        className={`px-4 md:px-8 py-2 md:py-2 rounded-md font-semibold transition-colors text-sm md:text-base ${
+        className={`px-3 md:px-8 h-10 rounded-md font-semibold transition-colors text-xs md:text-base flex-[0.7] md:flex-none w-full md:w-auto ${
           isTransactionPending 
             ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
             : 'bg-white text-black hover:bg-gray-200'
@@ -55,7 +55,7 @@ export const ConnectButton = () => {
       <DisclaimerDialog open={showDisclaimer} onAccept={handleDisclaimerAccept} />
       <button
         onClick={handleConnectClick}
-        className="px-4 md:px-8 py-2 md:py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 transition-colors text-sm md:text-base"
+        className="px-3 md:px-8 h-10 bg-white text-black rounded-md font-semibold hover:bg-gray-200 transition-colors text-xs md:text-base flex-[0.7] md:flex-none w-full md:w-auto"
       >
         Connect Wallet
       </button>

@@ -40,34 +40,35 @@ export function ChainSwitcher({ isCheckingConnection }: { isCheckingConnection: 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      className="flex-[0.3] md:flex-none"
     >
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-3 px-4 py-2 bg-black/40 border border-white/30 rounded-md hover:bg-white/10 transition-colors w-[220px] focus:outline-none focus-visible:outline-none">
+        <DropdownMenuTrigger className="flex items-center justify-center gap-2 md:gap-3 px-3 md:px-4 h-10 bg-black/40 border border-white/30 rounded-md hover:bg-white/10 transition-colors w-full md:w-[220px] focus:outline-none focus-visible:outline-none">
           <Image
             src={currentChain.icon}
             alt={currentChain.name}
             width={20}
             height={20}
-            className="w-4 h-4"
+            className="w-3 h-3 md:w-4 md:h-4"
           />
-          <span className="text-white font-medium">{currentChain.name}</span>
-          <ChevronDown className="w-4 h-4 text-white/70" />
+          <span className="text-white font-medium hidden md:inline">{currentChain.name}</span>
+          <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-white/70" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-black/95 border rounded-md border-white/10 backdrop-blur-sm z-[200] w-[220px]">
+        <DropdownMenuContent className="bg-black/95 border rounded-md border-white/10 backdrop-blur-sm z-[200] md:w-[220px]">
           {CHAINS.map((chainOption) => (
             <DropdownMenuItem
               key={chainOption.id}
               onClick={() => switchChain({ chainId: chainOption.id })}
-              className="group flex items-center gap-3 px-4 py-2 cursor-pointer text-white hover:text-black focus:text-white data-[highlighted]:text-black hover:bg-white focus:bg-white/5 data-[highlighted]:bg-white"
+              className="group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 cursor-pointer text-white hover:text-black focus:text-white data-[highlighted]:text-black hover:bg-white focus:bg-white/5 data-[highlighted]:bg-white text-xs md:text-base"
             >
               <Image
                 src={chainOption.icon}
                 alt={chainOption.name}
                 width={20}
                 height={20}
-                className="w-4 h-4 group-hover:brightness-0 transition-all"
+                className="w-3 h-3 md:w-4 md:h-4 group-hover:brightness-0 transition-all"
               />
-              <span>{chainOption.name}</span>
+              <span className="hidden md:inline">{chainOption.name}</span>
               {chain?.id === chainOption.id && (
                 <span className="ml-auto text-green-400">✓</span>
               )}

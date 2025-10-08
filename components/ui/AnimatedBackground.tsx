@@ -265,8 +265,8 @@ export default function AnimatedBackground({
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.95 }}
+      className="fixed inset-0 pointer-events-none z-0 animate-in fade-in duration-1000 w-screen h-screen"
+      style={{ opacity: 1 }}
     />
   );
 }

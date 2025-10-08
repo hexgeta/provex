@@ -7,7 +7,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 const Footer = () => {
   return (
-    <footer className="w-full bg-black/30 backdrop-blur-xs px-4 md:px-8 py-4 border-t border-[rgba(255,255,255,0.2)] relative z-[100]">
+    <footer className="w-full bg-black backdrop-blur-xs px-4 md:px-8 py-4 border-t border-[rgba(255,255,255,0.2)] relative z-[100]">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Main Info Column */}
@@ -28,7 +28,7 @@ const Footer = () => {
             <ul className="space-y-1">
               <li>
                 <Link 
-                  href="/#" 
+                  href="/team" 
                   className="text-sm text-[rgb(153,153,153)] hover:text-white transition-colors"
                 >
                   TEAM rewards

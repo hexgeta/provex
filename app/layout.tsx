@@ -79,14 +79,23 @@ export default async function RootLayout({
         <FontLoader weight="bold" />
         <script defer data-domain="otc.lookintomaxi.com" src="https://plausible.io/js/script.js"></script>
       </head>
-      <body className="min-h-screen bg-black text-white">
+      <body className="bg-black text-white">
         <AppKitProvider cookies={cookies}>
           <Providers>
-            <AnimatedBackgroundWrapper />
-            <div className="flex flex-col min-h-screen relative z-10">
-              <NavBar />
-              <main className="flex-grow">{children}</main>
-              <Footer />
+            <div className="relative">
+              <AnimatedBackgroundWrapper />
+              {/* Gradient overlay between background and content */}
+              <div 
+                className="fixed inset-0 z-[5] pointer-events-none"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.9) 100%)'
+                }}
+              />
+              <div className="flex flex-col min-h-screen relative z-10">
+                <NavBar />
+                <main className="flex-grow">{children}</main>
+                <Footer />
+              </div>
             </div>
             <Toaster />
           </Providers>

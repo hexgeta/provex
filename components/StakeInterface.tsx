@@ -1363,7 +1363,7 @@ export default function StakeInterface({
   return (
     <div className="w-full max-w-2xl mx-auto mt-4">
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-2 mb-0 text-md md:text-lg">
+      <div className="flex justify-center gap-2 mb-0 text-[10px] sm:text-lg">
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
@@ -1373,7 +1373,7 @@ export default function StakeInterface({
         <TabButton
           active={activeTab === 'end'}
           onClick={() => setActiveTab('end')}
-          label={shouldShowStartStake ? "Start The Stake" : "End The Stake"}
+          label={shouldShowStartStake ? "Start The Stake" : "End Stake"}
           borderColor={poolBorderColor}
         />
         <TabButton
@@ -1521,7 +1521,7 @@ export default function StakeInterface({
             <div className="p-0 bg-gray-900/20 rounded-xl">
               <p className="text-gray-300 mb-2">
                 Once the stake period has ended, anyone can trigger the stake ending process. This only needs to happen once.
-                Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim your HEX" tab.
+                Once the stake has been ended you can redeem your HEX principle & yield from the next "Claim HEX" tab.
               </p>
               
               {canEndStake ? (
@@ -1530,9 +1530,9 @@ export default function StakeInterface({
                   <span>Stake is ready to be ended!</span>
                 </div>
               ) : (
-                <div className="flex items-start gap-2 text-yellow-400 mb-4">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>
+                <div className="flex items-start gap-2 text-yellow-400 mb-4 leading-5">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="leading-5">
                     {stakeIsActive 
                       ? daysUntilEnd < COUNTDOWN_THRESHOLD_DAYS
                         ? <>
@@ -2143,9 +2143,9 @@ export default function StakeInterface({
               </button>
 
               {stakeIsActive && (
-                <p className="text-sm text-yellow-400 text-center flex items-start justify-center gap-2">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>
+                <p className="text-sm text-yellow-400 text-center flex items-start justify-center gap-2 leading-5">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="leading-5">
                     Redemption is only available after the stake ends in:{' '}
                     <span className="font-mono">
                       {timeRemaining.days > 0 && `${timeRemaining.days}d `}
@@ -2398,9 +2398,9 @@ export default function StakeInterface({
 
               {!isMintingPhaseActive && (
                 <div className="text-sm text-yellow-400 text-center space-y-2">
-                  <div className="flex items-start justify-center gap-2">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <span>
+                  <div className="flex items-start justify-center gap-2 leading-5">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <span className="leading-5">
                       Minting is only available during the reload phase. A period of {reloadPhaseDuration ? Number(reloadPhaseDuration) : '...'} days between the stake being ended and starting once again.
                     </span>
                   </div>
@@ -2484,7 +2484,7 @@ function TabButton({ active, onClick, label, borderColor }: { active: boolean; o
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-3 rounded-t-xl font-semibold relative ${
+      className={`px-3 md:px-6 py-2 md:py-3 rounded-t-xl font-semibold relative ${
         active
           ? 'bg-black border-2 border-b-0 text-white z-10 mb-[-2px] after:content-[""] after:absolute after:bottom-[-2px] after:left-0 after:right-0 after:h-[2px] after:bg-black'
           : 'bg-transparent text-gray-500 hover:text-gray-300'

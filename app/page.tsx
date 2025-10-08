@@ -77,13 +77,13 @@ function HomeContent() {
   };
   
   return (
-    <main className={`flex ${!isConnected && !isCheckingConnection ? 'min-h-screen' : ''} flex-col items-center ${isConnected ? 'pb-24' : ''}`}>
+    <main className="flex flex-col items-center pb-24">
       <AnimatePresence mode="wait">
         {/* Loading State */}
         {isCheckingConnection && (
           <div
             key="loading"
-            className="w-full min-h-screen flex items-center justify-center"
+            className="w-full flex items-center justify-center py-32"
           >
             <Loader2 className="w-12 h-12 animate-spin text-white" />
           </div>
@@ -96,7 +96,7 @@ function HomeContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="w-full px-2 md:px-8 bg-black flex-grow flex items-center justify-center"
+            className="w-full px-2 md:px-8 bg-black flex items-center justify-center py-32"
           >
             <div className="max-w-6xl mx-auto text-center">
               <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">

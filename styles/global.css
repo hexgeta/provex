@@ -94,6 +94,7 @@ body {
   font-family: 'Archia', ui-sans-serif, system-ui, sans-serif;
   font-size: 19px;
   line-height: 1.4;
+  overflow-x: hidden;
   overflow-y: auto;
   position: relative;
 }
