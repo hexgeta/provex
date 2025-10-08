@@ -58,7 +58,7 @@ export default function TeamStakingInterface() {
   } = usePerpetualPool(BASE_POOL_ADDRESS, 'BASE');
 
   const [stakeAmount, setStakeAmount] = useState('');
-  const [unstakeAmount, setUnstakeAmount] = useState('');
+  const [unstakeAmountsByPeriod, setUnstakeAmountsByPeriod] = useState<Record<number, string>>({});
   const [selectedClaimStakeID, setSelectedClaimStakeID] = useState('');
   const [showEarlyUnstakeDialog, setShowEarlyUnstakeDialog] = useState(false);
   const [earlyUnstakeDetails, setEarlyUnstakeDetails] = useState({
@@ -69,7 +69,7 @@ export default function TeamStakingInterface() {
   const [stakeEndCountdown, setStakeEndCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   // Period-specific state
-  const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, stakeNumber: number, amount: string, formattedAmount: string, status: 'active' | 'pending' | 'expired'}[]>([]);
+  const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, stakeNumber: number, amount: string, formattedAmount: string, originalAmount: string, formattedOriginalAmount: string, status: 'active' | 'pending' | 'expired'}[]>([]);
   const [selectedStakePeriod, setSelectedStakePeriod] = useState<number | null>(null);
   const [isLoadingStakes, setIsLoadingStakes] = useState(false);
   const [selectedPeriodBalance, setSelectedPeriodBalance] = useState('0');
@@ -81,6 +81,17 @@ export default function TeamStakingInterface() {
 
   // Default to current period for unstaking and claiming
   const currentStakeID = selectedStakePeriod !== null ? selectedStakePeriod.toString() : (currentPeriod ? currentPeriod.toString() : '');
+  
+  // Helper to get/set unstake amount for current selected period
+  const unstakeAmount = selectedStakePeriod !== null ? (unstakeAmountsByPeriod[selectedStakePeriod] || '') : '';
+  const setUnstakeAmount = (value: string) => {
+    if (selectedStakePeriod !== null) {
+      setUnstakeAmountsByPeriod(prev => ({
+        ...prev,
+        [selectedStakePeriod]: value,
+      }));
+    }
+  };
 
   // Auto-fill stake ID for claims with current period
   useEffect(() => {
@@ -102,7 +113,7 @@ export default function TeamStakingInterface() {
         const current = Number(currentPeriod);
         const formatted = allStakes
           .filter(({ period }) => Number(period) % 2 === 1) // Only odd periods (staking periods)
-          .map(({ stakeID, period, balance }) => {
+          .map(({ stakeID, period, balance, originalBalance }) => {
             const periodNum = Number(period);
             
             // Determine status based on current period and staking period
@@ -118,11 +129,16 @@ export default function TeamStakingInterface() {
             const balanceFormatted = formatUnits(balance, 8);
             const numericBalance = parseFloat(balanceFormatted);
             
+            const originalBalanceFormatted = formatUnits(originalBalance, 8);
+            const numericOriginalBalance = parseFloat(originalBalanceFormatted);
+            
             return {
               period: periodNum,
               stakeNumber: (periodNum + 1) / 2, // Calculate stake number from period: 1→1, 3→2, 5→3, etc.
               amount: balanceFormatted,
-              formattedAmount: formatNumberClean(numericBalance),
+              formattedAmount: formatNumberMax2Decimals(numericBalance),
+              originalAmount: originalBalanceFormatted,
+              formattedOriginalAmount: formatNumberMax2Decimals(numericOriginalBalance),
               status,
             };
           })
@@ -155,6 +171,7 @@ export default function TeamStakingInterface() {
     setStakesLoaded(false);
     setAllPeriodCommitments([]);
     setSelectedStakePeriod(null);
+    setUnstakeAmountsByPeriod({});
   }, [address, chain?.id]);
 
   // Update selected period balance when selection changes
@@ -214,6 +231,14 @@ export default function TeamStakingInterface() {
     return value.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 8,
+    });
+  };
+
+  // Format number with max 2 decimal places
+  const formatNumberMax2Decimals = (value: number): string => {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
     });
   };
 
@@ -413,7 +438,7 @@ export default function TeamStakingInterface() {
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-gray-400 text-sm">
-                    Balance: {formattedTeamBalance} TEAM
+                    {formattedTeamBalance} TEAM
                   </span>
                   <button
                     type="button"
@@ -483,7 +508,7 @@ export default function TeamStakingInterface() {
                   </div>
                   
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {allPeriodCommitments.map(({ period, stakeNumber, formattedAmount, status }) => {
+                    {allPeriodCommitments.map(({ period, stakeNumber, formattedAmount, formattedOriginalAmount, status }) => {
                       const isSelected = selectedStakePeriod === period;
                       return (
                         <label 
@@ -513,7 +538,7 @@ export default function TeamStakingInterface() {
                               </span>
                             </div>
                           </div>
-                          <div className="text-sm font-semibold text-white">{formattedAmount} TEAM</div>
+                          <div className="text-sm font-semibold text-white">{formattedAmount} / {formattedOriginalAmount} TEAM</div>
                         </label>
                       );
                     })}
@@ -539,7 +564,7 @@ export default function TeamStakingInterface() {
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-gray-400 text-sm">
-                    Staked: {selectedPeriodBalance} TEAM {selectedStakePeriod && `(Stake ${(selectedStakePeriod + 1) / 2})`}
+                    {selectedPeriodBalance} TEAM
                   </span>
                   <button
                     type="button"

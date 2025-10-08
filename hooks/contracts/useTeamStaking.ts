@@ -28,6 +28,7 @@ const TEAM_ABI = parseAbi([
   'function allowance(address, address) view returns (uint256)',
   'function totalSupply() view returns (uint256)',
   'function decimals() view returns (uint8)',
+  'function stakes(address, uint256) view returns (address staker, uint256 balance, uint256 stakeID, uint256 stake_expiry_period, bool initiated)',
   
   // Write functions
   'function stakeTeam(uint256 amount)',
@@ -175,18 +176,21 @@ export function useTeamStaking() {
     }
   };
 
-  // Get user's staked amount for a specific period
-  const getUserStakedForPeriod = async (period: bigint, stakeID: bigint) => {
+  // Get user's current withdrawable balance for a specific stakeID
+  const getUserStakedForPeriod = async (stakeID: bigint) => {
     if (!publicClient || !address) return 0n;
     
     try {
-      const amount = await publicClient.readContract({
+      const stakeData = await publicClient.readContract({
         address: TEAM_CONTRACT_ADDRESS,
         abi: TEAM_ABI,
-        functionName: 'getAddressPeriodEndTotal',
-        args: [address, period, stakeID],
-      });
-      return amount as bigint;
+        functionName: 'stakes',
+        args: [address, stakeID],
+      }) as [string, bigint, bigint, bigint, boolean];
+      
+      // stakes returns: [staker, balance, stakeID, stake_expiry_period, initiated]
+      // We want index 1: balance (current withdrawable amount)
+      return stakeData[1];
     } catch (error) {
       console.error('Error getting user staked for period:', error);
       return 0n;
@@ -202,25 +206,36 @@ export function useTeamStaking() {
         stakeID: bigint;
         period: bigint;
         balance: bigint;
+        originalBalance: bigint;
       }> = [];
 
-      // Loop through all possible periods up to current + some buffer
+      // Loop through all possible stakeIDs up to current period + buffer
+      // For TEAM staking, stakeID corresponds to the period number (odd numbers only)
       const maxPeriod = (currentPeriod as bigint) + 10n;
       
-      for (let period = 0n; period <= maxPeriod; period++) {
-        // For each period, check the stakeID (which matches period for TEAM staking)
+      for (let stakeID = 1n; stakeID <= maxPeriod; stakeID += 2n) {
+        // Only check odd periods (1, 3, 5, 7, etc.) since those are staking periods
         try {
-          const balance = await getUserStakedForPeriod(period, period);
+          const balance = await getUserStakedForPeriod(stakeID);
           
           if (balance > 0n) {
+            // Get original staked amount for this period
+            const originalAmount = await publicClient.readContract({
+              address: TEAM_CONTRACT_ADDRESS,
+              abi: TEAM_ABI,
+              functionName: 'getAddressPeriodEndTotal',
+              args: [address, stakeID, stakeID],
+            }) as bigint;
+            
             stakes.push({
-              stakeID: period,
-              period: period,
-              balance: balance,
+              stakeID: stakeID,
+              period: stakeID, // For TEAM, stakeID = period
+              balance: balance, // Current withdrawable balance
+              originalBalance: originalAmount, // Original amount staked
             });
           }
         } catch (error) {
-          // Skip periods with errors
+          // Skip stakeIDs with errors
           continue;
         }
       }
