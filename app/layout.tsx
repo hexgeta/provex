@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 import { Providers } from '@/components/Providers'
 import AppKitProvider from '@/context/AppKitProvider'
 import { Toaster } from '@/components/ui/toaster'
+import AnimatedBackgroundWrapper from '@/components/AnimatedBackgroundWrapper'
 import { headers } from 'next/headers'
 
 // Static layout with revalidation
@@ -81,7 +82,8 @@ export default async function RootLayout({
       <body className="min-h-screen bg-black text-white">
         <AppKitProvider cookies={cookies}>
           <Providers>
-            <div className="flex flex-col min-h-screen">
+            <AnimatedBackgroundWrapper />
+            <div className="flex flex-col min-h-screen relative z-10">
               <NavBar />
               <main className="flex-grow">{children}</main>
               <Footer />

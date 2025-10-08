@@ -44,6 +44,8 @@ export default function TeamStakingInterface() {
     checkPrepareClaimStatus,
     getClaimableAmount,
     checkHasClaimed,
+    getUserStakedForPeriod,
+    getAllUserStakes,
   } = useTeamStaking();
 
   // Use BASE pool hook to get stake status and countdown data
@@ -66,11 +68,19 @@ export default function TeamStakingInterface() {
   });
   const [stakeEndCountdown, setStakeEndCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
+  // Period-specific state
+  const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, stakeNumber: number, amount: string, formattedAmount: string, status: 'active' | 'pending' | 'expired'}[]>([]);
+  const [selectedStakePeriod, setSelectedStakePeriod] = useState<number | null>(null);
+  const [isLoadingStakes, setIsLoadingStakes] = useState(false);
+  const [selectedPeriodBalance, setSelectedPeriodBalance] = useState('0');
+  const [selectedPeriodFullPrecision, setSelectedPeriodFullPrecision] = useState('0');
+  const [stakesLoaded, setStakesLoaded] = useState(false);
+  
   const stakeAmountRef = useRef<HTMLInputElement>(null);
   const unstakeAmountRef = useRef<HTMLInputElement>(null);
 
   // Default to current period for unstaking and claiming
-  const currentStakeID = currentPeriod ? currentPeriod.toString() : '';
+  const currentStakeID = selectedStakePeriod !== null ? selectedStakePeriod.toString() : (currentPeriod ? currentPeriod.toString() : '');
 
   // Auto-fill stake ID for claims with current period
   useEffect(() => {
@@ -78,6 +88,85 @@ export default function TeamStakingInterface() {
       setSelectedClaimStakeID(currentPeriod.toString());
     }
   }, [currentPeriod, selectedClaimStakeID]);
+
+  // Fetch all user stakes across periods - only once on mount or when address/period changes
+  useEffect(() => {
+    const fetchAllStakesByPeriod = async () => {
+      if (!address || !currentPeriod || !getAllUserStakes || stakesLoaded) return;
+
+      setIsLoadingStakes(true);
+      try {
+        const allStakes = await getAllUserStakes();
+        
+        // Convert to array and format for display with status
+        const current = Number(currentPeriod);
+        const formatted = allStakes
+          .filter(({ period }) => Number(period) % 2 === 1) // Only odd periods (staking periods)
+          .map(({ stakeID, period, balance }) => {
+            const periodNum = Number(period);
+            
+            // Determine status based on current period and staking period
+            let status: 'active' | 'pending' | 'expired';
+            if (periodNum < current) {
+              status = 'expired';
+            } else if (periodNum === current) {
+              status = 'active';
+            } else {
+              status = 'pending';
+            }
+            
+            const balanceFormatted = formatUnits(balance, 8);
+            const numericBalance = parseFloat(balanceFormatted);
+            
+            return {
+              period: periodNum,
+              stakeNumber: (periodNum + 1) / 2, // Calculate stake number from period: 1→1, 3→2, 5→3, etc.
+              amount: balanceFormatted,
+              formattedAmount: formatNumberClean(numericBalance),
+              status,
+            };
+          })
+          .sort((a, b) => a.stakeNumber - b.stakeNumber); // Sort by stake number ascending
+
+        setAllPeriodCommitments(formatted);
+        setStakesLoaded(true);
+        
+        // Auto-select stake: priority is Active → Expired → Pending
+        if (formatted.length > 0) {
+          const activeStake = formatted.find(s => s.status === 'active');
+          const expiredStake = formatted.find(s => s.status === 'expired');
+          const pendingStake = formatted.find(s => s.status === 'pending');
+          
+          const defaultStake = activeStake || expiredStake || pendingStake || formatted[0];
+          setSelectedStakePeriod(defaultStake.period);
+        }
+      } catch (error) {
+        console.error('Error fetching stakes:', error);
+      } finally {
+        setIsLoadingStakes(false);
+      }
+    };
+
+    fetchAllStakesByPeriod();
+  }, [address, currentPeriod, getAllUserStakes, stakesLoaded]);
+
+  // Reset stakes loaded flag when address or chain changes
+  useEffect(() => {
+    setStakesLoaded(false);
+    setAllPeriodCommitments([]);
+    setSelectedStakePeriod(null);
+  }, [address, chain?.id]);
+
+  // Update selected period balance when selection changes
+  useEffect(() => {
+    if (selectedStakePeriod !== null) {
+      const selectedCommitment = allPeriodCommitments.find(c => c.period === selectedStakePeriod);
+      if (selectedCommitment) {
+        setSelectedPeriodBalance(selectedCommitment.formattedAmount);
+        setSelectedPeriodFullPrecision(selectedCommitment.amount);
+      }
+    }
+  }, [selectedStakePeriod, allPeriodCommitments]);
 
   // Countdown timer for when BASE stake ends
   useEffect(() => {
@@ -120,6 +209,14 @@ export default function TeamStakingInterface() {
 
   const removeCommas = (value: string) => value.replace(/,/g, '');
 
+  // Format number without trailing zeros
+  const formatNumberClean = (value: number): string => {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 8,
+    });
+  };
+
   const handleAmountChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: (value: string) => void,
@@ -147,6 +244,8 @@ export default function TeamStakingInterface() {
       const amountBigInt = parseUnits(stakeAmount, 8);
       await stakeTeam(amountBigInt);
       setStakeAmount('');
+      // Refetch stakes after staking
+      setStakesLoaded(false);
       alert('Successfully staked TEAM!');
     } catch (error: any) {
       console.error('Stake error:', error);
@@ -162,8 +261,8 @@ export default function TeamStakingInterface() {
     
     setEarlyUnstakeDetails({
       amount: formatNumberWithCommas(unstakeAmount),
-      penalty: penalty.toFixed(8),
-      afterPenalty: afterPenalty.toFixed(8),
+      penalty: formatNumberClean(penalty),
+      afterPenalty: formatNumberClean(afterPenalty),
     });
     
     setShowEarlyUnstakeDialog(true);
@@ -179,6 +278,8 @@ export default function TeamStakingInterface() {
       const amountBigInt = parseUnits(unstakeAmount, 8);
       await earlyEndStake(stakeIDBigInt, amountBigInt);
       setUnstakeAmount('');
+      // Refetch stakes after unstaking
+      setStakesLoaded(false);
       alert('Successfully unstaked TEAM (with penalty)!');
     } catch (error: any) {
       console.error('Early end stake error:', error);
@@ -194,6 +295,8 @@ export default function TeamStakingInterface() {
       const amountBigInt = parseUnits(unstakeAmount, 8);
       await endCompletedStake(stakeIDBigInt, amountBigInt);
       setUnstakeAmount('');
+      // Refetch stakes after unstaking
+      setStakesLoaded(false);
       alert('Successfully unstaked TEAM!');
     } catch (error: any) {
       console.error('End stake error:', error);
@@ -207,6 +310,8 @@ export default function TeamStakingInterface() {
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
       await extendStake(stakeIDBigInt);
+      // Refetch stakes after extending
+      setStakesLoaded(false);
       alert('Successfully extended stake to next period!');
     } catch (error: any) {
       console.error('Extend error:', error);
@@ -220,6 +325,8 @@ export default function TeamStakingInterface() {
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
       await restakeExpiredStake(stakeIDBigInt);
+      // Refetch stakes after restaking
+      setStakesLoaded(false);
       alert('Successfully restaked for next period!');
     } catch (error: any) {
       console.error('Restake error:', error);
@@ -244,7 +351,7 @@ export default function TeamStakingInterface() {
     <>
       {/* Period Banner */}
       {!isStakingPeriod && currentPeriod && Number(currentPeriod) > 0 && (
-        <div className="mb-6 p-4 bg-black border-2 border-white/30 rounded-xl">
+        <div className="mb-6 p-4 bg-black border-1 border-white/50 rounded-xl">
           <p className="text-white font-semibold text-center">
             🎉 Period {completedPeriod} has ended! Rewards are available to claim below
           </p>
@@ -253,14 +360,14 @@ export default function TeamStakingInterface() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="bg-black border-2 border-white/20 rounded-xl p-6">
-          <h3 className="text-sm text-gray-300 mb-2">Your TEAM Balance</h3>
+        <div className="bg-black border-2 border-white/50 rounded-xl p-6">
+          <h3 className="text-sm text-gray-300 mb-2">Liquid TEAM Balance</h3>
           <p className="text-3xl font-bold text-white">{formattedTeamBalance}</p>
           <p className="text-xs text-gray-400 mt-1">Available to stake</p>
         </div>
         
         <div className="bg-black border-2 border-white/20 rounded-xl p-6">
-          <h3 className="text-sm text-gray-300 mb-2">Your Staked TEAM</h3>
+          <h3 className="text-sm text-gray-300 mb-2">Your Total Staked TEAM</h3>
           <p className="text-3xl font-bold text-white">{formattedUserStaked}</p>
           <p className="text-xs text-gray-400 mt-1">Currently locked</p>
         </div>
@@ -329,7 +436,7 @@ export default function TeamStakingInterface() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin text-green-400" />
                     Processing...
                   </span>
                 ) : (
@@ -360,6 +467,66 @@ export default function TeamStakingInterface() {
             <h2 className="text-3xl font-bold text-white mb-6">Unstake TEAM</h2>
             
             <div className="space-y-4">
+              {/* Period Selector */}
+              {isLoadingStakes ? (
+                <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
+                  <p className="text-sm text-gray-400 text-center">
+                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-green-400" />
+                    Loading your stakes...
+                  </p>
+                </div>
+              ) : allPeriodCommitments.length > 0 ? (
+                <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold text-white">Select Stake to Manage</div>
+                    <div className="text-xs text-gray-400">{allPeriodCommitments.length} stake{allPeriodCommitments.length !== 1 ? 's' : ''}</div>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {allPeriodCommitments.map(({ period, stakeNumber, formattedAmount, status }) => {
+                      const isSelected = selectedStakePeriod === period;
+                      return (
+                        <label 
+                          key={period} 
+                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'bg-white/10 border border-white/40' 
+                              : 'bg-white/5 border border-transparent hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="selectedStake"
+                              checked={isSelected}
+                              onChange={() => setSelectedStakePeriod(period)}
+                              className="w-4 h-4 accent-green-400 cursor-pointer"
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-300 font-medium">Stake {stakeNumber}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                status === 'active' ? 'bg-green-500/20 text-green-300' :
+                                status === 'pending' ? 'bg-blue-500/20 text-blue-300' :
+                                'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {status === 'active' ? 'Active' : status === 'pending' ? 'Pre-committed' : 'Expired'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-sm font-semibold text-white">{formattedAmount} TEAM</div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
+                  <p className="text-sm text-gray-400 text-center">
+                    No TEAM stakes found. Stake TEAM to get started!
+                  </p>
+                </div>
+              )}
+
               <div>
                 <input
                   ref={unstakeAmountRef}
@@ -368,15 +535,17 @@ export default function TeamStakingInterface() {
                   onChange={(e) => handleAmountChange(e, setUnstakeAmount, unstakeAmountRef)}
                   placeholder="0.00"
                   className="w-full bg-black border-2 border-white/20 rounded-lg p-4 text-white text-lg placeholder-gray-400 focus:outline-none focus:border-white"
+                  disabled={!selectedStakePeriod}
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-gray-400 text-sm">
-                    Staked: {formattedUserStaked} TEAM
+                    Staked: {selectedPeriodBalance} TEAM {selectedStakePeriod && `(Stake ${(selectedStakePeriod + 1) / 2})`}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setUnstakeAmount(fullPrecisionUserStaked)}
+                    onClick={() => setUnstakeAmount(selectedPeriodFullPrecision)}
                     className="text-white hover:text-gray-300 text-sm font-semibold uppercase"
+                    disabled={!selectedStakePeriod}
                   >
                     MAX
                   </button>
@@ -387,7 +556,7 @@ export default function TeamStakingInterface() {
               {baseStakeIsActive === undefined ? (
                 <div className="p-4 bg-gray-700/30 border border-gray-600/30 rounded-lg">
                   <p className="text-sm text-gray-400 text-center">
-                    <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-green-400" />
                     Checking BASE stake status...
                   </p>
                 </div>
@@ -395,16 +564,16 @@ export default function TeamStakingInterface() {
                 <>
                   <button
                     onClick={handleEarlyEndStake}
-                    disabled={!unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
+                    disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                      unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
+                      selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
                         ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50'
                         : 'bg-gray-700/50 text-gray-500 cursor-not-allowed border-2 border-gray-700/50'
                     }`}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin text-green-400" />
                         Processing...
                       </span>
                     ) : (
@@ -422,16 +591,16 @@ export default function TeamStakingInterface() {
                 <>
                   <button
                     onClick={handleEndCompleted}
-                    disabled={!unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
+                    disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                      unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
+                      selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
                         ? 'bg-white/10 hover:bg-white/20 text-white'
                         : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                     }`}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin text-green-400" />
                         Processing...
                       </span>
                     ) : (
@@ -448,18 +617,18 @@ export default function TeamStakingInterface() {
               )}
 
               {/* Show Extend during reload phase (even periods) only */}
-              {!isStakingPeriod && (
+              {!isStakingPeriod && selectedStakePeriod !== null && (
                 <>
                   <button
                     onClick={handleExtend}
-                    disabled={isLoading}
+                    disabled={!selectedStakePeriod || isLoading}
                     className="w-full py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
                   >
                     Extend Stake
                   </button>
                   <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
                     <p className="text-sm text-gray-300">
-                      <strong>Extend Stake:</strong> Roll your stake to the next period during the expiry window.
+                      <strong>Extend Stake:</strong> Roll Stake {(selectedStakePeriod + 1) / 2} to the next period during the expiry window.
                     </p>
                   </div>
                 </>
@@ -709,7 +878,7 @@ function RewardsClaimSection({
                 }`}
               >
                 {loadingToken === token ? (
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto text-green-400" />
                 ) : (
                   <>
                     {prepareStatuses[token] ? '✅' : '⚙️'} {token}
@@ -757,7 +926,7 @@ function RewardsClaimSection({
                     }`}
                   >
                     {loadingToken === token ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin text-green-400" />
                     ) : canClaim ? (
                       'Claim'
                     ) : hasClaimed ? (

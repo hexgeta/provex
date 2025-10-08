@@ -12,6 +12,8 @@ interface PoolContextType {
 
 const PoolContext = createContext<PoolContextType | undefined>(undefined);
 
+export { PoolContext };
+
 export function PoolProvider({ children }: { children: ReactNode }) {
   const { chain } = useAccount();
   const [selectedTicker, setSelectedTicker] = useState<PoolTicker>('MAXI'); // Default to MAXI

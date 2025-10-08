@@ -65,6 +65,7 @@ const REWARD_BUCKET_ABI = parseAbi([
   'function getClaimableAmount(address user, uint256 period, string memory ticker, uint256 stakeID) public view returns (uint256, address)',
   'function getPeriodRedemptionRates(string memory ticker, uint256 period) public view returns (uint256)',
   'function periodEndBalance(string memory ticker, uint256 period) public view returns (uint256)',
+  'function prepareClaim(string memory ticker, uint256 period) external',
 ]);
 
 // ABI for DHStakeRewardDistribution contract
@@ -143,12 +144,20 @@ export default function StakeInterface({
   const [loadedDataPool, setLoadedDataPool] = useState<string>(''); // Track which pool the data is for
   const [loadedPeriodsPool, setLoadedPeriodsPool] = useState<string>(''); // Track which pool periods data is loaded for
   const [isLoadingStakes, setIsLoadingStakes] = useState(false); // Loading state for stakes
-  const [claimableRewards, setClaimableRewards] = useState<string>('0'); // Claimable rewards for selected expired stake
-  const [hasClaimedRewards, setHasClaimedRewards] = useState<boolean>(false); // Track if rewards already claimed
   const [historicalRewards, setHistoricalRewards] = useState<{period: number, rewards: string, claimed: boolean, globalStaked: string}[]>([]); // Rewards for all stakes
   const [allHistoricalPeriods, setAllHistoricalPeriods] = useState<{period: number, stakeNumber: number, status: 'active' | 'pending' | 'expired', globalStaked: string, rewards: string}[]>([]); // All periods
   const [loadedHistoricalPool, setLoadedHistoricalPool] = useState<string>(''); // Track which pool historical data is loaded for
-  const [isClaimingRewards, setIsClaimingRewards] = useState(false); // Loading state specifically for claiming rewards
+  
+  // Multi-token rewards support
+  const SUPPORTED_REWARD_TOKENS = ['HEX', 'MAXI', 'HDRN', 'BASE', 'TRIO', 'LUCKY', 'DECI', 'TEAM', 'ICSA'];
+  const [tokenRewards, setTokenRewards] = useState<{
+    token: string;
+    claimableAmount: string;
+    periodEndBalance: string;
+    hasClaimed: boolean;
+  }[]>([]);
+  const [isClaimingRewards, setIsClaimingRewards] = useState<{ [token: string]: boolean }>({}); // Loading state per token
+  const [isPreparingClaims, setIsPreparingClaims] = useState<{ [token: string]: boolean }>({}); // Loading state per token
 
   // Diamond Hands hook - only if pool has a DH contract
   const dhContractAddress = DIAMOND_HANDS_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
@@ -184,40 +193,11 @@ export default function StakeInterface({
   const rewardBucketAddressForPool = REWARD_BUCKET_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
   const stakeRewardDistributionAddressForPool = STAKE_REWARD_DISTRIBUTION_CONTRACTS[selectedTicker] as `0x${string}` | undefined;
 
-  // Read claimable rewards for the selected expired stake
-  const { data: claimableRewardsData, refetch: refetchClaimableRewards } = useContractRead({
-    address: rewardBucketAddressForPool,
-    abi: REWARD_BUCKET_ABI,
-    functionName: 'getClaimableAmount',
-    args: userAddress && selectedStakePeriod !== null ? [
-      userAddress,
-      BigInt(selectedStakePeriod),
-      selectedTicker.replace(/^e/, '').replace(/\d+$/, ''), // Remove 'e' prefix and numbers for ticker
-      BigInt(selectedStakePeriod)
-    ] : undefined,
-    query: {
-      enabled: !!userAddress && !!rewardBucketAddressForPool && selectedStakePeriod !== null && dhUnlockDialogOpen,
-    },
-  });
-
-  // Check if rewards have already been claimed
-  const { data: hasClaimedRewardsData, refetch: refetchHasClaimed } = useContractRead({
-    address: stakeRewardDistributionAddressForPool,
-    abi: DH_STAKE_REWARD_DISTRIBUTION_ABI,
-    functionName: 'didUserStakeClaimFromPeriod',
-    args: userAddress && selectedStakePeriod !== null ? [
-      userAddress,
-      BigInt(selectedStakePeriod),
-      BigInt(selectedStakePeriod),
-      selectedTicker.replace(/^e/, '').replace(/\d+$/, '') // Remove 'e' prefix and numbers for ticker
-    ] : undefined,
-    query: {
-      enabled: !!userAddress && !!stakeRewardDistributionAddressForPool && selectedStakePeriod !== null && dhUnlockDialogOpen,
-    },
-  });
-
   // Contract write for claiming rewards
   const { writeContractAsync: claimRewardsWrite } = useWriteContract();
+  
+  // Contract write for preparing claims
+  const { writeContractAsync: prepareClaimWrite } = useWriteContract();
 
   // Get public client for batch reading rewards
   const publicClient = usePublicClient();
@@ -271,6 +251,9 @@ export default function StakeInterface({
     setAllPeriodCommitments([]);
     setSelectedStakePeriod(null);
     setWithdrawAmounts({}); // Clear all withdraw amounts
+    setTokenRewards([]); // Reset multi-token rewards
+    setIsClaimingRewards({}); // Reset claiming states
+    setIsPreparingClaims({}); // Reset preparing states
     setLoadedDataPool(''); // Mark data as invalid
     setLoadedPeriodsPool(''); // Mark periods data as invalid - will reload on next dialog open
     setLoadedHistoricalPool(''); // Mark historical data as invalid - will reload on next dialog open
@@ -373,7 +356,7 @@ export default function StakeInterface({
               status = 'expired';
             } else if (period === current) {
               status = 'active';
-        } else {
+          } else {
               status = 'pending';
             }
             
@@ -408,33 +391,85 @@ export default function StakeInterface({
     fetchAllStakesByPeriod();
   }, [dhUnlockDialogOpen, currentPeriod, getAllUserStakes, dhContractAddress, selectedPool.ticker, loadedPeriodsPool]);
 
-  // Update claimable rewards when data changes or selected stake changes
+  // Fetch rewards for ALL supported tokens when selected stake changes
   useEffect(() => {
-    if (claimableRewardsData && Array.isArray(claimableRewardsData) && claimableRewardsData.length >= 1) {
-      const rewardsAmount = claimableRewardsData[0] as bigint;
-      const formatted = (Number(rewardsAmount) / 1e8).toFixed(2);
-      setClaimableRewards(formatted);
-        } else {
-      setClaimableRewards('0');
-    }
-  }, [claimableRewardsData]);
+    const fetchAllTokenRewards = async () => {
+      if (!selectedStakePeriod || !dhUnlockDialogOpen || !publicClient || !rewardBucketAddressForPool || !stakeRewardDistributionAddressForPool || !userAddress) {
+        return;
+      }
 
-  // Update has claimed status
-  useEffect(() => {
-    if (typeof hasClaimedRewardsData === 'boolean') {
-      setHasClaimedRewards(hasClaimedRewardsData);
-    } else {
-      setHasClaimedRewards(false);
-    }
-  }, [hasClaimedRewardsData]);
+      try {
+        const stakedTokenTicker = selectedTicker.replace(/^e/, '').replace(/\d+$/, ''); // The token that was staked
+        
+        // Fetch rewards for all supported tokens in parallel
+        const rewardsData = await Promise.all(
+          SUPPORTED_REWARD_TOKENS.map(async (rewardToken) => {
+            try {
+              // Get claimable amount
+              const claimableData = await publicClient.readContract({
+                address: rewardBucketAddressForPool,
+                abi: REWARD_BUCKET_ABI,
+                functionName: 'getClaimableAmount',
+                args: [userAddress, BigInt(selectedStakePeriod), rewardToken, BigInt(selectedStakePeriod)],
+              }) as any;
 
-  // Refetch rewards data when selected stake changes
-  useEffect(() => {
-    if (selectedStakePeriod !== null && dhUnlockDialogOpen) {
-      refetchClaimableRewards?.();
-      refetchHasClaimed?.();
-    }
-  }, [selectedStakePeriod, dhUnlockDialogOpen, refetchClaimableRewards, refetchHasClaimed]);
+              const claimableAmount = Array.isArray(claimableData) && claimableData.length >= 1 
+                ? (Number(claimableData[0] as bigint) / 1e8).toFixed(2)
+                : '0.00';
+
+              // Get period end balance (check if prepared)
+              const periodBalance = await publicClient.readContract({
+                address: rewardBucketAddressForPool,
+                abi: REWARD_BUCKET_ABI,
+                functionName: 'periodEndBalance',
+                args: [rewardToken, BigInt(selectedStakePeriod)],
+              }) as bigint;
+
+              const periodEndBalance = (Number(periodBalance) / 1e8).toFixed(2);
+
+              // Check if already claimed
+              const hasClaimed = await publicClient.readContract({
+                address: stakeRewardDistributionAddressForPool,
+                abi: DH_STAKE_REWARD_DISTRIBUTION_ABI,
+                functionName: 'didUserStakeClaimFromPeriod',
+                args: [userAddress, BigInt(selectedStakePeriod), BigInt(selectedStakePeriod), rewardToken],
+              }) as boolean;
+
+              return {
+                token: rewardToken,
+                claimableAmount,
+                periodEndBalance,
+                hasClaimed: hasClaimed || false,
+              };
+            } catch (error) {
+              // If error, return zero values for this token
+              return {
+                token: rewardToken,
+                claimableAmount: '0.00',
+                periodEndBalance: '0.00',
+                hasClaimed: false,
+              };
+            }
+          })
+        );
+
+        // Filter to only show tokens with either:
+        // 1. Claimable rewards > 0, OR
+        // 2. Period end balance > 0 (prepared but maybe user has no rewards), OR
+        // 3. Already claimed (show that they claimed)
+        const tokensWithRewards = rewardsData.filter(
+          r => parseFloat(r.claimableAmount) > 0 || parseFloat(r.periodEndBalance) > 0 || r.hasClaimed
+        );
+
+        setTokenRewards(tokensWithRewards);
+      } catch (error) {
+        // Silent error handling
+        setTokenRewards([]);
+      }
+    };
+
+    fetchAllTokenRewards();
+  }, [selectedStakePeriod, dhUnlockDialogOpen, publicClient, rewardBucketAddressForPool, stakeRewardDistributionAddressForPool, userAddress, selectedTicker, SUPPORTED_REWARD_TOKENS]);
 
   // Fetch ALL historical periods (GLOBAL - not just user's periods) when dialog opens
   useEffect(() => {
@@ -1085,49 +1120,73 @@ export default function StakeInterface({
     }
   };
 
-  // Handle claim rewards for expired stakes
-  const handleClaimRewards = async () => {
+  // Handle claim rewards for expired stakes (accepts token parameter)
+  const handleClaimRewards = async (rewardToken: string, claimableAmount: string) => {
     if (!selectedStakePeriod || !userAddress || !claimRewardsWrite || !stakeRewardDistributionAddressForPool) {
       onTransactionError?.('Unable to claim rewards. Please try again.');
       return;
     }
 
-    if (hasClaimedRewards) {
-      onTransactionError?.('You have already claimed rewards for this stake.');
-      return;
-    }
-
-    if (!claimableRewards || parseFloat(claimableRewards) <= 0) {
-      onTransactionError?.('No rewards available to claim for this stake.');
-      return;
-    }
-
     try {
-      setIsClaimingRewards(true);
+      setIsClaimingRewards(prev => ({ ...prev, [rewardToken]: true }));
       onTransactionStart?.();
       
-      const ticker = selectedTicker.replace(/^e/, '').replace(/\d+$/, ''); // Remove 'e' prefix and numbers
       const txHash = await claimRewardsWrite({
         address: stakeRewardDistributionAddressForPool,
         abi: DH_STAKE_REWARD_DISTRIBUTION_ABI,
         functionName: 'claimRewards',
-        args: [BigInt(selectedStakePeriod), ticker, BigInt(selectedStakePeriod)],
+        args: [BigInt(selectedStakePeriod), rewardToken, BigInt(selectedStakePeriod)],
       });
 
       onTransactionSuccess?.(
-        `Successfully claimed ${claimableRewards} ${formatTickerName(selectedTicker)} rewards!`,
+        `Successfully claimed ${claimableAmount} ${rewardToken} rewards!`,
         txHash
       );
       
-      // Refetch the claim status
-      refetchHasClaimed?.();
-      refetchClaimableRewards?.();
+      // Refetch rewards data for all tokens
+      // Trigger re-fetch by incrementing a counter or resetting dependencies
+      setTokenRewards([]);
     } catch (error: any) {
       onTransactionError?.(
         error?.message || 'Failed to claim rewards. Please try again.'
       );
     } finally {
-      setIsClaimingRewards(false);
+      setIsClaimingRewards(prev => ({ ...prev, [rewardToken]: false }));
+      onTransactionEnd?.();
+    }
+  };
+
+  // Handle prepare claim (anyone can call this to prepare rewards for a period)
+  const handlePrepareClaim = async (rewardToken: string) => {
+    if (!selectedStakePeriod || !prepareClaimWrite || !rewardBucketAddressForPool) {
+      onTransactionError?.('Unable to prepare claims. Please try again.');
+      return;
+    }
+
+    try {
+      setIsPreparingClaims(prev => ({ ...prev, [rewardToken]: true }));
+      onTransactionStart?.();
+      
+      const txHash = await prepareClaimWrite({
+        address: rewardBucketAddressForPool,
+        abi: REWARD_BUCKET_ABI,
+        functionName: 'prepareClaim',
+        args: [rewardToken, BigInt(selectedStakePeriod)],
+      });
+
+      onTransactionSuccess?.(
+        `Successfully prepared ${rewardToken} claims for Stake ${((selectedStakePeriod + 1) / 2)}. Users can now claim their rewards!`,
+        txHash
+      );
+      
+      // Refetch rewards data for all tokens
+      setTokenRewards([]);
+    } catch (error: any) {
+      onTransactionError?.(
+        error?.message || 'Failed to prepare claims. Please try again.'
+      );
+    } finally {
+      setIsPreparingClaims(prev => ({ ...prev, [rewardToken]: false }));
       onTransactionEnd?.();
     }
   };
@@ -1835,53 +1894,99 @@ export default function StakeInterface({
                                   )}
                                 </button>
 
-                                {/* Rewards Section - Always show for expired stakes */}
+                                {/* Rewards Section - Show all tokens with available rewards */}
                                 <div className="space-y-3">
-                                  {/* Claimable Rewards - Show if > 0 and not claimed */}
-                                  {parseFloat(claimableRewards) > 0 && !hasClaimedRewards && (
-                                    <div className="p-4 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-600/40 rounded-xl">
-                                      <div className="flex items-center justify-between">
-                                        <div>
-                                          <div className="text-xs text-green-400 font-semibold mb-1">🎁 Claimable Rewards</div>
-                                          <div className="text-2xl font-bold text-green-300">{claimableRewards} {formatTickerName(selectedTicker)}</div>
-                                          <div className="text-xs text-green-500/70 mt-1">From penalties & airdrops</div>
-                                        </div>
-                                        <button
-                                          onClick={handleClaimRewards}
-                                          disabled={isClaimingRewards}
-                                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                                            !isClaimingRewards
-                                              ? 'bg-green-600 hover:bg-green-700 text-white'
-                                              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                          }`}
-                                        >
-                                          {isClaimingRewards ? (
-                                            <span className="flex items-center gap-2">
-                                              <Loader2 className="w-4 h-4 animate-spin" />
-                                              Claiming...
-                                            </span>
-                                          ) : (
-                                            'Claim Rewards'
-                                          )}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
+                                  {tokenRewards.length > 0 ? (
+                                    <>
+                                      <div className="text-sm font-semibold text-white/90 mb-2">Available Reward Tokens:</div>
+                                      {tokenRewards.map(({ token, claimableAmount, periodEndBalance, hasClaimed }) => {
+                                        const isClaimingThisToken = isClaimingRewards[token] || false;
+                                        const isPreparingThisToken = isPreparingClaims[token] || false;
 
-                                  {/* No Rewards Message */}
-                                  {parseFloat(claimableRewards) === 0 && !hasClaimedRewards && (
+                                        // Rewards not prepared yet
+                                        if (parseFloat(periodEndBalance) === 0 && !hasClaimed) {
+                                          return (
+                                            <div key={token} className="p-4 bg-gradient-to-r from-yellow-900/30 to-amber-900/30 border border-yellow-600/40 rounded-xl">
+                                              <div className="flex items-center justify-between">
+                                                <div>
+                                                  <div className="text-xs text-yellow-400 font-semibold mb-1">⏳ {token} Rewards Pending</div>
+                                                  <div className="text-sm text-yellow-300/80">Claims need to be prepared first</div>
+                                                  <div className="text-xs text-yellow-500/70 mt-1">Anyone can prepare by clicking →</div>
+                                                </div>
+                                                <button
+                                                  onClick={() => handlePrepareClaim(token)}
+                                                  disabled={isPreparingThisToken}
+                                                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                                    !isPreparingThisToken
+                                                      ? 'bg-white hover:bg-gray-200 text-black'
+                                                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  {isPreparingThisToken ? (
+                                                    <span className="flex items-center gap-2">
+                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                      Preparing...
+                                                    </span>
+                                                  ) : (
+                                                    'Prepare Claims'
+                                                  )}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+
+                                        // Rewards prepared and claimable
+                                        if (parseFloat(periodEndBalance) > 0 && parseFloat(claimableAmount) > 0 && !hasClaimed) {
+                                          return (
+                                            <div key={token} className="p-4 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-600/40 rounded-xl">
+                                              <div className="flex items-center justify-between">
+                                                <div>
+                                                  <div className="text-xs text-green-400 font-semibold mb-1">🎁 {token} Rewards</div>
+                                                  <div className="text-2xl font-bold text-green-300">{claimableAmount} {token}</div>
+                                                  <div className="text-xs text-green-500/70 mt-1">From penalties & airdrops</div>
+                                                </div>
+                                                <button
+                                                  onClick={() => handleClaimRewards(token, claimableAmount)}
+                                                  disabled={isClaimingThisToken}
+                                                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                                    !isClaimingThisToken
+                                                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  {isClaimingThisToken ? (
+                                                    <span className="flex items-center gap-2">
+                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                      Claiming...
+                                                    </span>
+                                                  ) : (
+                                                    'Claim Rewards'
+                                                  )}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+
+                                        // Already claimed
+                                        if (hasClaimed) {
+                                          return (
+                                            <div key={token} className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-xl">
+                                              <p className="text-xs text-gray-400">
+                                                ✅ {token} rewards already claimed for this stake.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+
+                                        return null;
+                                      })}
+                                    </>
+                                  ) : (
                                     <div className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-xl">
                                       <p className="text-xs text-gray-400">
-                                        💎 No rewards available for this stake (no early exits during this period).
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {/* Already Claimed Message */}
-                                  {hasClaimedRewards && (
-                                    <div className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-xl">
-                                      <p className="text-xs text-gray-400">
-                                        ✅ Rewards already claimed for this stake.
+                                        💎 No rewards available for this stake (no early exits or airdrops during this period).
                                       </p>
                                     </div>
                                   )}

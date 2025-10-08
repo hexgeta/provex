@@ -175,6 +175,63 @@ export function useTeamStaking() {
     }
   };
 
+  // Get user's staked amount for a specific period
+  const getUserStakedForPeriod = async (period: bigint, stakeID: bigint) => {
+    if (!publicClient || !address) return 0n;
+    
+    try {
+      const amount = await publicClient.readContract({
+        address: TEAM_CONTRACT_ADDRESS,
+        abi: TEAM_ABI,
+        functionName: 'getAddressPeriodEndTotal',
+        args: [address, period, stakeID],
+      });
+      return amount as bigint;
+    } catch (error) {
+      console.error('Error getting user staked for period:', error);
+      return 0n;
+    }
+  };
+
+  // Get all user's stakes across periods
+  const getAllUserStakes = async () => {
+    if (!publicClient || !address || !currentPeriod) return [];
+
+    try {
+      const stakes: Array<{
+        stakeID: bigint;
+        period: bigint;
+        balance: bigint;
+      }> = [];
+
+      // Loop through all possible periods up to current + some buffer
+      const maxPeriod = (currentPeriod as bigint) + 10n;
+      
+      for (let period = 0n; period <= maxPeriod; period++) {
+        // For each period, check the stakeID (which matches period for TEAM staking)
+        try {
+          const balance = await getUserStakedForPeriod(period, period);
+          
+          if (balance > 0n) {
+            stakes.push({
+              stakeID: period,
+              period: period,
+              balance: balance,
+            });
+          }
+        } catch (error) {
+          // Skip periods with errors
+          continue;
+        }
+      }
+
+      return stakes;
+    } catch (error) {
+      console.error('Error fetching all user stakes:', error);
+      return [];
+    }
+  };
+
   // Stake TEAM
   const stakeTeam = async (amount: bigint) => {
     if (!walletClient || !address) {
@@ -406,6 +463,8 @@ export function useTeamStaking() {
     checkPrepareClaimStatus,
     getClaimableAmount,
     checkHasClaimed,
+    getUserStakedForPeriod,
+    getAllUserStakes,
     
     // Write functions
     stakeTeam,
