@@ -390,6 +390,40 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     }
   };
 
+  // Get user's historical staked amounts for past periods
+  const getHistoricalPeriods = async (numPeriods: number = 10) => {
+    if (!publicClient || !address || !currentPeriod) return [];
+
+    try {
+      const current = currentPeriod as bigint;
+      const historical: Array<{
+        period: bigint;
+        amount: bigint;
+      }> = [];
+
+      // Get data for completed periods (current period - numPeriods to current period - 1)
+      for (let i = 1; i <= numPeriods; i++) {
+        const period = current - BigInt(i);
+        if (period < 0n) break; // Don't go before period 0
+
+        const amount = await getUserStakedForPeriod(period);
+        
+        // Only add if there was an amount staked
+        if (amount > 0n) {
+          historical.push({
+            period,
+            amount,
+          });
+        }
+      }
+
+      return historical;
+    } catch (error) {
+      console.error('Error getting historical periods:', error);
+      return [];
+    }
+  };
+
   return {
     userStakedAmount,
     globalStakedAmount,
@@ -405,6 +439,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     getUserStakedForPeriod,
     getGlobalStakedForPeriod,
     getAllUserStakes,
+    getHistoricalPeriods,
     calculatePenalty,
     withdrawCompleted,
     withdrawEarly,

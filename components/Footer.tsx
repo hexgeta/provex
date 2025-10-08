@@ -28,7 +28,7 @@ const Footer = () => {
             <ul className="space-y-1">
               <li>
                 <Link 
-                  href="/team" 
+                  href="/#" 
                   className="text-sm text-[rgb(153,153,153)] hover:text-white transition-colors"
                 >
                   TEAM rewards
