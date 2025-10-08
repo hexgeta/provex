@@ -391,7 +391,7 @@ export default function TeamStakingInterface() {
           <p className="text-xs text-gray-400 mt-1">Available to stake</p>
         </div>
         
-        <div className="bg-black border-2 border-white/20 rounded-xl p-6">
+        <div className="bg-black border-2 border-white/50 rounded-xl p-6">
           <h3 className="text-sm text-gray-300 mb-2">Your Total Staked TEAM</h3>
           <p className="text-3xl font-bold text-white">{formattedUserStaked}</p>
           <p className="text-xs text-gray-400 mt-1">Currently locked</p>
@@ -461,7 +461,7 @@ export default function TeamStakingInterface() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-green-400" />
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
                     Processing...
                   </span>
                 ) : (
@@ -496,7 +496,7 @@ export default function TeamStakingInterface() {
               {isLoadingStakes ? (
                 <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
                   <p className="text-sm text-gray-400 text-center">
-                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-green-400" />
+                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
                     Loading your stakes...
                   </p>
                 </div>
@@ -581,7 +581,7 @@ export default function TeamStakingInterface() {
               {baseStakeIsActive === undefined ? (
                 <div className="p-4 bg-gray-700/30 border border-gray-600/30 rounded-lg">
                   <p className="text-sm text-gray-400 text-center">
-                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-green-400" />
+                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
                     Checking BASE stake status...
                   </p>
                 </div>
@@ -598,7 +598,7 @@ export default function TeamStakingInterface() {
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-green-400" />
+                        <Loader2 className="w-5 h-5 animate-spin text-white" />
                         Processing...
                       </span>
                     ) : (
@@ -625,7 +625,7 @@ export default function TeamStakingInterface() {
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-green-400" />
+                        <Loader2 className="w-5 h-5 animate-spin text-white" />
                         Processing...
                       </span>
                     ) : (
@@ -666,6 +666,8 @@ export default function TeamStakingInterface() {
         <TabsContent value="rewards" className="mt-0">
           <RewardsClaimSection
             currentPeriod={completedPeriod}
+            actualCurrentPeriod={currentPeriod}
+            allPeriodCommitments={allPeriodCommitments}
             selectedClaimStakeID={selectedClaimStakeID}
             setSelectedClaimStakeID={setSelectedClaimStakeID}
             isLoading={isLoading}
@@ -732,6 +734,8 @@ export default function TeamStakingInterface() {
 // Rewards Claim Component
 function RewardsClaimSection({
   currentPeriod,
+  actualCurrentPeriod,
+  allPeriodCommitments,
   selectedClaimStakeID,
   setSelectedClaimStakeID,
   isLoading,
@@ -743,49 +747,149 @@ function RewardsClaimSection({
   isStakingPeriod,
   stakeEndCountdown,
 }: any) {
-  const [prepareStatuses, setPrepareStatuses] = useState<Record<string, boolean>>({});
-  const [claimableAmounts, setClaimableAmounts] = useState<Record<string, bigint>>({});
-  const [claimedStatuses, setClaimedStatuses] = useState<Record<string, boolean>>({});
+  const [periodRewardsData, setPeriodRewardsData] = useState<Record<number, {
+    prepareStatuses: Record<string, boolean>;
+    claimableAmounts: Record<string, bigint>;
+    claimedStatuses: Record<string, boolean>;
+    totalClaimable: number;
+    hasAnyRewards: boolean;
+  }>>({});
   const [loadingToken, setLoadingToken] = useState<string | null>(null);
+  const [isLoadingPeriods, setIsLoadingPeriods] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [rewardsLoaded, setRewardsLoaded] = useState(false);
 
+  // Load rewards data for all periods - only once
   useEffect(() => {
-    if (currentPeriod && selectedClaimStakeID) {
-      loadAllStatuses();
-    }
-  }, [currentPeriod, selectedClaimStakeID]);
-
-  const loadAllStatuses = async () => {
-    if (!currentPeriod) return;
-    const period = BigInt(currentPeriod);
-    const stakeID = BigInt(selectedClaimStakeID);
+    const loadAllPeriodsData = async () => {
+      if (!allPeriodCommitments || allPeriodCommitments.length === 0 || rewardsLoaded) return;
+      
+      setIsLoadingPeriods(true);
+      const newPeriodData: Record<number, any> = {};
+      
+      for (const commitment of allPeriodCommitments) {
+        const period = BigInt(commitment.period);
+        const stakeID = BigInt(commitment.period);
+        
+        const prepareStatuses: Record<string, boolean> = {};
+        const claimableAmounts: Record<string, bigint> = {};
+        const claimedStatuses: Record<string, boolean> = {};
+        let totalClaimable = 0;
+        
+        for (const token of REWARD_TOKENS) {
+          try {
+            const isPrepared = await checkPrepareClaimStatus(token, period);
+            prepareStatuses[token] = isPrepared;
+            
+            if (isPrepared) {
+              const { amount } = await getClaimableAmount(period, token, stakeID);
+              claimableAmounts[token] = amount;
+              
+              const hasClaimed = await checkHasClaimed(period, token, stakeID);
+              claimedStatuses[token] = hasClaimed;
+              
+              if (amount > 0n && !hasClaimed) {
+                totalClaimable += parseFloat(formatUnits(amount, 8));
+              }
+            }
+          } catch (error) {
+            console.error(`Error loading ${token} for period ${commitment.period}:`, error);
+          }
+        }
+        
+        newPeriodData[commitment.period] = {
+          prepareStatuses,
+          claimableAmounts,
+          claimedStatuses,
+          totalClaimable,
+          hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
+        };
+      }
+      
+      setPeriodRewardsData(newPeriodData);
+      setIsLoadingPeriods(false);
+      setRewardsLoaded(true);
+      
+      // Auto-select first period with rewards, or most recent expired period
+      if (!selectedPeriod && allPeriodCommitments.length > 0) {
+        const periodWithRewards = allPeriodCommitments.find((c: any) => 
+          newPeriodData[c.period]?.hasAnyRewards
+        );
+        const expiredPeriod = allPeriodCommitments.find((c: any) => c.status === 'expired');
+        const defaultPeriod = periodWithRewards || expiredPeriod || allPeriodCommitments[0];
+        setSelectedPeriod(defaultPeriod.period);
+        setSelectedClaimStakeID(defaultPeriod.period.toString());
+      }
+    };
     
-    const newPrepareStatuses: Record<string, boolean> = {};
-    const newClaimableAmounts: Record<string, bigint> = {};
-    const newClaimedStatuses: Record<string, boolean> = {};
+    loadAllPeriodsData();
+  }, [allPeriodCommitments, checkPrepareClaimStatus, getClaimableAmount, checkHasClaimed, rewardsLoaded]);
+
+  // Reset rewards loaded flag when commitments change
+  useEffect(() => {
+    setRewardsLoaded(false);
+    setPeriodRewardsData({});
+    setSelectedPeriod(null);
+  }, [allPeriodCommitments]);
+
+  // Update selected claim stake ID when period changes
+  useEffect(() => {
+    if (selectedPeriod !== null) {
+      setSelectedClaimStakeID(selectedPeriod.toString());
+    }
+  }, [selectedPeriod]);
+
+  const currentPeriodData = selectedPeriod !== null ? periodRewardsData[selectedPeriod] : null;
+
+  const reloadPeriodData = async () => {
+    if (!selectedPeriod || !allPeriodCommitments) return;
+    
+    const period = BigInt(selectedPeriod);
+    const stakeID = BigInt(selectedPeriod);
+    
+    const prepareStatuses: Record<string, boolean> = {};
+    const claimableAmounts: Record<string, bigint> = {};
+    const claimedStatuses: Record<string, boolean> = {};
+    let totalClaimable = 0;
     
     for (const token of REWARD_TOKENS) {
-      const isPrepared = await checkPrepareClaimStatus(token, period);
-      newPrepareStatuses[token] = isPrepared;
-      
-      if (isPrepared) {
-        const { amount } = await getClaimableAmount(period, token, stakeID);
-        newClaimableAmounts[token] = amount;
+      try {
+        const isPrepared = await checkPrepareClaimStatus(token, period);
+        prepareStatuses[token] = isPrepared;
         
-        const hasClaimed = await checkHasClaimed(period, token, stakeID);
-        newClaimedStatuses[token] = hasClaimed;
+        if (isPrepared) {
+          const { amount } = await getClaimableAmount(period, token, stakeID);
+          claimableAmounts[token] = amount;
+          
+          const hasClaimed = await checkHasClaimed(period, token, stakeID);
+          claimedStatuses[token] = hasClaimed;
+          
+          if (amount > 0n && !hasClaimed) {
+            totalClaimable += parseFloat(formatUnits(amount, 8));
+          }
+        }
+      } catch (error) {
+        console.error(`Error loading ${token}:`, error);
       }
     }
     
-    setPrepareStatuses(newPrepareStatuses);
-    setClaimableAmounts(newClaimableAmounts);
-    setClaimedStatuses(newClaimedStatuses);
+    setPeriodRewardsData(prev => ({
+      ...prev,
+      [selectedPeriod]: {
+        prepareStatuses,
+        claimableAmounts,
+        claimedStatuses,
+        totalClaimable,
+        hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
+      }
+    }));
   };
 
   const handlePrepareClaim = async (ticker: string) => {
     setLoadingToken(ticker);
     try {
       await prepareClaim(ticker);
-      await loadAllStatuses();
+      await reloadPeriodData();
       alert(`Successfully prepared ${ticker} rewards!`);
     } catch (error: any) {
       console.error('Prepare claim error:', error);
@@ -796,13 +900,13 @@ function RewardsClaimSection({
   };
 
   const handleClaim = async (ticker: string) => {
-    if (!currentPeriod) return;
+    if (!selectedPeriod) return;
     setLoadingToken(ticker);
     try {
-      const period = BigInt(currentPeriod);
-      const stakeID = BigInt(selectedClaimStakeID);
+      const period = BigInt(selectedPeriod);
+      const stakeID = BigInt(selectedPeriod);
       await claimRewards(period, ticker, stakeID);
-      await loadAllStatuses();
+      await reloadPeriodData();
       alert(`Successfully claimed ${ticker} rewards!`);
     } catch (error: any) {
       console.error('Claim error:', error);
@@ -812,159 +916,171 @@ function RewardsClaimSection({
     }
   };
 
-  if (isStakingPeriod) {
-    return (
-      <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
-        <div className="flex items-center justify-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none">
-          <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-          <p className="text-sm text-yellow-400">
-            Rewards can only be claimed once the BASE stake ends in:{' '}
-            <span className="font-mono font-semibold">
-              {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
-              {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
-            </span>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5">
-      <h2 className="text-3xl font-bold text-white mb-4">
-        Pending Rewards - Period {currentPeriod}
-      </h2>
-      <p className="text-gray-400 text-sm mb-6">
-        Rewards earned during period {currentPeriod} are now available to claim
-      </p>
+    <div className="border-2 border-white/50 rounded-b-xl rounded-tr-xl rounded-tl-xl p-8 bg-black -mt-0.5 space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold text-white mb-2">Claim Rewards</h2>
+        <p className="text-gray-400 text-sm">
+          Claim your earned rewards from completed staking periods
+        </p>
+      </div>
 
-      {/* Pending Rewards Summary */}
-      {selectedClaimStakeID && Object.keys(claimableAmounts).length > 0 && (
-        <div className="mb-6 p-5 bg-white/10 border-2 border-white/30 rounded-lg">
+      {/* Period Selection */}
+      {isLoadingPeriods ? (
+        <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
+          <p className="text-sm text-gray-400 text-center">
+            <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
+            Loading reward data...
+          </p>
+        </div>
+      ) : allPeriodCommitments && allPeriodCommitments.length > 0 ? (
+        <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-bold text-white">💎 Your Pending Rewards</h3>
-            <span className="text-xs text-gray-400">Stake ID: {selectedClaimStakeID}</span>
+            <div className="text-sm font-semibold text-white">Select Period to Claim From</div>
+            <div className="text-xs text-gray-400">{allPeriodCommitments.length} stake{allPeriodCommitments.length !== 1 ? 's' : ''}</div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            {REWARD_TOKENS.map((token) => {
-              const amount = claimableAmounts[token] || 0n;
-              const hasClaimed = claimedStatuses[token];
-              if (amount === 0n && !hasClaimed) return null;
-              return (
-                <div key={token} className="flex items-center justify-between p-2 bg-black/50 rounded border border-white/10">
-                  <span className="font-semibold text-gray-300">{token}</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-white font-mono">
-                      {amount > 0n ? parseFloat(formatUnits(amount, 8)).toFixed(2) : '0'}
-                    </span>
-                    {hasClaimed && <span className="text-green-400">✓</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-        
-        {/* Stake ID Input */}
-        <div className="mb-6">
-          <label className="text-sm text-gray-300 mb-2 block">Your Stake ID:</label>
-          <input
-            type="number"
-            value={selectedClaimStakeID}
-            onChange={(e) => setSelectedClaimStakeID(e.target.value)}
-            className="w-full bg-black border-2 border-white/20 rounded-lg p-3 text-white focus:outline-none focus:border-white"
-            placeholder={currentPeriod.toString()}
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Usually matches the period you staked in (e.g., Period {currentPeriod})
-          </p>
-        </div>
-        
-        {/* Prepare Claims */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3">
-            1️⃣ Prepare Claims (Anyone Can Call)
-          </h3>
-          <p className="text-sm text-gray-400 mb-3">
-            Before claiming, someone must call prepareClaim for each token.
-          </p>
           
-          <div className="grid grid-cols-3 gap-2">
-            {REWARD_TOKENS.map((token) => (
-              <button
-                key={token}
-                onClick={() => handlePrepareClaim(token)}
-                disabled={prepareStatuses[token] || loadingToken === token}
-                className={`p-3 rounded-lg text-sm font-medium transition-all ${
-                  prepareStatuses[token]
-                    ? 'bg-white/10 text-white border border-white/30'
-                    : 'bg-white/5 text-gray-400 border border-white/20 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {loadingToken === token ? (
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto text-green-400" />
-                ) : (
-                  <>
-                    {prepareStatuses[token] ? '✅' : '⚙️'} {token}
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Claim Rewards */}
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-3">
-            2️⃣ Claim Your Rewards
-          </h3>
-          
-          <div className="space-y-2">
-            {REWARD_TOKENS.map((token) => {
-              const amount = claimableAmounts[token] || 0n;
-              const hasClaimed = claimedStatuses[token];
-              const canClaim = prepareStatuses[token] && amount > 0n && !hasClaimed;
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {allPeriodCommitments.map(({ period, stakeNumber, status }: any) => {
+              const isSelected = selectedPeriod === period;
+              const periodData = periodRewardsData[period];
+              const totalClaimable = periodData?.totalClaimable || 0;
+              const hasAnyRewards = periodData?.hasAnyRewards || false;
               
               return (
-                <div
-                  key={token}
-                  className="flex items-center justify-between p-4 bg-black border-2 border-white/20 rounded-lg"
+                <label 
+                  key={period} 
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                    isSelected 
+                      ? 'bg-white/10 border border-white/40' 
+                      : 'bg-white/5 border border-transparent hover:bg-white/10'
+                  }`}
                 >
-                  <div>
-                    <span className="font-semibold text-white text-lg">{token}</span>
-                    <span className="text-sm text-gray-400 ml-3">
-                      {amount > 0n ? formatUnits(amount, 8) : '0'}
-                    </span>
-                    {hasClaimed && (
-                      <span className="ml-2 text-xs text-green-400">(Claimed ✓)</span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="selectedPeriod"
+                      checked={isSelected}
+                      onChange={() => setSelectedPeriod(period)}
+                      className="w-4 h-4 accent-green-400 cursor-pointer"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-300 font-medium">Stake {stakeNumber} (Period {period})</span>
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        status === 'active' ? 'bg-green-500/20 text-green-300' :
+                        status === 'pending' ? 'bg-blue-500/20 text-blue-300' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {status === 'active' ? 'Active' : status === 'pending' ? 'Future' : 'Completed'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    {hasAnyRewards ? (
+                      <span className="text-white font-semibold">
+                        {totalClaimable > 0 ? `${totalClaimable.toFixed(2)} to claim` : 'Claimed ✓'}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">No rewards yet</span>
                     )}
                   </div>
-                  
-                  <button
-                    onClick={() => handleClaim(token)}
-                    disabled={!canClaim || loadingToken === token}
-                    className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                      canClaim && !loadingToken
-                        ? 'bg-white/10 text-white hover:bg-white/20'
-                        : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {loadingToken === token ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-green-400" />
-                    ) : canClaim ? (
-                      'Claim'
-                    ) : hasClaimed ? (
-                      'Claimed'
-                    ) : (
-                      'None'
-                    )}
-                  </button>
-                </div>
+                </label>
               );
             })}
           </div>
         </div>
+      ) : (
+        <div className="p-4 bg-white/5 border border-white/20 rounded-lg">
+          <p className="text-sm text-gray-400 text-center">
+            No stakes found. Stake TEAM to earn rewards!
+          </p>
+        </div>
+      )}
+
+      {/* Rewards for Selected Period */}
+      {selectedPeriod && currentPeriodData && (
+        <>
+          {/* Info Banner for Active Period */}
+          {isStakingPeriod && allPeriodCommitments.find((c: any) => c.period === selectedPeriod)?.status === 'active' && (
+            <div className="flex items-center gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+              <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+              <p className="text-sm text-yellow-400">
+                Current staking period rewards will be available after the period ends in:{' '}
+                <span className="font-mono font-semibold">
+                  {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
+                  {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
+                </span>
+              </p>
+            </div>
+          )}
+
+          {/* Rewards Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Your Rewards
+            </h3>
+            
+            <div className="space-y-2">
+              {REWARD_TOKENS.map((token) => {
+                const amount = currentPeriodData.claimableAmounts[token] || 0n;
+                const hasClaimed = currentPeriodData.claimedStatuses[token];
+                const isPrepared = currentPeriodData.prepareStatuses[token];
+                const isLoadingThisToken = loadingToken === token;
+                
+                // Determine button state and text
+                let buttonText = 'None';
+                let buttonAction = null;
+                let canInteract = false;
+                let buttonClass = 'bg-gray-700/50 text-gray-500 cursor-not-allowed';
+                
+                if (hasClaimed) {
+                  buttonText = 'Claimed ✓';
+                  buttonClass = 'bg-green-500/20 text-green-400 cursor-not-allowed';
+                } else if (!isPrepared) {
+                  buttonText = 'Prepare';
+                  buttonAction = () => handlePrepareClaim(token);
+                  canInteract = true;
+                  buttonClass = 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 border border-yellow-500/40';
+                } else if (amount > 0n) {
+                  buttonText = 'Claim';
+                  buttonAction = () => handleClaim(token);
+                  canInteract = true;
+                  buttonClass = 'bg-white/10 text-white hover:bg-white/20';
+                }
+                
+                return (
+                  <div
+                    key={token}
+                    className="flex items-center justify-between p-4 bg-black border-2 border-white/20 rounded-lg"
+                  >
+                    <div>
+                      <span className="font-semibold text-white text-lg">{token}</span>
+                      <span className="text-sm text-gray-400 ml-3">
+                        {isPrepared && amount > 0n ? formatUnits(amount, 8) : '0'}
+                      </span>
+                      {!isPrepared && (
+                        <span className="ml-2 text-xs text-yellow-400">(Not prepared)</span>
+                      )}
+                    </div>
+                    
+                    <button
+                      onClick={buttonAction || undefined}
+                      disabled={!canInteract || isLoadingThisToken}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all ${buttonClass}`}
+                    >
+                      {isLoadingThisToken ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-white" />
+                      ) : (
+                        buttonText
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
