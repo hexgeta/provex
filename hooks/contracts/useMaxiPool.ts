@@ -1,11 +1,14 @@
 import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'wagmi';
 import { Address, parseAbi } from 'viem';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-// HEX contract address on PulseChain
-const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
+// HEX contract addresses by chain
+const HEX_CONTRACT_ADDRESSES: Record<number, Address> = {
+  1: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' as Address, // Ethereum
+  369: '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address, // PulseChain
+};
 
-// MAXI contract address
+// MAXI contract address (same on both chains)
 const MAXI_CONTRACT_ADDRESS = '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b' as Address;
 
 // ABI for the MAXI contract - different from perpetual pools
@@ -47,13 +50,21 @@ export function useMaxiPool() {
   const [isLoading, setIsLoading] = useState(false);
   const [endStakeTxHash, setEndStakeTxHash] = useState<string | null>(null);
 
+  // Get the correct HEX contract address for the current chain
+  const HEX_CONTRACT_ADDRESS = useMemo(() => {
+    const chainId = chain?.id || 369; // Default to PulseChain
+    return HEX_CONTRACT_ADDRESSES[chainId] || HEX_CONTRACT_ADDRESSES[369];
+  }, [chain?.id]);
+
   // Read contract state
   const { data: userBalance, refetch: refetchBalance } = useContractRead({
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: {
+      enabled: !!address,
+    },
   });
 
   const { data: tokenName } = useContractRead({
@@ -128,6 +139,9 @@ export function useMaxiPool() {
     abi: HEX_ABI,
     functionName: 'stakeCount',
     args: [MAXI_CONTRACT_ADDRESS],
+    query: {
+      enabled: !!HEX_CONTRACT_ADDRESS,
+    },
   });
 
   // Query the first stake for MAXI
@@ -136,7 +150,9 @@ export function useMaxiPool() {
     abi: HEX_ABI,
     functionName: 'stakeLists',
     args: [MAXI_CONTRACT_ADDRESS, 0n],
-    enabled: !!stakeCount && Number(stakeCount) > 0,
+    query: {
+      enabled: !!stakeCount && Number(stakeCount) > 0 && !!HEX_CONTRACT_ADDRESS,
+    },
   });
 
   // Determine if stake is active based on MAXI logic
@@ -227,6 +243,34 @@ export function useMaxiPool() {
     }
   };
 
+  // Mint Hedron function
+  const mintHedron = async (stakeIndex: bigint, stakeIdParam: number) => {
+    if (!walletClient || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    setIsLoading(true);
+    try {
+      const { request } = await publicClient!.simulateContract({
+        address: MAXI_CONTRACT_ADDRESS,
+        abi: MAXI_ABI,
+        functionName: 'mintHedron',
+        args: [stakeIndex, stakeIdParam],
+        account: address,
+      });
+
+      const hash = await walletClient.writeContract(request);
+      
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+      
+      return { hash, receipt };
+    } catch (error: any) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Redeem HEX function
   const redeemHex = async (amount: bigint) => {
     if (!walletClient || !address) {
@@ -257,6 +301,10 @@ export function useMaxiPool() {
     }
   };
 
+  // Check if Hedron has been minted by checking if unlockedDay is 0
+  // unlockedDay is at index 5 in the stakeInfo tuple
+  const hasHedronMinted = stakeInfo ? stakeInfo[5] !== 0 : false;
+
   return {
     // Contract state
     stakeIsActive,
@@ -275,9 +323,11 @@ export function useMaxiPool() {
     decimals: decimals as number | undefined,
     mintingPhaseStartDay: mintingPhaseStartDay as bigint | undefined,
     mintingPhaseEndDay: mintingPhaseEndDay as bigint | undefined,
+    hasHedronMinted,
     
     // Functions
     endStake,
+    mintHedron,
     redeemHex,
     refetchBalance,
     

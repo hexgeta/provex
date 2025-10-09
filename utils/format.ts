@@ -135,16 +135,16 @@ export function formatHexDayToUTCDate(hexDay: number | bigint): string {
 
 /**
  * Format ticker name for display
- * - Removes 'e' prefix for Ethereum tokens (eTRIO -> TRIO)
- * - Removes trailing numbers from BASE tokens (BASE3 -> BASE)
+ * - Removes 'e' prefix for Ethereum tokens (eTRIO -> TRIO, eBASE4 -> BASE)
+ * - Removes trailing numbers from perpetual pool tokens (BASE3 -> BASE, TRIO2 -> TRIO)
  */
 export function formatTickerName(ticker: string): string {
   // Remove 'e' prefix for Ethereum tokens
   let formatted = ticker.startsWith('e') ? ticker.substring(1) : ticker;
   
-  // Remove trailing numbers from BASE tokens
-  if (formatted.startsWith('BASE')) {
-    formatted = 'BASE';
+  // Remove trailing numbers from perpetual pool tokens
+  if (formatted.startsWith('BASE') || formatted.startsWith('TRIO')) {
+    formatted = formatted.replace(/\d+$/, '');
   }
   
   return formatted;

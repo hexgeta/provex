@@ -2143,7 +2143,7 @@ export default function StakeInterface({
                 </div>
               </div>
 
-              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && (
+              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && !isLoading && stakeEndDay && (
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">
@@ -2163,24 +2163,24 @@ export default function StakeInterface({
 
               <button
                 onClick={handleRedeem}
-                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive}
+                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive || !stakeEndDay}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive
+                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive && stakeEndDay
                     ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                {isLoading ? (
+                {isLoading || !stakeEndDay ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
+                    {isLoading ? 'Processing...' : 'Loading...'}
                   </span>
                 ) : (
                   `Redeem Your HEX`
                 )}
               </button>
 
-              {stakeIsActive && (
+              {stakeIsActive && stakeEndDay && (
                 <p className="text-sm text-yellow-400 text-center flex items-start justify-center gap-2 leading-5">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <span className="leading-5">

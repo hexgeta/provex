@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useTeamStaking } from '@/hooks/contracts/useTeamStaking';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { REWARD_TOKENS, RewardToken, REWARD_TOKEN_ADDRESSES } from '@/constants/team';
-import { PERPETUAL_POOLS } from '@/constants/crypto';
+import { PERPETUAL_POOLS, getLatestPoolByPrefix } from '@/constants/crypto';
 import { useTokenPrices } from '@/hooks/crypto/useTokenPrices';
 import { useToast } from '@/hooks/use-toast';
 
@@ -62,8 +62,8 @@ export default function TeamStakingInterface() {
     );
   };
   
-  // Get the correct BASE pool based on chain (BASE3 for PulseChain, eBASE3 for Ethereum)
-  const BASE_POOL = chain?.id === 1 ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3;
+  // Get the latest BASE pool dynamically based on chain (e.g., BASE3/BASE4 for PulseChain, eBASE3/eBASE4 for Ethereum)
+  const BASE_POOL = getLatestPoolByPrefix('BASE', chain?.id) || (chain?.id === 1 ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3);
   const BASE_POOL_ADDRESS = BASE_POOL.contractAddress as Address;
   const {
     currentPeriod,
@@ -95,7 +95,7 @@ export default function TeamStakingInterface() {
     stakeEndDay,
     reloadPhaseEnd,
     currentHexDay,
-  } = usePerpetualPool(BASE_POOL_ADDRESS, 'BASE');
+  } = usePerpetualPool(BASE_POOL_ADDRESS, BASE_POOL.ticker as any);
 
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmountsByPeriod, setUnstakeAmountsByPeriod] = useState<Record<number, string>>({});
@@ -321,7 +321,7 @@ export default function TeamStakingInterface() {
     }
 
     const updateCountdown = () => {
-      // Use hardcoded deadline from PERPETUAL_POOLS config (BASE3 or eBASE3 based on chain)
+      // Use deadline from the latest BASE pool (dynamically selected based on chain)
       const deadline = new Date(BASE_POOL.deadlineUTC);
       const now = new Date();
       const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
@@ -410,7 +410,7 @@ export default function TeamStakingInterface() {
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
-        setStakesLoaded(false);
+      setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
       console.error('Stake error:', error);
@@ -461,7 +461,7 @@ export default function TeamStakingInterface() {
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
-        setStakesLoaded(false);
+      setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
       console.error('Early end stake error:', error);
@@ -495,7 +495,7 @@ export default function TeamStakingInterface() {
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
-        setStakesLoaded(false);
+      setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
       console.error('End stake error:', error);
@@ -527,7 +527,7 @@ export default function TeamStakingInterface() {
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
-        setStakesLoaded(false);
+      setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
       console.error('Extend error:', error);
@@ -559,7 +559,7 @@ export default function TeamStakingInterface() {
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
-        setStakesLoaded(false);
+      setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
       console.error('Restake error:', error);
@@ -575,13 +575,13 @@ export default function TeamStakingInterface() {
 
   const completedPeriod = currentPeriod ? Number(currentPeriod) - 1 : 0;
 
-  return (
+    return (
     <AnimatePresence mode="wait">
       {/* Loading State */}
       {isCheckingConnection && (
         <div
           key="loading"
-          className="w-full flex items-center justify-center py-32"
+          className="w-full flex items-center justify-center py-16 md:py-32"
         >
           <Loader2 className="w-12 h-12 animate-spin text-white" />
         </div>
@@ -594,12 +594,12 @@ export default function TeamStakingInterface() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="w-full flex items-center justify-center py-32"
+          className="w-full flex items-center justify-center py-16 md:py-32"
         >
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">Connect Your Wallet</h1>
-            <p className="text-gray-400">Please connect your wallet to access TEAM staking</p>
-          </div>
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white mb-4">Connect Your Wallet</h1>
+          <p className="text-gray-400">Please connect your wallet to access TEAM staking</p>
+        </div>
         </motion.div>
       )}
 
@@ -836,15 +836,57 @@ export default function TeamStakingInterface() {
                 </div>
               </div>
 
-              {/* Show Early Unstake if BASE stake is active */}
-              {baseStakeIsActive === undefined ? (
+              {/* Get selected stake status */}
+              {(() => {
+                const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
+                const stakeStatus = selectedStake?.status;
+
+                // For expired stakes, always show direct withdrawal (no penalty check needed)
+                if (stakeStatus === 'expired') {
+                  return (
+                    <>
+                      <button
+                        onClick={handleEndCompleted}
+                        disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
+                        className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                          selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
+                            ? 'bg-white text-black hover:bg-gray-200'
+                            : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </span>
+                        ) : (
+                          'Withdraw TEAM'
+                        )}
+                      </button>
+
+                      <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
+                        <p className="text-sm text-gray-300">
+                          ✅ This stake has expired. You can withdraw without penalty.
+                        </p>
+                      </div>
+                    </>
+                  );
+                }
+
+                // For active/pending stakes, check BASE stake status
+                if (baseStakeIsActive === undefined) {
+                  return (
                 <div className="p-4 bg-gray-700/30 border border-gray-600/30 rounded-lg">
                   <p className="text-sm text-gray-400 text-center">
                     <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
                     Checking BASE stake status...
                   </p>
                 </div>
-              ) : baseStakeIsActive === true ? (
+                  );
+                }
+
+                if (baseStakeIsActive === true) {
+                  return (
                 <>
                   <button
                     onClick={handleEarlyEndStake}
@@ -865,26 +907,37 @@ export default function TeamStakingInterface() {
                     )}
                   </button>
 
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg mt-4">
-                    <p className="text-sm text-red-400 font-semibold">
-                      ⚠️ BASE stake is still active. Early unstaking incurs a 3.69% penalty. Wait for the BASE stake to end to unstake without penalty.
+                      <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg mt-4">
+                        <p className="text-sm text-yellow-400 leading-5">
+                          ⚠️ TEAM stake is still active. Early unstaking incurs a 3.69% penalty. Wait for the TEAM stake to end (same time as BASE) to unstake without penalty.
+                          <br />
+                          <span className="text-xs mt-1 inline-block">
+                            Stake ends in:{' '}
+                            <span className="font-mono font-semibold">
+                              {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
+                              {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
+                            </span>
+                          </span>
                     </p>
                   </div>
                 </>
-              ) : (
+                  );
+                }
+
+                return (
                 <>
                   <button
                     onClick={handleEndCompleted}
                     disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                       selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
-                        ? 'bg-white text-black hover:bg-gray-200'
+                          ? 'bg-white text-black hover:bg-gray-200'
                         : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                     }`}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                         Processing...
                       </span>
                     ) : (
@@ -898,7 +951,8 @@ export default function TeamStakingInterface() {
                     </p>
                   </div>
                 </>
-              )}
+                );
+              })()}
 
               {/* Show Extend during reload phase (even periods) only */}
               {!isStakingPeriod && selectedStakePeriod !== null && (
@@ -1233,20 +1287,28 @@ function RewardsClaimSection({
         </div>
           )}
 
-          {/* Rewards Section - Only show if there are rewards */}
+          {/* Rewards Section - Show all reward tokens with their status */}
           {(() => {
             if (!currentPeriodData?.claimableAmounts || !currentPeriodData?.claimedStatuses || !currentPeriodData?.prepareStatuses) {
               return null;
             }
 
-            const hasRewards = REWARD_TOKENS.some((token) => {
+            // Check if this is a completed period (not active, not pending)
+            const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedClaimPeriod);
+            const isCompletedPeriod = selectedStake && selectedStake.status !== 'active' && selectedStake.status !== 'pending';
+
+            // For completed periods, always show rewards section (users need to see "Prepare Claim" buttons)
+            // For active/pending periods, only show if there are actual rewards
+            if (!isCompletedPeriod) {
+              const hasAnyRewardActivity = REWARD_TOKENS.some((token) => {
               const amount = currentPeriodData.claimableAmounts[token] || 0n;
               const hasClaimed = currentPeriodData.claimedStatuses[token];
               const isPrepared = currentPeriodData.prepareStatuses[token];
-              return (isPrepared && amount > 0n) || hasClaimed;
+                return isPrepared || hasClaimed || amount > 0n;
             });
 
-            if (!hasRewards) return null;
+              if (!hasAnyRewardActivity) return null;
+            }
 
             return (
         <div>
@@ -1255,67 +1317,95 @@ function RewardsClaimSection({
           </h3>
           
           <div className="space-y-2">
-                  {REWARD_TOKENS.filter((token) => {
-                    const amount = currentPeriodData.claimableAmounts?.[token] || 0n;
-                    const hasClaimed = currentPeriodData.claimedStatuses?.[token];
-                    const isPrepared = currentPeriodData.prepareStatuses?.[token];
-                    
-                    // Only show if: has claimable rewards or has been claimed
-                    return (isPrepared && amount > 0n) || hasClaimed;
-                  }).map((token) => {
+                  {REWARD_TOKENS.map((token) => {
                 const amount = currentPeriodData.claimableAmounts?.[token] || 0n;
                 const hasClaimed = currentPeriodData.claimedStatuses?.[token];
                 const isPrepared = currentPeriodData.prepareStatuses?.[token];
                 const isLoadingThisToken = loadingToken === token;
                 
-                // Determine button state and text
-                let buttonText = 'None';
-                let buttonAction = null;
-                let canInteract = false;
-                let buttonClass = 'bg-gray-700/50 text-gray-500 cursor-not-allowed';
-                
-                if (hasClaimed) {
-                  buttonText = 'Claimed ✓';
-                  buttonClass = 'bg-green-500/20 text-green-400 cursor-not-allowed';
-                } else if (amount > 0n) {
-                  buttonText = 'Claim';
-                  buttonAction = () => handleClaim(token);
-                  canInteract = true;
-                  buttonClass = 'bg-white text-black hover:bg-gray-200';
-                }
-              
+                // Rewards not prepared yet
+                if (!isPrepared && !hasClaimed) {
               return (
-                <div
-                  key={token}
-                  className="flex items-center justify-between p-4 bg-black border-2 border-white/20 rounded-lg"
-                >
-                    <div className="flex items-start gap-3">
-                    <span className="font-semibold text-white text-lg">{token}</span>
-                      <div className="flex flex-col">
-                        {amount > 0n && (
-                          <div className="text-xl font-semibold text-white">
-                            {calculateUSDValue(token, amount)}
+                    <div key={token} className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs text-yellow-400 font-semibold mb-1">⏳ {token} Rewards Pending</div>
+                          <div className="text-sm text-yellow-300/80">Claims need to be prepared first</div>
+                          <div className="text-xs text-yellow-500/70 mt-1">Anyone can prepare by clicking →</div>
                           </div>
-                        )}
-                        <div className="text-sm text-gray-400">
-                          {amount > 0n ? formatRewardAmount(formatUnits(amount, 8)) : '0'}
+                        <button
+                          onClick={() => handlePrepareClaim(token)}
+                          disabled={isLoadingThisToken}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            !isLoadingThisToken
+                              ? 'bg-white hover:bg-gray-200 text-black'
+                              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {isLoadingThisToken ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Preparing...
+                            </span>
+                          ) : (
+                            'Prepare Claim'
+                          )}
+                        </button>
                         </div>
                       </div>
-                  </div>
-                  
+                  );
+                }
+
+                // Rewards prepared and claimable
+                if (isPrepared && amount > 0n && !hasClaimed) {
+                  return (
+                    <div key={token} className="p-4 bg-green-900/30 border border-green-600/40 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs text-green-400 font-semibold mb-1">🎁 {token} Rewards</div>
+                          <div className="text-2xl font-bold text-green-300">
+                            {formatRewardAmount(formatUnits(amount, 8))} {token}
+                          </div>
+                          <div className="text-xs text-green-500/70 mt-1">
+                            {calculateUSDValue(token, amount)}
+                          </div>
+                        </div>
                   <button
-                      onClick={buttonAction || undefined}
-                      disabled={!canInteract || isLoadingThisToken}
-                      className={`px-6 py-2 rounded-lg font-medium transition-all ${buttonClass}`}
+                          onClick={() => handleClaim(token)}
+                          disabled={isLoadingThisToken}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            !isLoadingThisToken
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          }`}
                     >
                       {isLoadingThisToken ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Claiming...
+                            </span>
                       ) : (
-                        buttonText
+                            'Claim Rewards'
                     )}
                   </button>
+                      </div>
                 </div>
               );
+                }
+
+                // Already claimed
+                if (hasClaimed) {
+                  return (
+                    <div key={token} className="p-3 bg-gray-800/50 border border-gray-600/30 rounded-lg">
+                      <p className="text-xs text-gray-400">
+                        ✅ {token} rewards already claimed for this stake.
+                      </p>
+                    </div>
+                  );
+                }
+
+                // No rewards available and not claimed (prepared but 0 amount)
+                return null;
             })}
           </div>
         </div>

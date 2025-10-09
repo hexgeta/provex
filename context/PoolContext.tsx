@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAccount } from 'wagmi';
-import { PERPETUAL_POOLS, PerpetualPoolConfig, PoolTicker, getPoolOptionsForChain } from '@/config/perpetual-pools';
+import { PERPETUAL_POOLS, PerpetualPoolConfig, PoolTicker, getPoolOptionsForChain, getLatestPoolByPrefix } from '@/config/perpetual-pools';
 
 interface PoolContextType {
   selectedPool: PerpetualPoolConfig;
@@ -24,12 +24,18 @@ export function PoolProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hasAutoSelected) return;
     
-    const poolOptions = getPoolOptionsForChain(chain?.id);
-    const pools = poolOptions.map(pool => ({
-      ticker: pool.ticker as PoolTicker,
-      deadline: new Date(pool.deadlineUTC).getTime()
-    }));
+    const poolOptions = getPoolOptionsForChain(chain?.id).filter(Boolean);
+    if (poolOptions.length === 0) return; // No pools available yet
+    
+    const pools = poolOptions
+      .filter(pool => pool && pool.ticker && pool.deadlineUTC)
+      .map(pool => ({
+        ticker: pool.ticker as PoolTicker,
+        deadline: new Date(pool.deadlineUTC).getTime()
+      }));
 
+    if (pools.length === 0) return; // No valid pools
+    
     // Find pool with earliest deadline (ends soonest)
     const soonestPool = pools.reduce((prev, curr) => 
       curr.deadline < prev.deadline ? curr : prev
@@ -54,18 +60,25 @@ export function PoolProvider({ children }: { children: ReactNode }) {
 
     // If current ticker is not available on new chain, switch to equivalent
     if (!poolTickers.includes(selectedTicker)) {
-      // Switch BASE3 <-> eBASE3 when changing chains
-      if (selectedTicker === 'BASE3' && poolTickers.includes('eBASE3')) {
-        setSelectedTicker('eBASE3');
-      } else if (selectedTicker === 'eBASE3' && poolTickers.includes('BASE3')) {
-        setSelectedTicker('BASE3');
+      // Extract base ticker name (without 'e' prefix and without number suffix)
+      // e.g., "BASE3" -> "BASE", "eBASE3" -> "BASE", "TRIO2" -> "TRIO", "eTRIO2" -> "TRIO"
+      let baseTicker = selectedTicker.replace(/^e/, '').replace(/\d+$/, '');
+      
+      // Get the latest pool for this base ticker on the new chain
+      const latestPool = getLatestPoolByPrefix(baseTicker, chain.id);
+      
+      if (latestPool) {
+        setSelectedTicker(latestPool.ticker as PoolTicker);
       }
-      // For other pools (MAXI, DECI, LUCKY, TRIO), they're available on both chains, so keep as is
+      // For other pools (MAXI, DECI, LUCKY), they're available on both chains with same ticker, so keep as is
     }
   }, [chain?.id, selectedTicker, lastChainId]);
 
+  // Ensure selectedPool exists, fallback to MAXI if not found
+  const selectedPool = PERPETUAL_POOLS[selectedTicker] || PERPETUAL_POOLS.MAXI;
+  
   const value = {
-    selectedPool: PERPETUAL_POOLS[selectedTicker],
+    selectedPool,
     selectedTicker,
     setSelectedTicker,
   };

@@ -31,7 +31,7 @@ const Footer = () => {
                   href="/team" 
                   className="text-sm text-[rgb(153,153,153)] hover:text-white transition-colors"
                 >
-                  TEAM rewards
+                  TEAM
                 </Link>
               </li>
             </ul>

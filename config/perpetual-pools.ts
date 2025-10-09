@@ -3,6 +3,7 @@ export {
   PERPETUAL_POOLS,
   POOL_OPTIONS,
   getPoolOptionsForChain,
+  getLatestPoolByPrefix,
   type PerpetualPoolConfig,
   type PoolTicker,
 } from '@/constants/crypto';

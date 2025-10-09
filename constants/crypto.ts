@@ -296,6 +296,10 @@ export const TOKEN_CONSTANTS = [{
   stakeStartDate: new Date('2022-09-27'),
   stakeEndDate: '2025-10-13T00:00:00.000Z', // HEX Day 2140 + 2 days for practical conversion
   totalStakedDays: 1111,
+  color: '#FFFFFF',
+  gradientFrom: 'from-white',
+  gradientTo: 'to-gray-200',
+  description: 'TRIO Perpetual Pool',
   pair: {
     pairAddress: '0xda72b9e219d87ea31b4a1929640d9e960362470d',
     chain: 'ethereum'
@@ -316,6 +320,10 @@ export const TOKEN_CONSTANTS = [{
   stakeStartDate: new Date('2022-09-27'),
   stakeEndDate: '2029-09-26T00:00:00.000Z', // HEX Day 3584 + 2 days for practical conversion
   totalStakedDays: 2555,
+  color: '#416F22',
+  gradientFrom: 'from-[#416F22]',
+  gradientTo: 'to-green-800',
+  description: 'LUCKY Perpetual Pool',
   pair: {
     pairAddress: '0x7327325e5F41d4c1922a9DFc87d8a3b3F1ae5C1F',
     chain: 'ethereum'
@@ -336,6 +344,10 @@ export const TOKEN_CONSTANTS = [{
   stakeStartDate: new Date('2022-09-27'),
   stakeEndDate: '2032-11-10T00:00:00.000Z', // HEX Day 4725 + 2 days for practical conversion
   totalStakedDays: 3696,
+  color: '#C24C35',
+  gradientFrom: 'from-[#C24C35]',
+  gradientTo: 'to-red-700',
+  description: 'DECI Perpetual Pool',
   pair: {
     pairAddress: '0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e',
     chain: 'ethereum'
@@ -356,6 +368,10 @@ export const TOKEN_CONSTANTS = [{
   stakeStartDate: new Date('2022-05-01'),
   stakeEndDate: '2037-07-17T00:00:00.000Z', // HEX Day 6435 + 2 days for practical conversion
   totalStakedDays: 5555,
+  color: '#3991ED',
+  gradientFrom: 'from-[#3991ED]',
+  gradientTo: 'to-blue-700',
+  description: 'MAXI Fixed Stake Pool',
   pair: {
     pairAddress: '0xFD309d27B4cb4F5C869ee53E5D0fCc5654d3bb01',
     chain: 'ethereum'
@@ -403,12 +419,17 @@ export interface PerpetualPoolConfig {
 }
 
 // Derive PERPETUAL_POOLS from TOKEN_CONSTANTS to ensure single source of truth
-// Note: Includes both BASE3 (PulseChain) and eBASE3 (Ethereum) - always use the highest numbered cycle
-const perpetualPoolTokens = TOKEN_CONSTANTS.filter(token => 
-  ['MAXI', 'DECI', 'LUCKY', 'TRIO', 'BASE3', 'eBASE3'].includes(token.ticker) && 
-  token.color && 
-  token.totalStakedDays
-);
+// Note: Automatically includes all numbered variants (BASE3, BASE4, TRIO2, eTRIO2, etc.)
+const perpetualPoolTokens = TOKEN_CONSTANTS.filter(token => {
+  // Check if token has required perpetual pool fields
+  if (!token.color || !token.totalStakedDays) return false;
+  
+  // Extract base ticker name (remove 'e' prefix and numbers)
+  const baseTicker = token.ticker.replace(/^e/, '').replace(/\d+$/, '');
+  
+  // Include MAXI, DECI, LUCKY, and any BASE/TRIO variant
+  return ['MAXI', 'DECI', 'LUCKY', 'BASE', 'TRIO'].includes(baseTicker);
+});
 
 export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = perpetualPoolTokens.reduce((acc, token) => {
   const endDate = token.stakeEndDate as string | Date;
@@ -428,16 +449,78 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = perpetualPoo
   return acc;
 }, {} as Record<string, PerpetualPoolConfig>);
 
+// Helper function to get the highest numbered pool for a given ticker prefix
+export function getLatestPoolByPrefix(tickerPrefix: string, chainId: number | undefined): PerpetualPoolConfig | undefined {
+  const isEthereum = chainId === 1;
+  
+  // Build the search prefix (e.g., "BASE" or "eBASE" or "TRIO" or "eTRIO")
+  const searchPrefix = isEthereum && !tickerPrefix.startsWith('e') ? `e${tickerPrefix}` : tickerPrefix;
+  
+  // Find all pools that match this prefix
+  const matchingPools = TOKEN_CONSTANTS.filter(token => {
+    const matchesPrefix = token.ticker.startsWith(searchPrefix);
+    const matchesChain = token.chain === (isEthereum ? 1 : 369);
+    const hasRequiredFields = token.color && token.totalStakedDays;
+    return matchesPrefix && matchesChain && hasRequiredFields;
+  });
+  
+  if (matchingPools.length === 0) return undefined;
+  
+  // Extract the number from the ticker (e.g., "BASE3" -> 3, "eBASE2" -> 2)
+  // If no number, treat as 0 (for backwards compatibility with "TRIO" without number)
+  const poolsWithNumbers = matchingPools.map(token => {
+    const numberMatch = token.ticker.match(/\d+$/);
+    const number = numberMatch ? parseInt(numberMatch[0], 10) : 0;
+    return { token, number };
+  });
+  
+  // Sort by number descending and get the highest
+  poolsWithNumbers.sort((a, b) => b.number - a.number);
+  const latestToken = poolsWithNumbers[0].token;
+  
+  // Convert to PerpetualPoolConfig format
+  const endDate = latestToken.stakeEndDate as string | Date;
+  const deadlineUTC = typeof endDate === 'string' ? endDate : (endDate as Date).toISOString();
+  
+  return {
+    name: latestToken.name,
+    ticker: latestToken.ticker,
+    contractAddress: latestToken.a,
+    color: latestToken.color!,
+    gradientFrom: latestToken.gradientFrom!,
+    gradientTo: latestToken.gradientTo!,
+    description: latestToken.description!,
+    deadlineUTC,
+    stakeLengthDays: latestToken.totalStakedDays!,
+  };
+}
+
 // Helper function to get the correct pool options based on current chain
 export function getPoolOptionsForChain(chainId: number | undefined) {
-  const isEthereum = chainId === 1;
+  // Default to PulseChain (369) if chainId is undefined
+  const defaultChainId = chainId || 369;
+  
+  // Dynamically find the latest version of each pool
+  const latestMaxi = getLatestPoolByPrefix('MAXI', defaultChainId);
+  const latestDeci = getLatestPoolByPrefix('DECI', defaultChainId);
+  const latestLucky = getLatestPoolByPrefix('LUCKY', defaultChainId);
+  const latestTrio = getLatestPoolByPrefix('TRIO', defaultChainId);
+  const latestBase = getLatestPoolByPrefix('BASE', defaultChainId);
+  
+  // Fallbacks in case getLatestPoolByPrefix fails (should never happen with the metadata we added)
+  const maxiFallback = defaultChainId === 1 ? (PERPETUAL_POOLS.eMAXI || PERPETUAL_POOLS.MAXI) : PERPETUAL_POOLS.MAXI;
+  const deciFallback = defaultChainId === 1 ? (PERPETUAL_POOLS.eDECI || PERPETUAL_POOLS.DECI) : PERPETUAL_POOLS.DECI;
+  const luckyFallback = defaultChainId === 1 ? (PERPETUAL_POOLS.eLUCKY || PERPETUAL_POOLS.LUCKY) : PERPETUAL_POOLS.LUCKY;
+  const trioFallback = defaultChainId === 1 ? (PERPETUAL_POOLS.eTRIO || PERPETUAL_POOLS.TRIO) : PERPETUAL_POOLS.TRIO;
+  const baseFallback = defaultChainId === 1 ? (PERPETUAL_POOLS.eBASE3 || PERPETUAL_POOLS.BASE3) : PERPETUAL_POOLS.BASE3;
+  
   return [
-    PERPETUAL_POOLS.MAXI,
-    PERPETUAL_POOLS.DECI,
-    PERPETUAL_POOLS.LUCKY,
-    PERPETUAL_POOLS.TRIO,
-    isEthereum ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3,
-  ];
+    latestMaxi || maxiFallback,
+    latestDeci || deciFallback,
+    latestLucky || luckyFallback,
+    latestTrio || trioFallback,
+    latestBase || baseFallback,
+  ].filter(Boolean); // Remove any undefined values
 }
 
 // Default pool options: MAXI, DECI, LUCKY, TRIO, BASE3 (PulseChain)

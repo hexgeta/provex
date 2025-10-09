@@ -33,7 +33,7 @@ function HomeContent() {
 
   // Auto-switch to info tab when switching to MAXI while on mint tab
   useEffect(() => {
-    if (selectedTicker === 'MAXI' && activeTab === 'mint') {
+    if ((selectedTicker === 'MAXI' || selectedTicker === 'eMAXI') && activeTab === 'mint') {
       setActiveTab('info');
     }
   }, [selectedTicker, activeTab]);
@@ -69,7 +69,7 @@ function HomeContent() {
       },
     };
 
-    if (selectedTicker === 'MAXI') {
+    if (selectedTicker === 'MAXI' || selectedTicker === 'eMAXI') {
       return <MaxiStakeInterface {...sharedProps} />;
     }
 
@@ -77,13 +77,13 @@ function HomeContent() {
   };
   
   return (
-    <main className="flex flex-col items-center pb-24">
+    <main className="flex flex-col items-center pb-6 md:pb-16">
       <AnimatePresence mode="wait">
         {/* Loading State */}
         {isCheckingConnection && (
           <div
             key="loading"
-            className="w-full flex items-center justify-center py-32"
+            className="w-full flex items-center justify-center py-16 md:py-32"
           >
             <Loader2 className="w-12 h-12 animate-spin text-white" />
           </div>
@@ -96,7 +96,7 @@ function HomeContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="w-full px-2 md:px-8 bg-black flex items-center justify-center py-32"
+            className="w-full px-2 md:px-8 bg-black flex items-center justify-center py-16 md:py-32"
           >
             <div className="max-w-6xl mx-auto text-center">
               <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">
@@ -122,7 +122,7 @@ function HomeContent() {
             className="w-full"
           >
             {/* Pool Selector with Countdown */}
-            <div className="w-full px-2 md:px-8 mt-24">
+            <div className="w-full px-2 md:px-8 mt-6 md:mt-16">
               <PoolSelector />
             </div>
 

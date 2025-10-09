@@ -38,6 +38,7 @@ export default function MaxiStakeInterface({
     tokenSymbol,
     tokenName,
     endStake,
+    mintHedron,
     redeemHex,
     isLoading,
     isConnected,
@@ -45,6 +46,8 @@ export default function MaxiStakeInterface({
     endStaker,
     endStakeTxHash,
     chain,
+    stakeInfo,
+    hasHedronMinted,
   } = useMaxiPool();
 
   const [redeemAmount, setRedeemAmount] = useState('');
@@ -248,6 +251,38 @@ export default function MaxiStakeInterface({
       return (redeemableHearts / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } catch {
       return '0';
+    }
+  };
+
+  const handleMintHedron = async () => {
+    if (!stakeInfo) {
+      onTransactionError?.('Stake information not available. Please refresh and try again.');
+      return;
+    }
+
+    try {
+      onTransactionStart?.();
+      
+      const stakeIndex = 0n;
+      const stakeIdParam = Number(stakeInfo[0]); // First element is stakeId
+      
+      const result = await mintHedron(stakeIndex, stakeIdParam);
+      
+      onTransactionSuccess?.(
+        'Hedron minted successfully! You can now end the stake.',
+        result.hash
+      );
+    } catch (error: any) {
+      // If error says already minted, show success message
+      if (error?.message?.includes('already') || error?.message?.includes('minted')) {
+        onTransactionSuccess?.('Hedron has already been minted for this stake.');
+      } else {
+        onTransactionError?.(
+          error?.message || 'Failed to mint Hedron. Please try again.'
+        );
+      }
+    } finally {
+      onTransactionEnd?.();
     }
   };
 
@@ -541,24 +576,45 @@ export default function MaxiStakeInterface({
             )}
 
             {stakeIsActive && (
-              <button
-                onClick={handleEndStake}
-                disabled={!canEndStake || isLoading}
-                className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  canEndStake && !isLoading
-                    ? 'bg-white text-black hover:bg-gray-200'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  'End Stake'
-                )}
-              </button>
+              <div className="space-y-4">
+                <button
+                  onClick={handleMintHedron}
+                  disabled={!canEndStake || hasHedronMinted || isLoading}
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                    canEndStake && !hasHedronMinted && !isLoading
+                      ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Mint Hedron'
+                  )}
+                </button>
+
+                <button
+                  onClick={handleEndStake}
+                  disabled={!canEndStake || !hasHedronMinted || isLoading}
+                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                    canEndStake && hasHedronMinted && !isLoading
+                      ? 'bg-white text-black hover:bg-gray-200'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'End Stake'
+                  )}
+                </button>
+              </div>
             )}
           </div>
 
@@ -591,7 +647,7 @@ export default function MaxiStakeInterface({
                 </div>
               </div>
 
-              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && (
+              {redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !stakeIsActive && !isLoading && stakeEndDay && (
                 <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
                   <p className="text-sm text-gray-400">You will receive approximately:</p>
                   <p className="text-2xl font-bold text-white mt-1">
@@ -602,24 +658,24 @@ export default function MaxiStakeInterface({
 
               <button
                 onClick={handleRedeem}
-                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive}
+                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive || !stakeEndDay}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive
+                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive && stakeEndDay
                     ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                {isLoading ? (
+                {isLoading || !stakeEndDay ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
+                    {isLoading ? 'Processing...' : 'Loading...'}
                   </span>
                 ) : (
                   `Redeem Your HEX`
                 )}
               </button>
 
-              {stakeIsActive && (
+              {stakeIsActive && stakeEndDay && (
                 <p className="text-sm text-yellow-400 text-center">
                   Redemption is only available after the stake has ended.
                 </p>
