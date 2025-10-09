@@ -1,25 +1,72 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { usePool } from '@/context/PoolContext';
+import { TOKEN_CONSTANTS } from '@/constants/crypto';
 
-interface AnimatedBackgroundProps {
-  enabled?: boolean;
-  dotColor?: string;
-  dotSize?: number;
-  spacing?: number;
-  animationSpeed?: number;
-  activePoolColor?: string;
-}
+// ========================================
+// ANIMATION CONFIGURATION - Tweak these values!
+// ========================================
+const ANIMATION_CONFIG = {
+  enabled: true,
+  dotSize: 2,              // Size of each dot (min: 2, max: 20)
+  spacing: 90,             // Grid spacing - LOWER = more dots (min: 10, max: 300)
+  floatingSpeed: 0.001,     // Time speed (min: 0.0001, max: 0.05)
+  wanderSpeed: 0.4,         // Random roaming speed (min: 0, max: 10)
+  flashingSpeed: 0,         // Pulse/flash speed (min: 0, max: 20)
+  clusterAttraction: 10,   // Gravity pull strength (min: 0, max: 200)
+  chaos: 1,               // Separation force (min: 0.0, max: 1.0)
+  momentum: 0.85,           // Movement smoothness - HIGHER = smoother (min: 0.0, max: 0.99)
+  pixelNoise: 0,          // Pixel skip chance - HIGHER = more holes/noise (min: 0.0, max: 0.9)
+  pixelDensity: 4,          // Pixels per dot (min: 2, max: 8) - HIGHER = more detailed
+  defaultColor: '#ffffff',  // Dot color when no pool selected (hex color)
+  baseOpacity: 1,         // Visibility (min: 0.0, max: 1.0)
+};
 
-export default function AnimatedBackground({
-  enabled = true,
-  dotColor = '#2D82F3',
-  dotSize = 12,
-  spacing = 30,
-  animationSpeed = 0.00005,
-  activePoolColor,
-}: AnimatedBackgroundProps) {
+export default function AnimatedBackground() {
+  const { selectedTicker } = usePool();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  // Delay showing the background briefly to coordinate with page load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100); // Small delay to ensure canvas is ready
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Get the color for the currently selected pool
+  const getPoolColor = (ticker: string): string => {
+    if (!ticker) return ANIMATION_CONFIG.defaultColor;
+    
+    // Remove 'e' prefix (for Ethereum versions like eBASE3 -> BASE3)
+    const normalizedTicker = ticker.replace(/^e/, '');
+    
+    // Find the matching pool in TOKEN_CONSTANTS
+    // First try exact match
+    let pool = TOKEN_CONSTANTS.find(t => t.ticker === normalizedTicker);
+    
+    // If no exact match, try matching by base name (e.g., BASE3 -> BASE, BASE2 -> BASE)
+    if (!pool) {
+      const baseTicker = normalizedTicker.replace(/\d+$/, '');
+      pool = TOKEN_CONSTANTS.find(t => {
+        if (!t.ticker) return false;
+        const poolBaseTicker = t.ticker.replace(/\d+$/, '');
+        return poolBaseTicker === baseTicker;
+      });
+    }
+    
+    return pool?.color || ANIMATION_CONFIG.defaultColor;
+  };
+
+  // Get active color based on selected pool
+  const activeColor = selectedTicker 
+    ? getPoolColor(selectedTicker)
+    : ANIMATION_CONFIG.defaultColor;
+
+  const dotColor = activeColor;
+  const activePoolColor = activeColor;
   
   // Helper: Parse hex color to RGB
   const hexToRgb = (hex: string) => {
@@ -41,35 +88,20 @@ export default function AnimatedBackground({
   useEffect(() => {
     const targetColor = activePoolColor || dotColor;
     
-    console.log('🎨 AnimatedBackground color update:', {
-      activePoolColor,
-      targetColor,
-      previousColor: previousColorRef.current,
-      willTransition: targetColor !== previousColorRef.current
-    });
-    
     // Only transition if the color actually changed
     if (targetColor !== previousColorRef.current) {
       const targetRgb = hexToRgb(targetColor);
       const startRgb = hexToRgb(previousColorRef.current);
       let progress = 0;
       
-      console.log('🎨 Starting color transition:', {
-        from: previousColorRef.current,
-        to: targetColor,
-        fromRgb: startRgb,
-        toRgb: targetRgb
-      });
-      
       const transitionInterval = setInterval(() => {
-        progress += 0.02; // Smooth transition over ~50 frames
+        progress += 0.09; // Smooth transition over ~50 frames
         
         if (progress >= 1) {
           progress = 1;
           clearInterval(transitionInterval);
           setCurrentColor(targetColor);
           previousColorRef.current = targetColor;
-          console.log('🎨 Color transition complete:', targetColor);
         }
         
         // Lerp between colors
@@ -85,7 +117,7 @@ export default function AnimatedBackground({
   }, [activePoolColor, dotColor, hexToRgb]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!ANIMATION_CONFIG.enabled) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -95,6 +127,9 @@ export default function AnimatedBackground({
 
     let animationFrameId: number;
     let time = 0;
+    let lastFrameTime = 0;
+    const targetFPS = 30; // Limit to 30 FPS for performance
+    const frameInterval = 1000 / targetFPS;
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -109,6 +144,8 @@ export default function AnimatedBackground({
       y: number; 
       baseX: number; 
       baseY: number; 
+      vx: number;        // velocity X for momentum
+      vy: number;        // velocity Y for momentum
       cluster: number;
       noiseOffsetX: number;
       noiseOffsetY: number;
@@ -123,14 +160,14 @@ export default function AnimatedBackground({
     };
 
     // Create dot grid with heavy randomization to break grid pattern
-    for (let y = 0; y < canvas.height; y += spacing) {
-      for (let x = 0; x < canvas.width; x += spacing) {
+    for (let y = 0; y < canvas.height; y += ANIMATION_CONFIG.spacing) {
+      for (let x = 0; x < canvas.width; x += ANIMATION_CONFIG.spacing) {
         const clusterValue = noise(x, y, 0);
         const density = noise(x + 1000, y + 1000, 0); // Different noise pattern for density
         
         // Add significant random offset to break grid pattern
-        const randomOffsetX = (Math.random() - 0.5) * spacing * 0.8;
-        const randomOffsetY = (Math.random() - 0.5) * spacing * 0.8;
+        const randomOffsetX = (Math.random() - 0.5) * ANIMATION_CONFIG.spacing * 0.8;
+        const randomOffsetY = (Math.random() - 0.5) * ANIMATION_CONFIG.spacing * 0.8;
         
         // Add main dot with random offset
         dots.push({
@@ -138,6 +175,8 @@ export default function AnimatedBackground({
           y: y + randomOffsetY,
           baseX: x + randomOffsetX,
           baseY: y + randomOffsetY,
+          vx: 0,
+          vy: 0,
           cluster: clusterValue,
           noiseOffsetX: Math.random() * Math.PI * 2,
           noiseOffsetY: Math.random() * Math.PI * 2,
@@ -147,7 +186,7 @@ export default function AnimatedBackground({
         const numExtraDots = density > 0.8 ? Math.floor(density * 2) : 0;
         for (let i = 0; i < numExtraDots; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const distance = Math.random() * spacing * 0.9;
+          const distance = Math.random() * ANIMATION_CONFIG.spacing * 0.9;
           const offsetX = Math.cos(angle) * distance;
           const offsetY = Math.sin(angle) * distance;
           
@@ -156,6 +195,8 @@ export default function AnimatedBackground({
             y: y + offsetY + randomOffsetY,
             baseX: x + offsetX + randomOffsetX,
             baseY: y + offsetY + randomOffsetY,
+            vx: 0,
+            vy: 0,
             cluster: clusterValue,
             noiseOffsetX: Math.random() * Math.PI * 2,
             noiseOffsetY: Math.random() * Math.PI * 2,
@@ -164,110 +205,112 @@ export default function AnimatedBackground({
       }
     }
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
+      // FPS limiter - skip frames if needed
+      const elapsed = currentTime - lastFrameTime;
+      if (elapsed < frameInterval) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTime = currentTime - (elapsed % frameInterval);
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      time += animationSpeed;
+      time += ANIMATION_CONFIG.floatingSpeed;
 
       dots.forEach((dot) => {
-        // Dynamic clustering based on noise - creates organic shapes
-        const clusterNoise = noise(dot.baseX, dot.baseY, time * 2);
-        const attractionX = noise(dot.baseX * 0.5, dot.baseY * 0.5, time * 1.5 + dot.noiseOffsetX);
-        const attractionY = noise(dot.baseX * 0.5, dot.baseY * 0.5, time * 1.5 + dot.noiseOffsetY);
+        // INDEPENDENT BEE SWARM BEHAVIOR - each dot moves on its own
         
-        // Add chaotic, random movement with multiple frequencies
-        const wave1 = Math.sin(dot.baseX * 0.01 + time * 3 + dot.noiseOffsetX) * 12;
-        const wave2 = Math.cos(dot.baseY * 0.01 + time * 3 + dot.noiseOffsetY) * 12;
-        const wave3 = Math.sin((dot.baseX + dot.baseY) * 0.005 + time * 4) * 7;
+        // Each dot uses its unique offset for different noise values
+        const clusterNoise = noise(dot.x * 0.005 + dot.noiseOffsetX, dot.y * 0.005 + dot.noiseOffsetY, time);
         
-        // Add high-frequency jitter for more chaotic movement
-        const jitterX = Math.sin(dot.baseX * 0.05 + time * 8 + dot.noiseOffsetX) * 3;
-        const jitterY = Math.cos(dot.baseY * 0.05 + time * 8 + dot.noiseOffsetY) * 3;
+        // INDIVIDUAL WANDERING - each dot has its own path
+        const wanderAngle = noise(dot.noiseOffsetX * 10, dot.noiseOffsetY * 10, time * 2) * Math.PI * 2;
+        const wanderX = Math.cos(wanderAngle) * ANIMATION_CONFIG.wanderSpeed;
+        const wanderY = Math.sin(wanderAngle) * ANIMATION_CONFIG.wanderSpeed;
         
-        // Add slow drift
-        const driftX = Math.sin(time * 0.5 + dot.noiseOffsetX) * 5;
-        const driftY = Math.cos(time * 0.5 + dot.noiseOffsetY) * 5;
+        // GRAVITY ATTRACTION - dots near each other attract
+        const pullX = (clusterNoise - 0.5) * ANIMATION_CONFIG.clusterAttraction;
+        const pullY = (Math.sin(clusterNoise * Math.PI + dot.noiseOffsetY) - 0.5) * ANIMATION_CONFIG.clusterAttraction;
         
-        // Pull dots together in areas of high noise (creates organic shapes)
-        const pullX = (attractionX - 0.5) * 10 * clusterNoise;
-        const pullY = (attractionY - 0.5) * 10 * clusterNoise;
+        // CHAOS - individual random bursts
+        const shouldSeparate = Math.random() < ANIMATION_CONFIG.chaos * 0.01;
+        const separationX = shouldSeparate ? (Math.random() - 0.5) * 50 : 0;
+        const separationY = shouldSeparate ? (Math.random() - 0.5) * 50 : 0;
+        
+        // Apply forces to velocity - each dot moves independently
+        dot.vx = dot.vx * ANIMATION_CONFIG.momentum + (wanderX + pullX + separationX) * 0.1;
+        dot.vy = dot.vy * ANIMATION_CONFIG.momentum + (wanderY + pullY + separationY) * 0.1;
+        
+        // Update position with velocity
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+        
+        // EDGE WRAPPING - dots wrap around screen for continuous roaming
+        if (dot.x < -50) dot.x = canvas.width + 50;
+        if (dot.x > canvas.width + 50) dot.x = -50;
+        if (dot.y < -50) dot.y = canvas.height + 50;
+        if (dot.y > canvas.height + 50) dot.y = -50;
 
-        dot.x = dot.baseX + wave1 + wave3 + pullX + jitterX + driftX;
-        dot.y = dot.baseY + wave2 + wave3 + pullY + jitterY + driftY;
+        // Calculate opacity - FLASHING/PULSING effect (simplified)
+        const flashCycle = (Math.sin(time * ANIMATION_CONFIG.flashingSpeed + dot.noiseOffsetX) + 1) * 0.3;
+        const opacity = ANIMATION_CONFIG.baseOpacity * (0.5 + flashCycle + clusterNoise * 0.2);
 
-        // Calculate opacity based on clustering and movement
-        const intensity = (Math.sin(dot.baseX * 0.02 + dot.baseY * 0.02 + time * 5) + 1) / 2;
-        const clusterBoost = clusterNoise * 0.2; // Dots in clusters are brighter
-        const shapeBoost = (attractionX + attractionY) * 0.1; // Dots forming shapes glow
-        const opacity = 0.25 + intensity * 0.25 + clusterBoost + shapeBoost;
-
-        // Draw irregular, pixelated blobs instead of perfect circles
-        const pixelSize = 0.8; // Size of individual pixels
-        const numPixels = 8; // Number of pixels to create blob
+        // Draw pixelated square with noise - like retro pixels
+        const rgb = colorTransitionRef.current;
+        const size = ANIMATION_CONFIG.dotSize;
         
-        for (let n = 0; n < numPixels; n++) {
-          // Random offset from center to create irregular shape
-          const offsetX = (Math.random() - 0.5) * dotSize * 1.5;
-          const offsetY = (Math.random() - 0.5) * dotSize * 1.5;
-          
-          // Distance from center - fade edges
-          const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-          const maxDist = dotSize * 0.75;
-          
-          if (dist < maxDist) {
-            const edgeFade = 1 - (dist / maxDist);
-            const pixelOpacity = opacity * edgeFade * (0.8 + Math.random() * 0.4);
+        // Create cluster of small squares for pixelated look
+        const pixelsPerDot = ANIMATION_CONFIG.pixelDensity;
+        const pixelSize = size / pixelsPerDot;
+        
+        for (let px = 0; px < pixelsPerDot; px++) {
+          for (let py = 0; py < pixelsPerDot; py++) {
+            // Random chance to skip pixels for noisy appearance (causes shape changing)
+            if (Math.random() > (1 - ANIMATION_CONFIG.pixelNoise)) continue;
             
-            // Use transitioning color
-            const rgb = colorTransitionRef.current;
-            ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${Math.min(pixelOpacity, 1)})`;
+            // Vary opacity for each pixel
+            const pixelOpacity = opacity * (0.6 + Math.random() * 0.4);
             
-            // Draw small rectangles instead of circles for pixelated look
+            ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pixelOpacity})`;
             ctx.fillRect(
-              dot.x + offsetX - pixelSize / 2,
-              dot.y + offsetY - pixelSize / 2,
-              pixelSize + Math.random() * 0.4, // Slight size variation
-              pixelSize + Math.random() * 0.4
+              dot.x + px * pixelSize - size / 2,
+              dot.y + py * pixelSize - size / 2,
+              pixelSize,
+              pixelSize
             );
           }
         }
       });
 
-      // Add horizontal fade gradient on edges
-      const fadeWidth = canvas.width * 0.25; // 25% fade on each side
-      
-      // Left fade (black to transparent)
-      const leftGradient = ctx.createLinearGradient(0, 0, fadeWidth, 0);
-      leftGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
-      leftGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = leftGradient;
-      ctx.fillRect(0, 0, fadeWidth, canvas.height);
-      
-      // Right fade (transparent to black)
-      const rightGradient = ctx.createLinearGradient(canvas.width - fadeWidth, 0, canvas.width, 0);
-      rightGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rightGradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
-      ctx.fillStyle = rightGradient;
-      ctx.fillRect(canvas.width - fadeWidth, 0, fadeWidth, canvas.height);
-
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [enabled, dotColor, dotSize, spacing, animationSpeed]);
+  }, [activePoolColor]); // All other config values are in ANIMATION_CONFIG constant
 
-  if (!enabled) return null;
+  if (!ANIMATION_CONFIG.enabled) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 animate-in fade-in duration-1000 w-screen h-screen"
-      style={{ opacity: 1 }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 pointer-events-none z-0 w-screen h-screen transition-opacity duration-700 ease-out"
+        style={{ opacity: isReady ? 1 : 0 }}
+      />
+      {/* Gradient overlay on top of background */}
+      <div 
+        className="fixed inset-0 z-[1] pointer-events-none transition-opacity duration-700 ease-out"
+        style={{
+          opacity: isReady ? 1 : 0,
+          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.9) 100%)'
+        }}
+      />
+    </>
   );
 }
 

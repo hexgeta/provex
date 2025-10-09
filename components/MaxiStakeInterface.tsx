@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useMaxiPool } from '@/hooks/contracts/useMaxiPool';
 import { usePool } from '@/context/PoolContext';
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, ChevronDown } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
 
@@ -50,6 +50,10 @@ export default function MaxiStakeInterface({
   const [redeemAmount, setRedeemAmount] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const redeemAmountRef = useRef<HTMLInputElement>(null);
+  
+  // Scroll indicator states
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const infoScrollRef = useRef<HTMLDivElement>(null);
 
   // Threshold for showing detailed countdown (days)
   const COUNTDOWN_THRESHOLD_DAYS = 30;
@@ -95,6 +99,32 @@ export default function MaxiStakeInterface({
       }
     }
   }, [redeemAmount]);
+
+  // Check if content is scrollable and track scroll position
+  useEffect(() => {
+    const checkScroll = () => {
+      if (infoScrollRef.current && activeTab === 'info') {
+        const { scrollHeight, clientHeight, scrollTop } = infoScrollRef.current;
+        const isScrollable = scrollHeight > clientHeight;
+        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+        setShowScrollIndicator(isScrollable && !isAtBottom);
+      }
+    };
+
+    checkScroll();
+    const scrollElement = infoScrollRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+    }
+
+    return () => {
+      if (scrollElement) {
+        scrollElement.removeEventListener('scroll', checkScroll);
+      }
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [activeTab, stakeIsActive, currentHexDay, stakeEndDay]);
 
   // Helper function to remove commas for calculations
   const removeCommas = (value: string): string => {
@@ -307,11 +337,14 @@ export default function MaxiStakeInterface({
 
       {/* Content Area */}
       <div 
-        className="bg-black border-2 rounded-2xl p-6 md:p-8"
+        className="bg-black/10 backdrop-blur-[3px] border-2 rounded-2xl p-6 md:p-8"
         style={{ borderColor: poolBorderColor }}
       >
         <div className="relative">
-          <div className={`space-y-6 transition-all duration-200 ${activeTab === 'info' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
+          <div 
+            ref={infoScrollRef}
+            className={`space-y-6 transition-all duration-200 max-h-[70vh] overflow-y-auto scrollbar-hide ${activeTab === 'info' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}
+          >
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pool Information</h2>
             
             <InfoRow label="Pool Name" value={tokenName || 'Loading...'} />
@@ -414,21 +447,26 @@ export default function MaxiStakeInterface({
               </>
             )}
             
-            <div className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl">
+            <a
+              href={getBlockExplorerUrl(MAXI_CONTRACT_ADDRESS)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl block hover:bg-blue-900/30 transition-colors cursor-pointer"
+            >
               <h3 className="text-lg font-semibold text-white mb-2">Contract Address</h3>
               <div className="flex items-center gap-2">
                 <code className="text-sm text-gray-300 break-all">{MAXI_CONTRACT_ADDRESS}</code>
-                <a
-                  href={getBlockExplorerUrl(MAXI_CONTRACT_ADDRESS)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                <ExternalLink className="w-4 h-4 text-blue-400" />
               </div>
-            </div>
+            </a>
           </div>
+
+          {/* Scroll indicator */}
+          {showScrollIndicator && activeTab === 'info' && (
+            <div className="absolute bottom-0 mb-[-10px] left-1/2 -translate-x-1/2 pointer-events-none z-10">
+              <ChevronDown className="w-6 h-6 text-white/60" />
+            </div>
+          )}
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'end' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">End HEX Stake</h2>

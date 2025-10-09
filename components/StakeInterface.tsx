@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { useDiamondHands } from '@/hooks/contracts/useDiamondHands';
 import { usePool } from '@/context/PoolContext';
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle, Lock } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Gem, AlertTriangle, Lock, ChevronDown } from 'lucide-react';
 import { formatEther, parseUnits, parseAbi } from 'viem';
 import { useContractRead, useWriteContract, usePublicClient, useWalletClient, useAccount } from 'wagmi';
 import { ConnectButton } from './ConnectButton';
@@ -133,6 +133,10 @@ export default function StakeInterface({
   const mintAmountRef = useRef<HTMLInputElement>(null);
   const withdrawAmountRef = useRef<HTMLInputElement>(null);
   const lockAmountRef = useRef<HTMLInputElement>(null);
+  
+  // Scroll indicator states
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const infoScrollRef = useRef<HTMLDivElement>(null);
 
   // Period-specific staking amounts for accurate reward calculations
   const [userStakedForActivePeriod, setUserStakedForActivePeriod] = useState<bigint>(0n);
@@ -724,6 +728,32 @@ export default function StakeInterface({
 
     return () => clearInterval(interval);
   }, [reloadPhaseEnd, currentHexDay, stakeIsActive]);
+
+  // Check if content is scrollable and track scroll position
+  useEffect(() => {
+    const checkScroll = () => {
+      if (infoScrollRef.current && activeTab === 'info') {
+        const { scrollHeight, clientHeight, scrollTop } = infoScrollRef.current;
+        const isScrollable = scrollHeight > clientHeight;
+        const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+        setShowScrollIndicator(isScrollable && !isAtBottom);
+      }
+    };
+
+    checkScroll();
+    const scrollElement = infoScrollRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+    }
+
+    return () => {
+      if (scrollElement) {
+        scrollElement.removeEventListener('scroll', checkScroll);
+      }
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [activeTab, stakeIsActive, currentHexDay, stakeEndDay]);
 
   // Format user balance for display (2 decimals)
   const formattedBalance = userBalance 
@@ -1363,7 +1393,7 @@ export default function StakeInterface({
   return (
     <div className="w-full max-w-2xl mx-auto mt-4">
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-2 mb-0 text-[10px] sm:text-lg">
+      <div className="flex justify-center gap-2 mb-0 text-[10px] xs:text-md md:text-lg">
         <TabButton
           active={activeTab === 'info'}
           onClick={() => setActiveTab('info')}
@@ -1392,11 +1422,14 @@ export default function StakeInterface({
 
       {/* Content Area */}
       <div 
-        className="bg-black border-2 rounded-2xl p-6 md:p-8"
+        className="bg-black/20 backdrop-blur-sm border-2 rounded-2xl p-6 md:p-8"
         style={{ borderColor: poolBorderColor }}
       >
         <div className="relative">
-          <div className={`space-y-6 transition-all duration-200 ${activeTab === 'info' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
+          <div 
+            ref={infoScrollRef}
+            className={`space-y-6 transition-all duration-200 max-h-[70vh] overflow-y-auto scrollbar-hide ${activeTab === 'info' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}
+          >
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Pool Information</h2>
             
             <InfoRow label="Pool Name" value={tokenName || 'Loading...'} />
@@ -1499,20 +1532,18 @@ export default function StakeInterface({
               </>
             )}
             
-            <div className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl">
+            <a
+              href={getBlockExplorerUrl(selectedPool.contractAddress)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 p-4 bg-blue-900/20 border-1 border-blue-500/30 rounded-xl block hover:bg-blue-900/30 transition-colors cursor-pointer"
+            >
               <h3 className="text-lg font-semibold text-white mb-2">Contract Address</h3>
               <div className="flex items-center gap-2">
                 <code className="text-sm text-gray-300 break-all">{selectedPool.contractAddress}</code>
-                <a
-                  href={`https://otter.pulsechain.com/address/${selectedPool.contractAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                <ExternalLink className="w-4 h-4 text-blue-400" />
               </div>
-            </div>
+            </a>
           </div>
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'end' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
@@ -1650,6 +1681,13 @@ export default function StakeInterface({
               </button>
             )}
           </div>
+
+          {/* Scroll indicator */}
+          {showScrollIndicator && activeTab === 'info' && (
+            <div className="absolute bottom-0 mb-[-10px] left-1/2 -translate-x-1/2 pointer-events-none z-10">
+              <ChevronDown className="w-6 h-6 text-white/60" />
+            </div>
+          )}
 
           <div className={`space-y-6 transition-all duration-200 ${activeTab === 'claim' ? 'opacity-100 visible' : 'opacity-0 invisible absolute inset-0'}`}>
             <div className="flex items-center justify-between mb-6">

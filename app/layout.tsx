@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 import { Providers } from '@/components/Providers'
 import AppKitProvider from '@/context/AppKitProvider'
 import { Toaster } from '@/components/ui/toaster'
-import AnimatedBackgroundWrapper from '@/components/AnimatedBackgroundWrapper'
+import AnimatedBackground from '@/components/ui/AnimatedBackground'
 import { headers } from 'next/headers'
 
 // Static layout with revalidation
@@ -83,14 +83,7 @@ export default async function RootLayout({
         <AppKitProvider cookies={cookies}>
           <Providers>
             <div className="relative">
-              <AnimatedBackgroundWrapper />
-              {/* Gradient overlay between background and content */}
-              <div 
-                className="fixed inset-0 z-[5] pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.9) 100%)'
-                }}
-              />
+              <AnimatedBackground />
               <div className="flex flex-col min-h-screen relative z-10">
                 <NavBar />
                 <main className="flex-grow">{children}</main>

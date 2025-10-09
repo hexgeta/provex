@@ -110,6 +110,7 @@ module.exports = {
     },
     plugins: [
       require('tailwindcss-animate'),
+      require('tailwind-scrollbar')({ nocompatible: true }),
       // ... any other plugins you're using
     ],
   }

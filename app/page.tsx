@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { PoolProvider, usePool } from '@/context/PoolContext';
+import { usePool } from '@/context/PoolContext';
 import PoolSelector from '@/components/PoolSelector';
 import PoolCountdown from '@/components/PoolCountdown';
 import StakeInterface from '@/components/StakeInterface';
@@ -23,10 +23,10 @@ function HomeContent() {
 
   // Check connection status
   useEffect(() => {
-    // Wait a brief moment to determine connection status
+    // Wait a brief moment to determine connection status and coordinate with background fade-in
     const timer = setTimeout(() => {
       setIsCheckingConnection(false);
-    }, 500);
+    }, 100);
     
     return () => clearTimeout(timer);
   }, [isConnected]);
@@ -95,7 +95,7 @@ function HomeContent() {
             key="hero"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="w-full px-2 md:px-8 bg-black flex items-center justify-center py-32"
           >
             <div className="max-w-6xl mx-auto text-center">
@@ -118,7 +118,7 @@ function HomeContent() {
             key="content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="w-full"
           >
             {/* Pool Selector with Countdown */}
@@ -140,9 +140,5 @@ function HomeContent() {
 }
 
 export default function Home() {
-  return (
-    <PoolProvider>
-      <HomeContent />
-    </PoolProvider>
-  );
+  return <HomeContent />;
 } 

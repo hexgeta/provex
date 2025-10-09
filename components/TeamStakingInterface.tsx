@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { formatUnits, parseUnits, Address } from 'viem';
 import { Loader2, Info, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -19,13 +20,47 @@ import { usePerpetualPool } from '@/hooks/contracts/usePerpetualPool';
 import { REWARD_TOKENS, RewardToken, REWARD_TOKEN_ADDRESSES } from '@/constants/team';
 import { PERPETUAL_POOLS } from '@/constants/crypto';
 import { useTokenPrices } from '@/hooks/crypto/useTokenPrices';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TeamStakingInterface() {
   const { address, isConnected, chain } = useAccount();
+  const { toast } = useToast();
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   
   // Fetch token prices for all reward tokens
   const rewardTokenAddresses = Object.values(REWARD_TOKEN_ADDRESSES);
   const { prices: tokenPrices } = useTokenPrices(rewardTokenAddresses);
+
+  // Check connection status
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCheckingConnection(false);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [isConnected]);
+
+  // Get the correct transaction URL based on chain
+  const getTxUrl = (txHash: string) => {
+    if (chain?.id === 1) {
+      return `https://etherscan.io/tx/${txHash}`;
+    }
+    return `https://otter.pulsechain.com/tx/${txHash}`;
+  };
+
+  // Helper function to check if error is a user rejection
+  const isUserRejection = (error: any): boolean => {
+    const errorMessage = error?.message?.toLowerCase() || error?.toString()?.toLowerCase() || '';
+    return (
+      errorMessage.includes('user rejected') ||
+      errorMessage.includes('user denied') ||
+      errorMessage.includes('rejected the request') ||
+      errorMessage.includes('user cancelled') ||
+      errorMessage.includes('cancelled') ||
+      errorMessage.includes('denied transaction') ||
+      errorMessage.includes('user rejection')
+    );
+  };
   
   // Get the correct BASE pool based on chain (BASE3 for PulseChain, eBASE3 for Ethereum)
   const BASE_POOL = chain?.id === 1 ? PERPETUAL_POOLS.eBASE3 : PERPETUAL_POOLS.BASE3;
@@ -361,14 +396,31 @@ export default function TeamStakingInterface() {
     
     try {
       const amountBigInt = parseUnits(stakeAmount, 8);
-      await stakeTeam(amountBigInt);
+      const { hash } = await stakeTeam(amountBigInt);
       setStakeAmount('');
-      // Refetch stakes after staking
-      setStakesLoaded(false);
-      alert('Successfully staked TEAM!');
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully staked TEAM! Click to view transaction.",
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+        setStakesLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Stake error:', error);
-      alert(error.message || 'Failed to stake TEAM');
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to stake TEAM',
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -395,14 +447,31 @@ export default function TeamStakingInterface() {
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
       const amountBigInt = parseUnits(unstakeAmount, 8);
-      await earlyEndStake(stakeIDBigInt, amountBigInt);
+      const { hash } = await earlyEndStake(stakeIDBigInt, amountBigInt);
       setUnstakeAmount('');
-      // Refetch stakes after unstaking
-      setStakesLoaded(false);
-      alert('Successfully unstaked TEAM (with penalty)!');
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully unstaked TEAM (with penalty)! Click to view transaction.",
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+        setStakesLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Early end stake error:', error);
-      alert(error.message || 'Failed to unstake TEAM');
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to unstake TEAM',
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -412,14 +481,31 @@ export default function TeamStakingInterface() {
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
       const amountBigInt = parseUnits(unstakeAmount, 8);
-      await endCompletedStake(stakeIDBigInt, amountBigInt);
+      const { hash } = await endCompletedStake(stakeIDBigInt, amountBigInt);
       setUnstakeAmount('');
-      // Refetch stakes after unstaking
-      setStakesLoaded(false);
-      alert('Successfully unstaked TEAM!');
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully unstaked TEAM! Click to view transaction.",
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+        setStakesLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('End stake error:', error);
-      alert(error.message || 'Failed to unstake TEAM');
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to unstake TEAM',
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -428,13 +514,30 @@ export default function TeamStakingInterface() {
     
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
-      await extendStake(stakeIDBigInt);
-      // Refetch stakes after extending
-      setStakesLoaded(false);
-      alert('Successfully extended stake to next period!');
+      const { hash } = await extendStake(stakeIDBigInt);
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully extended stake to next period! Click to view transaction.",
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+        setStakesLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Extend error:', error);
-      alert(error.message || 'Failed to extend stake');
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to extend stake',
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -443,31 +546,72 @@ export default function TeamStakingInterface() {
     
     try {
       const stakeIDBigInt = BigInt(currentStakeID);
-      await restakeExpiredStake(stakeIDBigInt);
-      // Refetch stakes after restaking
-      setStakesLoaded(false);
-      alert('Successfully restaked for next period!');
+      const { hash } = await restakeExpiredStake(stakeIDBigInt);
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully restaked for next period! Click to view transaction.",
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+        setStakesLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Restake error:', error);
-      alert(error.message || 'Failed to restake');
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to restake',
+          variant: "destructive",
+        });
+      }
     }
   };
-
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">Connect Your Wallet</h1>
-          <p className="text-gray-400">Please connect your wallet to access TEAM staking</p>
-        </div>
-      </div>
-    );
-  }
 
   const completedPeriod = currentPeriod ? Number(currentPeriod) - 1 : 0;
 
   return (
-    <>
+    <AnimatePresence mode="wait">
+      {/* Loading State */}
+      {isCheckingConnection && (
+        <div
+          key="loading"
+          className="w-full flex items-center justify-center py-32"
+        >
+          <Loader2 className="w-12 h-12 animate-spin text-white" />
+        </div>
+      )}
+
+      {/* Connect Wallet Message */}
+      {!isCheckingConnection && !isConnected && (
+        <motion.div
+          key="connect"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="w-full flex items-center justify-center py-32"
+        >
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-white mb-4">Connect Your Wallet</h1>
+            <p className="text-gray-400">Please connect your wallet to access TEAM staking</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main Content */}
+      {!isCheckingConnection && isConnected && (
+        <motion.div 
+          key="content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="w-full max-w-2xl mx-auto mt-4"
+        >
       {/* Period Banner */}
       {!isStakingPeriod && currentPeriod && Number(currentPeriod) > 0 && (
         <div className="mb-6 p-4 bg-black border-1 border-white/50 rounded-xl">
@@ -526,24 +670,24 @@ export default function TeamStakingInterface() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="stake" className="w-full">
-        <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0 text-[10px] sm:text-2xl">
+        <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0">
           <TabsTrigger 
             value="stake" 
-            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
+            className="text-[10px] sm:text-base md:text-lg px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
             <span className="sm:hidden">Stake</span>
             <span className="hidden sm:inline">Stake TEAM</span>
           </TabsTrigger>
           <TabsTrigger 
             value="unstake" 
-            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
+            className="text-[10px] sm:text-base md:text-lg px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
             <span className="sm:hidden">Unstake</span>
             <span className="hidden sm:inline">Unstake TEAM</span>
           </TabsTrigger>
           <TabsTrigger 
             value="rewards" 
-            className="px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
+            className="text-[10px] sm:text-base md:text-lg px-3 md:px-8 py-2 md:py-3 rounded-t-xl rounded-b-none bg-transparent border-2 border-transparent data-[state=active]:bg-black data-[state=active]:border-white/50 data-[state=active]:border-b-transparent data-[state=active]:text-white text-gray-500 hover:text-gray-300 transition-colors relative data-[state=active]:z-10 font-semibold"
           >
             <span className="sm:hidden">Claim</span>
             <span className="hidden sm:inline">Claim Rewards</span>
@@ -581,36 +725,22 @@ export default function TeamStakingInterface() {
 
               <button
                 onClick={handleStake}
-                disabled={!stakeAmount || parseFloat(stakeAmount) <= 0 || isLoading || baseStakeIsActive === true}
+                disabled={!stakeAmount || parseFloat(stakeAmount) <= 0 || isLoading}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  stakeAmount && parseFloat(stakeAmount) > 0 && !isLoading && baseStakeIsActive !== true
-                    ? 'bg-white/10 hover:bg-white/20 text-white'
+                  stakeAmount && parseFloat(stakeAmount) > 0 && !isLoading
+                    ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Processing...
                   </span>
                 ) : (
                   'Stake TEAM'
                 )}
               </button>
-
-              {/* Show warning if BASE stake is active */}
-              {baseStakeIsActive === true && (
-                <div className="flex items-start gap-3 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg outline-none select-none leading-5">
-                  <Info className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-                  <p className="text-sm text-center text-yellow-400 leading-5">
-                    Staking is only available after the BASE stake ends in:{' '}
-                    <span className="font-mono font-semibold">
-                      {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
-                      {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
-                    </span>
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </TabsContent>
@@ -748,13 +878,13 @@ export default function TeamStakingInterface() {
                     disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                       selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
-                        ? 'bg-white/10 hover:bg-white/20 text-white'
+                        ? 'bg-white text-black hover:bg-gray-200'
                         : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                     }`}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                         Processing...
                       </span>
                     ) : (
@@ -776,7 +906,7 @@ export default function TeamStakingInterface() {
                   <button
                     onClick={handleExtend}
                     disabled={!selectedStakePeriod || isLoading}
-                    className="w-full py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
+                    className="w-full py-3 rounded-xl font-semibold bg-white text-black hover:bg-gray-200 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
                   >
                     Extend Stake
                   </button>
@@ -810,6 +940,9 @@ export default function TeamStakingInterface() {
             isStakingPeriod={isStakingPeriod}
             stakeEndCountdown={stakeEndCountdown}
             tokenPrices={tokenPrices}
+            toast={toast}
+            getTxUrl={getTxUrl}
+            isUserRejection={isUserRejection}
           />
         </TabsContent>
       </Tabs>
@@ -859,7 +992,9 @@ export default function TeamStakingInterface() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -881,6 +1016,9 @@ function RewardsClaimSection({
   isStakingPeriod,
   stakeEndCountdown,
   tokenPrices,
+  toast,
+  getTxUrl,
+  isUserRejection,
 }: any) {
   const [loadingToken, setLoadingToken] = useState<string | null>(null);
 
@@ -933,12 +1071,30 @@ function RewardsClaimSection({
   const handlePrepareClaim = async (ticker: string) => {
     setLoadingToken(ticker);
     try {
-      await prepareClaim(ticker);
-      setRewardsLoaded(false); // Trigger refetch
-      alert(`Successfully prepared ${ticker} rewards!`);
+      const { hash } = await prepareClaim(ticker);
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: `Successfully prepared ${ticker} rewards! Click to view transaction.`,
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch rewards
+      setTimeout(() => {
+        setRewardsLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Prepare claim error:', error);
-      alert(error.message || `Failed to prepare ${ticker} rewards`);
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || `Failed to prepare ${ticker} rewards`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingToken(null);
     }
@@ -950,12 +1106,30 @@ function RewardsClaimSection({
     try {
       const period = BigInt(selectedClaimPeriod);
       const stakeID = BigInt(selectedClaimPeriod);
-      await claimRewards(period, ticker, stakeID);
-      setRewardsLoaded(false); // Trigger refetch
-      alert(`Successfully claimed ${ticker} rewards!`);
+      const { hash } = await claimRewards(period, ticker, stakeID);
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: `Successfully claimed ${ticker} rewards! Click to view transaction.`,
+        action: {
+          label: "View TX",
+          onClick: () => window.open(txUrl, '_blank'),
+        } as any,
+      });
+      // Wait a bit for blockchain to update, then refetch rewards
+      setTimeout(() => {
+        setRewardsLoaded(false);
+      }, 2000);
     } catch (error: any) {
       console.error('Claim error:', error);
-      alert(error.message || `Failed to claim ${ticker} rewards`);
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || `Failed to claim ${ticker} rewards`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingToken(null);
     }
@@ -1016,7 +1190,7 @@ function RewardsClaimSection({
                         status === 'pending' ? 'bg-blue-500/20 text-blue-300' :
                         'bg-gray-500/20 text-gray-400'
                       }`}>
-                        {status === 'active' ? 'Active' : status === 'pending' ? 'Future' : 'Completed'}
+                        {status === 'active' ? 'Active' : status === 'pending' ? 'Pre-committed' : 'Completed'}
                     </span>
                   </div>
                 </div>
@@ -1061,6 +1235,10 @@ function RewardsClaimSection({
 
           {/* Rewards Section - Only show if there are rewards */}
           {(() => {
+            if (!currentPeriodData?.claimableAmounts || !currentPeriodData?.claimedStatuses || !currentPeriodData?.prepareStatuses) {
+              return null;
+            }
+
             const hasRewards = REWARD_TOKENS.some((token) => {
               const amount = currentPeriodData.claimableAmounts[token] || 0n;
               const hasClaimed = currentPeriodData.claimedStatuses[token];
@@ -1078,16 +1256,16 @@ function RewardsClaimSection({
           
           <div className="space-y-2">
                   {REWARD_TOKENS.filter((token) => {
-                    const amount = currentPeriodData.claimableAmounts[token] || 0n;
-                    const hasClaimed = currentPeriodData.claimedStatuses[token];
-                    const isPrepared = currentPeriodData.prepareStatuses[token];
+                    const amount = currentPeriodData.claimableAmounts?.[token] || 0n;
+                    const hasClaimed = currentPeriodData.claimedStatuses?.[token];
+                    const isPrepared = currentPeriodData.prepareStatuses?.[token];
                     
                     // Only show if: has claimable rewards or has been claimed
                     return (isPrepared && amount > 0n) || hasClaimed;
                   }).map((token) => {
-                const amount = currentPeriodData.claimableAmounts[token] || 0n;
-                const hasClaimed = currentPeriodData.claimedStatuses[token];
-                const isPrepared = currentPeriodData.prepareStatuses[token];
+                const amount = currentPeriodData.claimableAmounts?.[token] || 0n;
+                const hasClaimed = currentPeriodData.claimedStatuses?.[token];
+                const isPrepared = currentPeriodData.prepareStatuses?.[token];
                 const isLoadingThisToken = loadingToken === token;
                 
                 // Determine button state and text
@@ -1103,7 +1281,7 @@ function RewardsClaimSection({
                   buttonText = 'Claim';
                   buttonAction = () => handleClaim(token);
                   canInteract = true;
-                  buttonClass = 'bg-white/10 text-white hover:bg-white/20';
+                  buttonClass = 'bg-white text-black hover:bg-gray-200';
                 }
               
               return (

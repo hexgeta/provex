@@ -59,14 +59,14 @@ export function ChainSwitcher({ isCheckingConnection }: { isCheckingConnection: 
             <DropdownMenuItem
               key={chainOption.id}
               onClick={() => switchChain({ chainId: chainOption.id })}
-              className="group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 cursor-pointer text-white hover:text-black focus:text-white data-[highlighted]:text-black hover:bg-white focus:bg-white/5 data-[highlighted]:bg-white text-xs md:text-base"
+              className="group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 cursor-pointer text-white hover:text-black hover:bg-white data-[highlighted]:bg-white data-[highlighted]:text-black focus-visible:outline-none text-xs md:text-base transition-colors"
             >
               <Image
                 src={chainOption.icon}
                 alt={chainOption.name}
                 width={20}
                 height={20}
-                className="w-3 h-3 md:w-4 md:h-4 group-hover:brightness-0 transition-all"
+                className="w-3 h-3 md:w-4 md:h-4 group-hover:brightness-0 group-data-[highlighted]:brightness-0 transition-all"
               />
               <span className="hidden md:inline">{chainOption.name}</span>
               {chain?.id === chainOption.id && (
