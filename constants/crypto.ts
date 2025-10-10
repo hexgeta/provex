@@ -48,7 +48,7 @@ export const TOKEN_CONSTANTS = [{
   name: "PulseX"
 }, {
   chain: 369,
-  a: "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39",
+  a: "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
   dexs: "0xf1f4ee610b2babb05c635f726ef8b0c568c8dc65",
   ticker: "HEX",
     decimals: 8,
@@ -70,7 +70,7 @@ export const TOKEN_CONSTANTS = [{
   origin: [369, "0x0"]
 }, {
   chain: 369,
-  a: "0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b",
+  a: "0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b",
   dexs: "0xbfb22cc394c53c14dc8a5840a246dfdd2f7b2507",
   ticker: "MAXI",
   decimals: 8,
@@ -90,7 +90,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'MAXI Fixed Stake Pool',
 }, {
   chain: 369,
-  a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
+  a: "0x6B32022693210cD2Cfc466b9Ac0085DE8fC34eA6",
   dexs: "0x969af590981bb9d19ff38638fa3bd88aed13603a",
   ticker: "DECI",
   decimals: 8,
@@ -114,7 +114,7 @@ export const TOKEN_CONSTANTS = [{
     }
 }, {
   chain: 369,
-  a: "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140",
+  a: "0x6b0956258fF7bd7645aa35369b55b61b8e6d6140",
   dexs: "0x52d4b3f479537a15d0b37b6cdbdb2634cc78525e",
   ticker: "LUCKY",
   decimals: 8,
@@ -138,7 +138,7 @@ export const TOKEN_CONSTANTS = [{
     }
 }, {
   chain: 369,
-  a: "0xf55cd1e399e1cc3d95303048897a680be3313308",
+  a: "0xF55cD1e399e1cc3D950303048897a680be3313308",
   dexs: "0x0b0f8f6c86c506b70e2a488a451e5ea7995d05c9",
   ticker: "TRIO",
   decimals: 8,
@@ -158,7 +158,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'TRIO Perpetual Pool',
 }, {
   chain: 369,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE3",
   decimals: 8,
@@ -178,7 +178,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'BASE Perpetual Pool'
 }, {
   chain: 369,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE1",
   decimals: 8,
@@ -198,7 +198,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 369,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE2",
   decimals: 8,
@@ -218,7 +218,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE1",
   decimals: 8,
@@ -238,7 +238,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE2",
   decimals: 8,
@@ -258,7 +258,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
+  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE3",
   decimals: 8,
@@ -282,7 +282,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xf55cd1e399e1cc3d95303048897a680be3313308",
+  a: "0xF55cD1e399e1cc3D950303048897a680be3313308",
   dexs: "0xda72b9e219d87ea31b4a1929640d9e960362470d",
   ticker: "eTRIO",
   decimals: 8,
@@ -306,7 +306,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140",
+  a: "0x6b0956258fF7bd7645aa35369b55b61b8e6d6140",
   dexs: "0x7327325e5F41d4c1922a9DFc87d8a3b3F1ae5C1F",
   ticker: "eLUCKY",
   decimals: 8,
@@ -330,7 +330,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
+  a: "0x6B32022693210cD2Cfc466b9Ac0085DE8fC34eA6",
   dexs: "0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e",
   ticker: "eDECI",
   decimals: 8,
