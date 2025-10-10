@@ -136,7 +136,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: PERPETUAL_POOL_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: { enabled: !!address },
   });
 
   const { data: totalSupplyRaw } = useContractRead({
@@ -190,7 +190,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: HEX_ABI,
     functionName: 'stakeLists',
     args: [contractAddress, 0n],
-    enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
+    query: { enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0 },
   });
 
   // Check if Hedron has been minted for this stake
@@ -199,7 +199,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: HEDRON_ABI,
     functionName: 'claimableByStake',
     args: stakeInfoRaw ? [contractAddress, 0n, stakeInfoRaw[0]] : undefined,
-    enabled: !!stakeInfoRaw,
+    query: { enabled: !!stakeInfoRaw },
   });
 
   // Query user's HEX balance
@@ -208,7 +208,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: HEX_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: { enabled: !!address },
   });
 
   // Query user's HEX allowance for this pool
@@ -217,7 +217,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: HEX_ABI,
     functionName: 'allowance',
     args: address ? [address, contractAddress] : undefined,
-    enabled: !!address,
+    query: { enabled: !!address },
   });
 
   // Use raw contract values directly

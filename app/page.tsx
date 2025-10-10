@@ -100,7 +100,7 @@ function HomeContent() {
           >
             <div className="max-w-6xl mx-auto text-center">
               <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white mb-2">
-                Pooled Stake Redemption Management
+                Pooled Stake Management Dapp
               </h2>
               <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
                 End pooled stakes. Redeem HEX rewards.

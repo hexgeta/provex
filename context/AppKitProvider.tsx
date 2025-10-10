@@ -23,7 +23,6 @@ export const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
   networks,
-  defaultChain: networks[0], // Set PulseChain as default (first in array)
   metadata,
   themeMode: 'dark',
   features: {
@@ -32,12 +31,6 @@ export const modal = createAppKit({
     socials: [], // Disable social login options/onboarding
     emailShowWallets: false, // Hide wallet options in email flow
   },
-  // Remove branding and search
-  enableNetworkView: false,
-  enableAccountView: false,
-  enableExplorer: true, // Show the search bar
-  enableOnramp: false, // Disable onramp/funding features
-  enableSwaps: false, // Disable swap features
   themeVariables: {
     // Colors - Black and White Theme
     '--w3m-accent': '#ffffff', // White accent for buttons and highlights
@@ -56,7 +49,7 @@ export const modal = createAppKit({
     
     // Effects
     '--w3m-backdrop-filter': 'blur(4px)', // Blur effect
-    '--w3m-z-index': '9999', // Higher than navbar and footer
+    '--w3m-z-index': 9999, // Higher than navbar and footer
     
     // Borders and overlays
     '--w3m-color-overlay': 'rgba(255, 255, 255, 0.1)', // White overlay for hover states
@@ -81,7 +74,7 @@ export const modal = createAppKit({
     // Additional branding hide attempts
     '--w3m-wui-ux-by-reown-display': 'none',
   
-  }
+  } as any
   // Show all 470+ wallets - removed includeWalletIds to display complete selection
 })
 

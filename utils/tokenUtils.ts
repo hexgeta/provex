@@ -27,7 +27,6 @@ function getTokenLogo(ticker: string): string {
     'weLUCKY': '/coin-logos/weLUCKY.svg',
     'weTRIO': '/coin-logos/weTRIO.svg',
     'weBASE': '/coin-logos/weBASE.svg',
-    'WPLS': '/coin-logos/WPLS.svg',
     'weWETH': '/coin-logos/weWETH.svg',
     'weDAI': '/coin-logos/weDAI.svg',
     'weUSDC': '/coin-logos/weUSDC.svg',
@@ -39,25 +38,13 @@ function getTokenLogo(ticker: string): string {
     'EDAI': '/coin-logos/EDAI.svg',
     'eDAI': '/coin-logos/EDAI.svg',
     'DAI': '/coin-logos/weDAI.svg', // DAI uses weDAI logo
-    'weWETH': '/coin-logos/weWETH.svg',
-    'WPLS': '/coin-logos/WPLS.svg',
-    'INC': '/coin-logos/INC.svg',
-    'PCOCK': '/coin-logos/PCOCK.svg',
-    'HTT3000': '/coin-logos/HTT3000.svg',
-    'HTT5000': '/coin-logos/HTT5000.svg',
-    'HTT7000': '/coin-logos/HTT7000.svg',
-    'ALAMO': '/coin-logos/ALAMO.svg',
-    'BRIAH': '/coin-logos/BRIAH.svg',
-    'HDRN': '/coin-logos/HDRN.svg',
-    'ICSA': '/coin-logos/ICSA.svg',
-    'COM': '/coin-logos/COM.svg',
   };
   
   return logoMap[ticker] || '/coin-logos/default.svg';
 }
 
 // Create a map of token addresses to token info from TOKEN_CONSTANTS
-const TOKEN_MAP = new Map([
+const TOKEN_MAP = new Map<string, { ticker: string; name: string; decimals: number; logo: string }>([
   // Add tokens from TOKEN_CONSTANTS (only if they have an address)
   ...TOKEN_CONSTANTS
     .filter(token => token.a && token.a.trim() !== '')
@@ -69,14 +56,14 @@ const TOKEN_MAP = new Map([
         decimals: token.decimals,
         logo: getTokenLogo(token.ticker)
       }
-    ]),
+    ] as [string, { ticker: string; name: string; decimals: number; logo: string }]),
   // Add contract's native address mapping to PLS
   ['0x000000000000000000000000000000000000dead', {
     ticker: 'PLS',
     name: 'Pulse',
     decimals: 18,
     logo: getTokenLogo('PLS')
-  }],
+  }] as [string, { ticker: string; name: string; decimals: number; logo: string }],
 ]);
 
 

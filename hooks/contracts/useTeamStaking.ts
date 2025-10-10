@@ -72,7 +72,7 @@ export function useTeamStaking() {
     abi: TEAM_ABI,
     functionName: 'USER_AMOUNT_STAKED',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: { enabled: !!address },
   });
 
   // Get user's TEAM balance
@@ -81,7 +81,7 @@ export function useTeamStaking() {
     abi: TEAM_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: { enabled: !!address },
   });
 
   // Get global staked amount

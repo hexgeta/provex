@@ -43,7 +43,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     abi: DIAMOND_HANDS_ABI,
     functionName: 'USER_AMOUNT_STAKED',
     args: address ? [address] : undefined,
-    enabled: !!address && !!contractAddress,
+    query: { enabled: !!address && !!contractAddress },
   });
 
   // Get global total staked amount
@@ -51,7 +51,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     address: contractAddress,
     abi: DIAMOND_HANDS_ABI,
     functionName: 'GLOBAL_AMOUNT_STAKED',
-    enabled: !!contractAddress,
+    query: { enabled: !!contractAddress },
   });
 
   // Get current period
@@ -59,7 +59,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     address: contractAddress,
     abi: DIAMOND_HANDS_ABI,
     functionName: 'getCurrentPeriod',
-    enabled: !!contractAddress,
+    query: { enabled: !!contractAddress },
   });
 
   // Get reward bucket address
@@ -67,7 +67,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     address: contractAddress,
     abi: DIAMOND_HANDS_ABI,
     functionName: 'REWARD_BUCKET_ADDRESS',
-    enabled: !!contractAddress,
+    query: { enabled: !!contractAddress },
   });
 
   // Get stake reward distribution address
@@ -75,7 +75,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     address: contractAddress,
     abi: DIAMOND_HANDS_ABI,
     functionName: 'STAKE_REWARD_DISTRIBUTION_ADDRESS',
-    enabled: !!contractAddress,
+    query: { enabled: !!contractAddress },
   });
 
   // Get reward bucket balance (pool tokens in reward bucket)
@@ -84,7 +84,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     abi: POOL_TOKEN_ABI,
     functionName: 'balanceOf',
     args: rewardBucketAddress ? [rewardBucketAddress] : undefined,
-    enabled: !!poolTokenAddress && !!rewardBucketAddress,
+    query: { enabled: !!poolTokenAddress && !!rewardBucketAddress },
   });
 
   // Get pool token total supply
@@ -92,7 +92,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     address: poolTokenAddress,
     abi: POOL_TOKEN_ABI,
     functionName: 'totalSupply',
-    enabled: !!poolTokenAddress,
+    query: { enabled: !!poolTokenAddress },
   });
 
   // Get pool token allowance for Diamond Hands contract
@@ -101,7 +101,7 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
     abi: POOL_TOKEN_ABI,
     functionName: 'allowance',
     args: address && contractAddress ? [address, contractAddress] : undefined,
-    enabled: !!address && !!poolTokenAddress && !!contractAddress,
+    query: { enabled: !!address && !!poolTokenAddress && !!contractAddress },
   });
 
   // Get stake info for a specific stake ID
