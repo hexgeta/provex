@@ -96,18 +96,15 @@ function HomeContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="w-full px-2 md:px-8 bg-black flex items-center justify-center py-16 md:py-32"
+            className="w-full px-2 md:px-8 bg-transparent flex items-center justify-center py-16 md:py-32"
           >
             <div className="max-w-6xl mx-auto text-center">
-              <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white">
+              <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white mb-2">
                 Pooled Stake Redemption Front-End
               </h2>
               <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
                 End pooled stakes. Redeem HEX rewards.
               </p>
-              <div className="mt-8">
-                <ConnectButton />
-              </div>
             </div>
           </motion.div>
         )}

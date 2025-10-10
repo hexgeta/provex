@@ -7,6 +7,13 @@ import { usePool } from '@/context/PoolContext';
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink, ChevronDown } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate } from '@/utils/format';
+import { 
+  validateAmount, 
+  removeCommas, 
+  formatNumberWithCommas,
+  isValidNumberInput,
+  amountToBigInt 
+} from '@/utils/validation';
 
 interface MaxiStakeInterfaceProps {
   activeTab: 'info' | 'end' | 'claim' | 'mint';
@@ -129,34 +136,6 @@ export default function MaxiStakeInterface({
     };
   }, [activeTab, stakeIsActive, currentHexDay, stakeEndDay]);
 
-  // Helper function to remove commas for calculations
-  const removeCommas = (value: string): string => {
-    return value.replace(/,/g, '');
-  };
-
-  // Helper function to format numbers with commas
-  const formatNumberWithCommas = (value: string): string => {
-    if (!value) return '';
-    
-    if (value.endsWith('.') || value.endsWith('.0')) {
-      return value;
-    }
-    
-    const num = parseFloat(value);
-    if (isNaN(num)) return value;
-    
-    const decimalIndex = value.indexOf('.');
-    if (decimalIndex !== -1) {
-      const decimalPlaces = value.length - decimalIndex - 1;
-      return num.toLocaleString('en-US', {
-        minimumFractionDigits: decimalPlaces,
-        maximumFractionDigits: decimalPlaces
-      });
-    }
-    
-    return num.toLocaleString();
-  };
-
   // Helper function to preserve cursor position during formatting
   const handleAmountChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -166,7 +145,8 @@ export default function MaxiStakeInterface({
     const input = e.target;
     const rawValue = removeCommas(input.value);
 
-    if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+    // Use validation utility for input checking
+    if (rawValue === '' || isValidNumberInput(rawValue, 8)) {
       setter(rawValue);
 
       requestAnimationFrame(() => {
@@ -306,21 +286,31 @@ export default function MaxiStakeInterface({
   };
 
   const handleRedeem = async () => {
-    const cleanAmount = removeCommas(redeemAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to redeem');
+    // Validate amount using centralized validation
+    const validation = validateAmount(redeemAmount, {
+      fieldName: 'Redeem amount',
+      maxBalance: (Number(userBalance || 0n) / 1e8).toString(),
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to redeem');
       return;
     }
+
+    const cleanAmount = removeCommas(redeemAmount);
 
     try {
       onTransactionStart?.();
       
-      // Convert to mini (8 decimals) - handle precision carefully
-      const [whole, decimal = ''] = cleanAmount.split('.');
-      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
-      const amountInMini = BigInt(whole + paddedDecimal);
+      // Convert to mini (8 decimals) using safe conversion
+      const conversion = amountToBigInt(cleanAmount, 8);
+      if (!conversion.success) {
+        onTransactionError?.(conversion.error);
+        return;
+      }
       
-      const result = await redeemHex(amountInMini);
+      const result = await redeemHex(conversion.value);
       
       onTransactionSuccess?.(
         `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol || 'tokens'} for MAXI!`,

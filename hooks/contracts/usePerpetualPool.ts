@@ -2,7 +2,6 @@ import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'w
 import { Address, parseAbi } from 'viem';
 import { useState, useEffect } from 'react';
 import { PoolTicker } from '@/config/perpetual-pools';
-import { getOverrideValue } from '@/config/test-overrides';
 
 // HEX contract address on PulseChain
 const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
@@ -221,25 +220,25 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     enabled: !!address,
   });
 
-  // Apply test overrides to functional read values only
-  const stakeIsActive = getOverrideValue(ticker, 'stakeIsActive', stakeIsActiveRaw);
-  const stakeEndDay = getOverrideValue(ticker, 'stakeEndDay', stakeEndDayRaw);
-  const stakeStartDay = getOverrideValue(ticker, 'stakeStartDay', stakeStartDayRaw);
-  const currentHexDay = getOverrideValue(ticker, 'currentHexDay', currentHexDayRaw);
-  const currentPeriod = getOverrideValue(ticker, 'currentPeriod', currentPeriodRaw);
-  const currentStakePrincipal = getOverrideValue(ticker, 'currentStakePrincipal', currentStakePrincipalRaw);
-  const hexRedemptionRate = getOverrideValue(ticker, 'hexRedemptionRate', hexRedemptionRateRaw);
-  const reloadPhaseEnd = getOverrideValue(ticker, 'reloadPhaseEnd', reloadPhaseEndRaw);
-  const reloadPhaseStart = getOverrideValue(ticker, 'reloadPhaseStart', reloadPhaseStartRaw);
-  const reloadPhaseDuration = getOverrideValue(ticker, 'reloadPhaseDuration', reloadPhaseDurationRaw);
-  const stakeLength = getOverrideValue(ticker, 'stakeLength', stakeLengthRaw);
-  const userBalance = getOverrideValue(ticker, 'userBalance', userBalanceRaw);
-  const totalSupply = getOverrideValue(ticker, 'totalSupply', totalSupplyRaw);
-  const stakeCount = getOverrideValue(ticker, 'stakeCount', stakeCountRaw);
-  const stakeInfo = getOverrideValue(ticker, 'stakeInfo', stakeInfoRaw);
-  const endStaker = getOverrideValue(ticker, 'endStaker', endStakerRaw);
-  const teamContractAddress = getOverrideValue(ticker, 'teamContractAddress', teamContractAddressRaw);
-  const decimals = getOverrideValue(ticker, 'decimals', decimalsRaw);
+  // Use raw contract values directly
+  const stakeIsActive = stakeIsActiveRaw;
+  const stakeEndDay = stakeEndDayRaw;
+  const stakeStartDay = stakeStartDayRaw;
+  const currentHexDay = currentHexDayRaw;
+  const currentPeriod = currentPeriodRaw;
+  const currentStakePrincipal = currentStakePrincipalRaw;
+  const hexRedemptionRate = hexRedemptionRateRaw;
+  const reloadPhaseEnd = reloadPhaseEndRaw;
+  const reloadPhaseStart = reloadPhaseStartRaw;
+  const reloadPhaseDuration = reloadPhaseDurationRaw;
+  const stakeLength = stakeLengthRaw;
+  const userBalance = userBalanceRaw;
+  const totalSupply = totalSupplyRaw;
+  const stakeCount = stakeCountRaw;
+  const stakeInfo = stakeInfoRaw;
+  const endStaker = endStakerRaw;
+  const teamContractAddress = teamContractAddressRaw;
+  const decimals = decimalsRaw;
   
   // Determine if Hedron has been minted
   // If claimableHedron is 0, it means either already minted or no Hedron to mint

@@ -1,5 +1,4 @@
 import { TOKEN_CONSTANTS } from '@/constants/crypto';
-import { MORE_COINS } from '@/constants/more-coins';
 
 // Function to get token logo URL based on ticker
 function getTokenLogo(ticker: string): string {
@@ -57,7 +56,7 @@ function getTokenLogo(ticker: string): string {
   return logoMap[ticker] || '/coin-logos/default.svg';
 }
 
-// Create a map of token addresses to token info from both TOKEN_CONSTANTS and MORE_COINS
+// Create a map of token addresses to token info from TOKEN_CONSTANTS
 const TOKEN_MAP = new Map([
   // Add tokens from TOKEN_CONSTANTS (only if they have an address)
   ...TOKEN_CONSTANTS
@@ -78,18 +77,6 @@ const TOKEN_MAP = new Map([
     decimals: 18,
     logo: getTokenLogo('PLS')
   }],
-  // Add tokens from MORE_COINS (only if not already in TOKEN_CONSTANTS)
-  ...MORE_COINS
-    .filter(coin => coin.a && coin.a.trim() !== '' && !TOKEN_CONSTANTS.some(token => token.a && token.a.toLowerCase() === coin.a.toLowerCase()))
-    .map(coin => [
-      coin.a.toLowerCase(),
-      {
-        ticker: coin.ticker,
-        name: coin.name,
-        decimals: coin.decimals,
-        logo: getTokenLogo(coin.ticker)
-      }
-    ])
 ]);
 
 

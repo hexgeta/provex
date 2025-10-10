@@ -21,6 +21,12 @@ import { REWARD_TOKENS, RewardToken, REWARD_TOKEN_ADDRESSES } from '@/constants/
 import { PERPETUAL_POOLS, getLatestPoolByPrefix } from '@/constants/crypto';
 import { useTokenPrices } from '@/hooks/crypto/useTokenPrices';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  validateAmount, 
+  removeCommas, 
+  formatNumberWithCommas,
+  isValidNumberInput 
+} from '@/utils/validation';
 
 export default function TeamStakingInterface() {
   const { address, isConnected, chain } = useAccount();
@@ -209,7 +215,7 @@ export default function TeamStakingInterface() {
           setSelectedStakePeriod(defaultStake.period);
         }
       } catch (error) {
-        console.error('Error fetching stakes:', error);
+        // Silent error handling
       } finally {
         setIsLoadingStakes(false);
       }
@@ -264,7 +270,7 @@ export default function TeamStakingInterface() {
               }
             }
           } catch (error) {
-            console.error(`Error loading ${token} for period ${commitment.period}:`, error);
+            // Silent error handling
           }
         }
 
@@ -346,15 +352,6 @@ export default function TeamStakingInterface() {
     return () => clearInterval(interval);
   }, [baseStakeIsActive]);
 
-  // Format number with commas
-  const formatNumberWithCommas = (value: string) => {
-    const parts = value.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return parts.join('.');
-  };
-
-  const removeCommas = (value: string) => value.replace(/,/g, '');
-
   // Format number without trailing zeros
   const formatNumberClean = (value: number): string => {
     return value.toLocaleString('en-US', {
@@ -377,7 +374,8 @@ export default function TeamStakingInterface() {
     ref: React.RefObject<HTMLInputElement>
   ) => {
     const rawValue = removeCommas(e.target.value);
-    if (rawValue === '' || /^\d*\.?\d{0,8}$/.test(rawValue)) {
+    // Use validation utility for input checking
+    if (rawValue === '' || isValidNumberInput(rawValue, 8)) {
       setter(rawValue);
       if (ref.current) {
         const cursorPosition = ref.current.selectionStart || 0;
@@ -392,7 +390,21 @@ export default function TeamStakingInterface() {
   };
 
   const handleStake = async () => {
-    if (!stakeAmount || parseFloat(stakeAmount) <= 0) return;
+    // Validate amount
+    const validation = validateAmount(stakeAmount, {
+      fieldName: 'Stake amount',
+      maxBalance: fullPrecisionTeamBalance || '0',
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      toast({
+        title: "Error",
+        description: validation.error || 'Please enter a valid amount',
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       const amountBigInt = parseUnits(stakeAmount, 8);
@@ -413,7 +425,6 @@ export default function TeamStakingInterface() {
       setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Stake error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -464,7 +475,6 @@ export default function TeamStakingInterface() {
       setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Early end stake error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -498,7 +508,6 @@ export default function TeamStakingInterface() {
       setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('End stake error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -530,7 +539,6 @@ export default function TeamStakingInterface() {
       setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Extend error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -562,7 +570,6 @@ export default function TeamStakingInterface() {
       setStakesLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Restake error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -1076,13 +1083,6 @@ function RewardsClaimSection({
 }: any) {
   const [loadingToken, setLoadingToken] = useState<string | null>(null);
 
-  // Format number with commas
-  const formatNumberWithCommas = (value: string) => {
-    const parts = value.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return parts.join('.');
-  };
-
   // Format reward amount with smart decimal places
   const formatRewardAmount = (value: string) => {
     const num = parseFloat(value);
@@ -1141,7 +1141,6 @@ function RewardsClaimSection({
         setRewardsLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Prepare claim error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",
@@ -1176,7 +1175,6 @@ function RewardsClaimSection({
         setRewardsLoaded(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Claim error:', error);
       if (!isUserRejection(error)) {
         toast({
           title: "Error",

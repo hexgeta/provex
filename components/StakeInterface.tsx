@@ -10,6 +10,13 @@ import { formatEther, parseUnits, parseAbi } from 'viem';
 import { useContractRead, useWriteContract, usePublicClient, useWalletClient, useAccount } from 'wagmi';
 import { ConnectButton } from './ConnectButton';
 import { formatHexDayToUTCDate, formatTickerName } from '@/utils/format';
+import { 
+  validateAmount, 
+  removeCommas, 
+  formatNumberWithCommas,
+  isValidNumberInput,
+  amountToBigInt 
+} from '@/utils/validation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
@@ -588,36 +595,6 @@ export default function StakeInterface({
     }
   }, [redeemAmount, selectedTicker]);
 
-  // Helper function to remove commas for calculations
-  const removeCommas = (value: string): string => {
-    return value.replace(/,/g, '');
-  };
-
-  // Helper function to format numbers with commas
-  const formatNumberWithCommas = (value: string): string => {
-    if (!value) return '';
-    
-    // Preserve trailing decimal point or zeros while typing
-    if (value.endsWith('.') || value.endsWith('.0')) {
-      return value;
-    }
-    
-    const num = parseFloat(value);
-    if (isNaN(num)) return value;
-    
-    // If the original value has more decimal places than toLocaleString would show, preserve them
-    const decimalIndex = value.indexOf('.');
-    if (decimalIndex !== -1) {
-      const decimalPlaces = value.length - decimalIndex - 1;
-      return num.toLocaleString('en-US', {
-        minimumFractionDigits: decimalPlaces,
-        maximumFractionDigits: decimalPlaces
-      });
-    }
-    
-    return num.toLocaleString();
-  };
-
   // Helper function to preserve cursor position during formatting
   const handleAmountChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -627,7 +604,8 @@ export default function StakeInterface({
     const input = e.target;
     const rawValue = removeCommas(input.value);
 
-    if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+    // Use validation utility for input checking
+    if (rawValue === '' || isValidNumberInput(rawValue, 8)) {
       setter(rawValue);
 
       // Use a more reliable approach with double requestAnimationFrame
@@ -707,8 +685,10 @@ export default function StakeInterface({
       const SECONDS_PER_DAY = 86400;
       
       const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(reloadPhaseEnd) * SECONDS_PER_DAY);
-      const now = Math.floor(Date.now() / 1000);
-      const secondsRemaining = reloadEndTimestamp - now;
+      
+      // Use currentHexDay for calculation to work with test overrides
+      const currentTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(currentHexDay) * SECONDS_PER_DAY);
+      const secondsRemaining = reloadEndTimestamp - currentTimestamp;
 
       if (secondsRemaining <= 0) {
         setReloadPhaseTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -885,21 +865,31 @@ export default function StakeInterface({
   };
 
   const handleRedeem = async () => {
-    const cleanAmount = removeCommas(redeemAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to redeem');
+    // Validate amount using centralized validation
+    const validation = validateAmount(redeemAmount, {
+      fieldName: 'Redeem amount',
+      maxBalance: (Number(userBalance || 0n) / 1e8).toString(),
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to redeem');
       return;
     }
+
+    const cleanAmount = removeCommas(redeemAmount);
 
     try {
       onTransactionStart?.();
       
-      // Convert to mini (8 decimals) - handle precision carefully
-      const [whole, decimal = ''] = cleanAmount.split('.');
-      const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
-      const amountInMini = BigInt(whole + paddedDecimal);
+      // Convert to mini (8 decimals) using safe conversion
+      const conversion = amountToBigInt(cleanAmount, 8);
+      if (!conversion.success) {
+        onTransactionError?.(conversion.error);
+        return;
+      }
       
-      const result = await redeemHex(amountInMini);
+      const result = await redeemHex(conversion.value);
       
       onTransactionSuccess?.(
         `Successfully redeemed ${formatNumberWithCommas(cleanAmount)} ${tokenSymbol ? formatTickerName(tokenSymbol) : 'tokens'} for ${formatTickerName(selectedPool.ticker)}!`,
@@ -918,11 +908,18 @@ export default function StakeInterface({
   };
 
   const handleApprove = async () => {
-    const cleanAmount = removeCommas(mintAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to approve');
+    // Validate amount
+    const validation = validateAmount(mintAmount, {
+      fieldName: 'Mint amount',
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to approve');
       return;
     }
+
+    const cleanAmount = removeCommas(mintAmount);
 
     try {
       onTransactionStart?.();
@@ -948,11 +945,18 @@ export default function StakeInterface({
   };
 
   const handlePledge = async () => {
-    const cleanAmount = removeCommas(mintAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to pledge');
+    // Validate amount
+    const validation = validateAmount(mintAmount, {
+      fieldName: 'Pledge amount',
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to pledge');
       return;
     }
+
+    const cleanAmount = removeCommas(mintAmount);
 
     try {
       onTransactionStart?.();
@@ -996,11 +1000,20 @@ export default function StakeInterface({
 
   const handleDHWithdraw = async () => {
     const withdrawAmount = getWithdrawAmount();
-    const cleanAmount = removeCommas(withdrawAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to withdraw');
+    
+    // Validate amount
+    const validation = validateAmount(withdrawAmount, {
+      fieldName: 'Withdraw amount',
+      maxBalance: (Number(userStakedAmount || 0n) / 1e8).toString(),
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to withdraw');
       return;
     }
+
+    const cleanAmount = removeCommas(withdrawAmount);
 
     // Use the selected stake period as stakeID
     if (selectedStakePeriod === null) {
@@ -1065,11 +1078,20 @@ export default function StakeInterface({
 
   const handleEarlyDHWithdraw = async () => {
     const withdrawAmount = getWithdrawAmount();
-    const cleanAmount = removeCommas(withdrawAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to withdraw');
+    
+    // Validate amount
+    const validation = validateAmount(withdrawAmount, {
+      fieldName: 'Withdraw amount',
+      maxBalance: (Number(userStakedAmount || 0n) / 1e8).toString(),
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to withdraw');
       return;
     }
+
+    const cleanAmount = removeCommas(withdrawAmount);
 
     try {
       // Convert to mini (8 decimals)
@@ -1321,11 +1343,19 @@ export default function StakeInterface({
   const rewardsAPY = calculateRewardsAPY();
 
   const handleDHLock = async () => {
-    const cleanAmount = removeCommas(lockAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to lock');
+    // Validate amount
+    const validation = validateAmount(lockAmount, {
+      fieldName: 'Lock amount',
+      maxBalance: (Number(userBalance || 0n) / 1e8).toString(),
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to lock');
       return;
     }
+
+    const cleanAmount = removeCommas(lockAmount);
 
     try {
       onTransactionStart?.();
@@ -1354,11 +1384,18 @@ export default function StakeInterface({
   };
 
   const handleDHApprove = async () => {
-    const cleanAmount = removeCommas(lockAmount);
-    if (!cleanAmount || parseFloat(cleanAmount) <= 0) {
-      onTransactionError?.('Please enter a valid amount to approve');
+    // Validate amount
+    const validation = validateAmount(lockAmount, {
+      fieldName: 'Approve amount',
+      maxDecimals: 8
+    });
+    
+    if (!validation.isValid) {
+      onTransactionError?.(validation.error || 'Please enter a valid amount to approve');
       return;
     }
+
+    const cleanAmount = removeCommas(lockAmount);
 
     try {
       onTransactionStart?.();

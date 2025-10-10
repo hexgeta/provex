@@ -10,7 +10,13 @@
     "compile": "hardhat compile",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network pulsechainTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network pulsechain",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "fork:ethereum": "hardhat node --fork https://eth.llamarpc.com --port 8545",
+    "fork:pulsechain": "hardhat node --fork https://rpc.pulsechain.com --port 8545",
+    "time:status": "TIME_CMD=status hardhat run scripts/fast-forward-time.js --network localhost",
+    "test:stakes": "hardhat run scripts/test-stake-lifecycle.js --network localhost",
+    "impersonate:whale": "hardhat run scripts/impersonate-whale.js --network localhost",
+    "quick-test": "bash scripts/quick-test.sh"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -28,7 +34,7 @@
     "clsx": "^2.1.0",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.309.0",
-    "next": "14.0.4",
+    "next": "^14.2.33",
     "next-themes": "^0.2.1",
     "react": "^18",
     "react-dom": "^18",

@@ -126,7 +126,6 @@ export function useTeamStaking() {
       });
       return rate && rate > 0n;
     } catch (error) {
-      console.error('Error checking prepare claim status:', error);
       return false;
     }
   };
@@ -149,7 +148,6 @@ export function useTeamStaking() {
       
       return { amount: result[0], tokenAddress: result[1] };
     } catch (error) {
-      console.error('Error getting claimable amount:', error);
       return { amount: 0n, tokenAddress: '0x0' as Address };
     }
   };
@@ -171,7 +169,6 @@ export function useTeamStaking() {
       });
       return hasClaimed;
     } catch (error) {
-      console.error('Error checking claim status:', error);
       return false;
     }
   };
@@ -192,7 +189,6 @@ export function useTeamStaking() {
       // We want index 1: balance (current withdrawable amount)
       return stakeData[1];
     } catch (error) {
-      console.error('Error getting user staked for period:', error);
       return 0n;
     }
   };
@@ -242,7 +238,6 @@ export function useTeamStaking() {
 
       return stakes;
     } catch (error) {
-      console.error('Error fetching all user stakes:', error);
       return [];
     }
   };
@@ -272,7 +267,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error staking TEAM:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -303,7 +297,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error early ending stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -334,7 +327,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error ending completed stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -362,7 +354,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error extending stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -392,7 +383,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error restaking expired stake:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -420,7 +410,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error preparing claim:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -448,7 +437,6 @@ export function useTeamStaking() {
       
       return { hash, receipt };
     } catch (error: any) {
-      console.error('Error claiming rewards:', error);
       throw error;
     } finally {
       setIsLoading(false);

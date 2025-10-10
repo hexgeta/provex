@@ -117,7 +117,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
       });
       return stakeInfo;
     } catch (error) {
-      console.error('Error fetching stake info:', error);
       return null;
     }
   };
@@ -138,7 +137,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
       const activePeriod = isStaking ? currentPeriod : (currentPeriod as bigint) - 1n;
       return activePeriod;
     } catch (error) {
-      console.error('Error getting active staking period:', error);
       return null;
     }
   };
@@ -187,7 +185,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
       
       return stakes;
     } catch (error) {
-      console.error('Error getting all user stakes:', error);
       return [];
     }
   };
@@ -233,7 +230,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
 
       return total;
     } catch (error) {
-      console.error('Error getting user staked for period:', error);
       return 0n;
     }
   };
@@ -251,7 +247,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
       });
       return amount as bigint;
     } catch (error) {
-      console.error('Error getting global staked for period:', error);
       return 0n;
     }
   };
@@ -269,7 +264,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
       });
       return penalty as bigint;
     } catch (error) {
-      console.error('Error calculating penalty:', error);
       return 0n;
     }
   };
@@ -419,7 +413,6 @@ export function useDiamondHands(contractAddress: Address, poolTokenAddress?: Add
 
       return historical;
     } catch (error) {
-      console.error('Error getting historical periods:', error);
       return [];
     }
   };

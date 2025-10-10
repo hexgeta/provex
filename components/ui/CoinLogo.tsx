@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { MORE_COINS } from '@/constants/more-coins'
 
 const LOGO_SIZES = {
   sm: 'w-4 h-4',   // 16px
@@ -26,18 +25,7 @@ export function CoinLogo({
   variant = 'default'
 }: CoinLogoProps) {
   // Remove any 'p' or 'e' prefix from the symbol
-  const baseSymbol = symbol.replace(/^[pe]/, '')
-  
-  // Check MORE_COINS for matching ticker or name
-  const moreCoinMatch = MORE_COINS.find(coin => 
-    coin.ticker === symbol || 
-    coin.ticker === baseSymbol ||
-    coin.name === symbol ||
-    coin.name === baseSymbol
-  )
-  
-  // Use the matched coin's ticker if found, otherwise use the base symbol
-  const logoSymbol = moreCoinMatch ? moreCoinMatch.ticker : baseSymbol
+  const logoSymbol = symbol.replace(/^[pe]/, '')
   
   // Special case for ETH with no background
   const logoPath = logoSymbol === 'ETH' && variant === 'no-bg'
