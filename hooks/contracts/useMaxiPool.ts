@@ -5,11 +5,11 @@ import { useState, useEffect, useMemo } from 'react';
 // HEX contract addresses by chain
 const HEX_CONTRACT_ADDRESSES: Record<number, Address> = {
   1: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' as Address, // Ethereum
-  369: '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address, // PulseChain
+  369: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' as Address, // PulseChain (same checksum as ETH)
 };
 
 // MAXI contract address (same on both chains)
-const MAXI_CONTRACT_ADDRESS = '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b' as Address;
+const MAXI_CONTRACT_ADDRESS = '0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b' as Address;
 
 // ABI for the MAXI contract - different from perpetual pools
 const MAXI_ABI = parseAbi([
