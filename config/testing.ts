@@ -8,7 +8,7 @@
  */
 
 // 🔧 TOGGLE THIS TO ENABLE/DISABLE TESTING MODE
-export const TESTING_MODE = true;
+export const TESTING_MODE = false;
 
 // Local fork chain configuration
 export const LOCAL_FORK_CHAIN_ID = 31337;
