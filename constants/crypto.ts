@@ -1,4 +1,5 @@
 import { PairData } from '@/types/crypto'
+import { normalizeChainId } from '@/config/testing'
 
 export interface TokenConfig {
   chain: number
@@ -90,7 +91,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'MAXI Fixed Stake Pool',
 }, {
   chain: 369,
-  a: "0x6B32022693210cD2Cfc466b9Ac0085DE8fC34eA6",
+  a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
   dexs: "0x969af590981bb9d19ff38638fa3bd88aed13603a",
   ticker: "DECI",
   decimals: 8,
@@ -114,7 +115,7 @@ export const TOKEN_CONSTANTS = [{
     }
 }, {
   chain: 369,
-  a: "0x6b0956258fF7bd7645aa35369b55b61b8e6d6140",
+  a: "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140",
   dexs: "0x52d4b3f479537a15d0b37b6cdbdb2634cc78525e",
   ticker: "LUCKY",
   decimals: 8,
@@ -138,7 +139,7 @@ export const TOKEN_CONSTANTS = [{
     }
 }, {
   chain: 369,
-  a: "0xF55cD1e399e1cc3D950303048897a680be3313308",
+  a: "0xF55cD1e399e1cc3D95303048897a680be3313308",
   dexs: "0x0b0f8f6c86c506b70e2a488a451e5ea7995d05c9",
   ticker: "TRIO",
   decimals: 8,
@@ -158,7 +159,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'TRIO Perpetual Pool',
 }, {
   chain: 369,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE3",
   decimals: 8,
@@ -178,7 +179,7 @@ export const TOKEN_CONSTANTS = [{
   description: 'BASE Perpetual Pool'
 }, {
   chain: 369,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE1",
   decimals: 8,
@@ -198,7 +199,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 369,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0xb39490b46d02146f59e80c6061bb3e56b824d672",
   ticker: "BASE2",
   decimals: 8,
@@ -218,7 +219,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE1",
   decimals: 8,
@@ -238,7 +239,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE2",
   decimals: 8,
@@ -258,7 +259,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xe9f84d418B008888a992FF8C6D22389C2c3504e0",
+  a: "0xe9f84d418b008888a992ff8c6d22389c2c3504e0",
   dexs: "0x7b33fe2C4f48da97dc2BAa1f32f869c50Dc1dF85",
   ticker: "eBASE3",
   decimals: 8,
@@ -282,7 +283,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0xF55cD1e399e1cc3D950303048897a680be3313308",
+  a: "0xF55cD1e399e1cc3D95303048897a680be3313308",
   dexs: "0xda72b9e219d87ea31b4a1929640d9e960362470d",
   ticker: "eTRIO",
   decimals: 8,
@@ -306,7 +307,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0x6b0956258fF7bd7645aa35369b55b61b8e6d6140",
+  a: "0x6b0956258ff7bd7645aa35369b55b61b8e6d6140",
   dexs: "0x7327325e5F41d4c1922a9DFc87d8a3b3F1ae5C1F",
   ticker: "eLUCKY",
   decimals: 8,
@@ -330,7 +331,7 @@ export const TOKEN_CONSTANTS = [{
   }
 }, {
   chain: 1,
-  a: "0x6B32022693210cD2Cfc466b9Ac0085DE8fC34eA6",
+  a: "0x6b32022693210cd2cfc466b9ac0085de8fc34ea6",
   dexs: "0x39e87e2baa67f3c7f1dd58f58014f23f97e3265e",
   ticker: "eDECI",
   decimals: 8,
@@ -449,9 +450,18 @@ export const PERPETUAL_POOLS: Record<string, PerpetualPoolConfig> = perpetualPoo
   return acc;
 }, {} as Record<string, PerpetualPoolConfig>);
 
+// 🔍 LOG: Show all available pools
+console.log('🔍 [PERPETUAL_POOLS] All available pools:', Object.keys(PERPETUAL_POOLS));
+console.log('🔍 [PERPETUAL_POOLS] Pool details:', Object.entries(PERPETUAL_POOLS).map(([ticker, config]) => ({
+  ticker,
+  name: config.name,
+  address: config.contractAddress,
+})));
+
 // Helper function to get the highest numbered pool for a given ticker prefix
 export function getLatestPoolByPrefix(tickerPrefix: string, chainId: number | undefined): PerpetualPoolConfig | undefined {
-  const isEthereum = chainId === 1;
+  const normalizedChainId = normalizeChainId(chainId);
+  const isEthereum = normalizedChainId === 1;
   
   // Build the search prefix (e.g., "BASE" or "eBASE" or "TRIO" or "eTRIO")
   const searchPrefix = isEthereum && !tickerPrefix.startsWith('e') ? `e${tickerPrefix}` : tickerPrefix;
@@ -497,8 +507,10 @@ export function getLatestPoolByPrefix(tickerPrefix: string, chainId: number | un
 
 // Helper function to get the correct pool options based on current chain
 export function getPoolOptionsForChain(chainId: number | undefined) {
+  // Normalize chain ID for testing (31337 -> 369)
+  const normalizedChainId = normalizeChainId(chainId);
   // Default to PulseChain (369) if chainId is undefined
-  const defaultChainId = chainId || 369;
+  const defaultChainId = normalizedChainId || 369;
   
   // Dynamically find the latest version of each pool
   const latestMaxi = getLatestPoolByPrefix('MAXI', defaultChainId);

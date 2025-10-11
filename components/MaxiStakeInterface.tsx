@@ -55,10 +55,28 @@ export default function MaxiStakeInterface({
     chain,
     stakeInfo,
     hasHedronMinted,
+    claimableHedron,
   } = useMaxiPool();
+
+  // 🔍 LOG: MaxiStakeInterface received data
+  console.log('🔍 [MaxiStakeInterface] Received data from useMaxiPool', {
+    selectedPoolTicker: selectedPool.ticker,
+    tokenName,
+    tokenSymbol,
+    stakeStartDay: stakeStartDay?.toString(),
+    currentHexDay: currentHexDay?.toString(),
+    stakeEndDay: stakeEndDay?.toString(),
+    stakeIsActive,
+    userBalance: userBalance?.toString(),
+    isConnected,
+    chainId: chain?.id,
+    chainName: chain?.name,
+  });
 
   const [redeemAmount, setRedeemAmount] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isMintingHedron, setIsMintingHedron] = useState(false); // Loading state for minting hedron
+  const [isEndingStake, setIsEndingStake] = useState(false); // Loading state for ending stake
   const redeemAmountRef = useRef<HTMLInputElement>(null);
   
   // Scroll indicator states
@@ -240,6 +258,7 @@ export default function MaxiStakeInterface({
       return;
     }
 
+    setIsMintingHedron(true);
     try {
       onTransactionStart?.();
       
@@ -262,11 +281,13 @@ export default function MaxiStakeInterface({
         );
       }
     } finally {
+      setIsMintingHedron(false);
       onTransactionEnd?.();
     }
   };
 
   const handleEndStake = async () => {
+    setIsEndingStake(true);
     try {
       onTransactionStart?.();
       
@@ -281,6 +302,7 @@ export default function MaxiStakeInterface({
         error?.message || 'Failed to end stake. Please try again.'
       );
     } finally {
+      setIsEndingStake(false);
       onTransactionEnd?.();
     }
   };
@@ -567,35 +589,47 @@ export default function MaxiStakeInterface({
 
             {stakeIsActive && (
               <div className="space-y-4">
-                <button
-                  onClick={handleMintHedron}
-                  disabled={!canEndStake || hasHedronMinted || isLoading}
-                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                    canEndStake && !hasHedronMinted && !isLoading
-                      ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    'Mint Hedron'
-                  )}
-                </button>
+                {/* Show Mint Hedron button if there's Hedron to claim */}
+                {claimableHedron > 0n && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleMintHedron}
+                      disabled={!canEndStake || isMintingHedron || isEndingStake}
+                      className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                        canEndStake && !isMintingHedron && !isEndingStake
+                          ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
+                          : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      {isMintingHedron ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </span>
+                      ) : (
+                        'Mint Hedron'
+                      )}
+                    </button>
+                    {/* Only show claimable amount when stake can be ended */}
+                    {canEndStake && (
+                      <p className="text-sm text-gray-400 text-center">
+                        Claimable: {(Number(claimableHedron) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 2 })} HDRN
+                      </p>
+                    )}
+                  </div>
+                )}
 
+                {/* Always show End Stake button - ghosted if Hedron hasn't been minted yet */}
                 <button
                   onClick={handleEndStake}
-                  disabled={!canEndStake || !hasHedronMinted || isLoading}
+                  disabled={!canEndStake || claimableHedron > 0n || isMintingHedron || isEndingStake}
                   className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                    canEndStake && hasHedronMinted && !isLoading
+                    canEndStake && claimableHedron === 0n && !isMintingHedron && !isEndingStake
                       ? 'bg-white text-black hover:bg-gray-200'
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
                   }`}
                 >
-                  {isLoading ? (
+                  {isEndingStake ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Processing...
@@ -666,8 +700,17 @@ export default function MaxiStakeInterface({
               </button>
 
               {stakeIsActive && stakeEndDay && (
-                <p className="text-sm text-yellow-400 text-center">
-                  Redemption is only available after the stake has ended.
+                <p className="text-sm text-yellow-400 text-center flex items-start justify-center gap-2 leading-5">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="leading-5">
+                    Redemption is only available after the stake ends in:{' '}
+                    <span className="font-mono">
+                      {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+                      {String(timeRemaining.hours).padStart(2, '0')}h{' '}
+                      {String(timeRemaining.minutes).padStart(2, '0')}m{' '}
+                      {String(timeRemaining.seconds).padStart(2, '0')}s
+                    </span>
+                  </span>
                 </p>
               )}
             </div>

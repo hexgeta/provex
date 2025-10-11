@@ -13,6 +13,23 @@ const config = {
     },
   },
   networks: {
+    hardhat: {
+      chainId: 31337,
+      hardfork: "shanghai", // Use shanghai hardfork for compatibility
+      forking: process.env.FORK_URL ? {
+        url: process.env.FORK_URL,
+        blockNumber: process.env.FORK_BLOCK ? parseInt(process.env.FORK_BLOCK) : undefined,
+      } : undefined,
+      chains: {
+        369: {
+          hardforkHistory: {
+            berlin: 0,
+            london: 0,
+            shanghai: 0,
+          }
+        }
+      }
+    },
     // Production networks
     pulsechain: {
       url: process.env.PULSECHAIN_RPC || "https://rpc.pulsechain.com",
@@ -29,6 +46,14 @@ const config = {
     localhost: {
       url: "http://127.0.0.1:8545",  // Standard Hardhat port for forks
       chainId: 31337,                 // Hardhat's default chain ID
+      chains: {
+        369: {
+          hardforkHistory: {
+            london: 0,
+            shanghai: 0,
+          }
+        }
+      }
     },
     // Note: These network configs are just for reference
     // The actual forks are started with the npm scripts below

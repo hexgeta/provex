@@ -18,14 +18,15 @@ npm run fork:pulsechain      # PulseChain fork on port 8545
 
 ### 2. Connect to Local Fork
 
-Your app now includes a **"Local Fork (PLS/ETH)"** network!
+**In Rabby Wallet**, temporarily point PulseChain to your local fork:
 
-1. Go to **http://localhost:3000**
-2. Click **Connect Wallet** → select Rabby
-3. In the network dropdown, select **"Local Fork (PLS/ETH)"**
-4. Connect with any account
+1. Open Rabby → Networks → Find **PulseChain** (Chain ID 369)
+2. Edit the RPC URL from `https://rpc.pulsechain.com` to `http://127.0.0.1:8545`
+3. Save
+4. Go to **http://localhost:3000** and connect
+5. The app will now read from your local fork!
 
-✅ The app will automatically connect to `http://127.0.0.1:8545`!
+⚠️ **Remember**: Change the RPC back to `https://rpc.pulsechain.com` when you're done testing.
 
 💡 The fork inherits the chain data from whichever network you started (Ethereum or PulseChain).
 

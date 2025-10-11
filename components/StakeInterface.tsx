@@ -92,6 +92,13 @@ export default function StakeInterface({
   const { selectedPool, selectedTicker } = usePool();
   const poolBorderColor = `${selectedPool.color}80`; // 50% opacity
   
+  // 🔍 LOG: StakeInterface pool selection
+  console.log('🔍 [StakeInterface] Pool selection', {
+    selectedTicker,
+    selectedPoolAddress: selectedPool.contractAddress,
+    selectedPoolName: selectedPool.name,
+  });
+  
   const {
     stakeIsActive,
     stakeEndDay,
@@ -119,6 +126,7 @@ export default function StakeInterface({
     reloadPhaseDuration,
     stakeInfo,
     hasHedronMinted,
+    claimableHedron,
   } = usePerpetualPool(selectedPool.contractAddress as `0x${string}`, selectedTicker);
 
   const [redeemAmount, setRedeemAmount] = useState('');
@@ -155,6 +163,8 @@ export default function StakeInterface({
   const [loadedDataPool, setLoadedDataPool] = useState<string>(''); // Track which pool the data is for
   const [loadedPeriodsPool, setLoadedPeriodsPool] = useState<string>(''); // Track which pool periods data is loaded for
   const [isLoadingStakes, setIsLoadingStakes] = useState(false); // Loading state for stakes
+  const [isMintingHedron, setIsMintingHedron] = useState(false); // Loading state for minting hedron
+  const [isEndingStake, setIsEndingStake] = useState(false); // Loading state for ending stake
   const [historicalRewards, setHistoricalRewards] = useState<{period: number, rewards: string, claimed: boolean, globalStaked: string}[]>([]); // Rewards for all stakes
   const [allHistoricalPeriods, setAllHistoricalPeriods] = useState<{period: number, stakeNumber: number, status: 'active' | 'pending' | 'expired', globalStaked: string, rewards: string}[]>([]); // All periods
   const [loadedHistoricalPool, setLoadedHistoricalPool] = useState<string>(''); // Track which pool historical data is loaded for
@@ -217,8 +227,12 @@ export default function StakeInterface({
   // Change this number to adjust when the HH:MM:SS countdown appears
   const COUNTDOWN_THRESHOLD_DAYS = 30;
 
-  // Check if we should show "Start the Stake" instead of "End the Stake"
-  const shouldShowStartStake = !stakeIsActive && currentHexDay && reloadPhaseEnd && currentHexDay > reloadPhaseEnd;
+  // Check if reload phase is over (matches contract requirement: current_day > RELOAD_PHASE_END)
+  const isReloadPhaseOver = currentHexDay && reloadPhaseEnd ? currentHexDay > reloadPhaseEnd : false;
+  
+  // Only show "Start the Stake" button after reload phase is over
+  const shouldShowStartStake = !stakeIsActive && isReloadPhaseOver;
+  const canStartStake = shouldShowStartStake;
 
   // Get the correct block explorer URL based on chain
   const getBlockExplorerUrl = (address: string) => {
@@ -675,19 +689,20 @@ export default function StakeInterface({
 
   // Reload phase countdown - only when stake has ended
   useEffect(() => {
-    if (stakeIsActive || !reloadPhaseEnd || !currentHexDay) {
+    if (stakeIsActive || !reloadPhaseEnd) {
       return;
     }
 
     const updateReloadCountdown = () => {
-      // Reload phase ends at UTC midnight (00:00:00) at the START of the end day
+      // HEX launch timestamp: December 2, 2019 at 00:00:00 UTC
       const HEX_LAUNCH_TIMESTAMP = 1575331200;
       const SECONDS_PER_DAY = 86400;
       
+      // Calculate when the reload phase end day starts (at midnight UTC)
       const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(reloadPhaseEnd) * SECONDS_PER_DAY);
       
-      // Use currentHexDay for calculation to work with test overrides
-      const currentTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(currentHexDay) * SECONDS_PER_DAY);
+      // Get the actual current time in seconds (not the HEX day from contract)
+      const currentTimestamp = Math.floor(Date.now() / 1000);
       const secondsRemaining = reloadEndTimestamp - currentTimestamp;
 
       if (secondsRemaining <= 0) {
@@ -707,7 +722,7 @@ export default function StakeInterface({
     const interval = setInterval(updateReloadCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [reloadPhaseEnd, currentHexDay, stakeIsActive]);
+  }, [reloadPhaseEnd, stakeIsActive]);
 
   // Check if content is scrollable and track scroll position
   useEffect(() => {
@@ -795,6 +810,7 @@ export default function StakeInterface({
 
   const handleEndStake = async () => {
     try {
+      setIsEndingStake(true);
       onTransactionStart?.();
       
       // endStake now automatically fetches stake index and ID from HEX contract
@@ -809,6 +825,7 @@ export default function StakeInterface({
         error?.message || 'Failed to end stake. Please try again.'
       );
     } finally {
+      setIsEndingStake(false);
       onTransactionEnd?.();
     }
   };
@@ -839,6 +856,7 @@ export default function StakeInterface({
     }
 
     try {
+      setIsMintingHedron(true);
       onTransactionStart?.();
       
       const stakeIndex = 0n;
@@ -860,6 +878,7 @@ export default function StakeInterface({
         );
       }
     } finally {
+      setIsMintingHedron(false);
       onTransactionEnd?.();
     }
   };
@@ -1174,7 +1193,7 @@ export default function StakeInterface({
 
   // Handle claim rewards for expired stakes (accepts token parameter)
   const handleClaimRewards = async (rewardToken: string, claimableAmount: string) => {
-    if (!selectedStakePeriod || !userAddress || !claimRewardsWrite || !stakeRewardDistributionAddressForPool) {
+    if (!selectedStakePeriod || !userAddress || !claimRewardsWrite || !stakeRewardDistributionAddressForPool || !publicClient) {
       onTransactionError?.('Unable to claim rewards. Please try again.');
       return;
     }
@@ -1189,6 +1208,9 @@ export default function StakeInterface({
         functionName: 'claimRewards',
         args: [BigInt(selectedStakePeriod), rewardToken, BigInt(selectedStakePeriod)],
       });
+
+      // Wait for transaction confirmation
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
 
       onTransactionSuccess?.(
         `Successfully claimed ${claimableAmount} ${rewardToken} rewards!`,
@@ -1210,7 +1232,7 @@ export default function StakeInterface({
 
   // Handle prepare claim (anyone can call this to prepare rewards for a period)
   const handlePrepareClaim = async (rewardToken: string) => {
-    if (!selectedStakePeriod || !prepareClaimWrite || !rewardBucketAddressForPool) {
+    if (!selectedStakePeriod || !prepareClaimWrite || !rewardBucketAddressForPool || !publicClient) {
       onTransactionError?.('Unable to prepare claims. Please try again.');
       return;
     }
@@ -1225,6 +1247,9 @@ export default function StakeInterface({
         functionName: 'prepareClaim',
         args: [rewardToken, BigInt(selectedStakePeriod)],
       });
+
+      // Wait for transaction confirmation
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
 
       onTransactionSuccess?.(
         `Successfully prepared ${rewardToken} claims for Stake ${((selectedStakePeriod + 1) / 2)}. Users can now claim their rewards!`,
@@ -1657,35 +1682,47 @@ export default function StakeInterface({
 
             {stakeIsActive && (
               <div className="space-y-4">
-                <button
-                  onClick={handleMintHedron}
-                  disabled={!canEndStake || hasHedronMinted || isLoading}
-                  className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                    canEndStake && !hasHedronMinted && !isLoading
-                      ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    'Mint Hedron'
-                  )}
-                </button>
+                {/* Show Mint Hedron button if there's Hedron to claim */}
+                {claimableHedron > 0n && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleMintHedron}
+                      disabled={!canEndStake || isMintingHedron || isEndingStake}
+                      className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                        canEndStake && !isMintingHedron && !isEndingStake
+                          ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
+                          : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      {isMintingHedron ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </span>
+                      ) : (
+                        'Mint Hedron'
+                      )}
+                    </button>
+                    {/* Only show claimable amount when stake can be ended */}
+                    {canEndStake && (
+                      <p className="text-sm text-gray-400 text-center">
+                        Claimable: {(Number(claimableHedron) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 2 })} HDRN
+                      </p>
+                    )}
+                  </div>
+                )}
 
+                {/* Always show End Stake button - ghosted if Hedron hasn't been minted yet */}
                 <button
                   onClick={handleEndStake}
-                  disabled={!canEndStake || !hasHedronMinted || isLoading}
+                  disabled={!canEndStake || claimableHedron > 0n || isMintingHedron || isEndingStake}
                   className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                    canEndStake && hasHedronMinted && !isLoading
+                    canEndStake && claimableHedron === 0n && !isMintingHedron && !isEndingStake
                       ? 'bg-white text-black hover:bg-gray-200'
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
                   }`}
                 >
-                  {isLoading ? (
+                  {isEndingStake ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Processing...
@@ -2200,12 +2237,12 @@ export default function StakeInterface({
 
               <button
                 onClick={handleRedeem}
-                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive || !stakeEndDay}
+                disabled={!redeemAmount || parseFloat(removeCommas(redeemAmount)) <= 0 || isLoading || stakeIsActive || !stakeEndDay || !userBalance || userBalance === 0n}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive && stakeEndDay
+                  redeemAmount && parseFloat(removeCommas(redeemAmount)) > 0 && !isLoading && !stakeIsActive && stakeEndDay && userBalance && userBalance > 0n
                     ? 'bg-white text-black hover:bg-gray-200'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
+                } ${!userBalance || userBalance === 0n ? 'opacity-50' : ''}`}
               >
                 {isLoading || !stakeEndDay ? (
                   <span className="flex items-center justify-center gap-2">

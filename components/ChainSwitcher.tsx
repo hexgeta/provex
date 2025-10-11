@@ -1,7 +1,6 @@
 'use client';
 
 import { useAccount, useSwitchChain } from 'wagmi';
-import { mainnet } from '@reown/appkit/networks';
 import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -11,19 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getAvailableChains } from '@/config/testing';
 
-const CHAINS = [
-  {
-    id: 369,
-    name: 'PulseChain',
-    icon: '/coin-logos/PLS-white.svg',
-  },
-  {
-    id: mainnet.id,
-    name: 'Ethereum',
-    icon: '/coin-logos/ETH-white.svg',
-  },
-];
+const CHAINS = getAvailableChains();
 
 export function ChainSwitcher({ isCheckingConnection }: { isCheckingConnection: boolean }) {
   const { chain, isConnected } = useAccount();

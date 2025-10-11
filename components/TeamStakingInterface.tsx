@@ -886,7 +886,7 @@ export default function TeamStakingInterface() {
                 <div className="p-4 bg-gray-700/30 border border-gray-600/30 rounded-lg">
                   <p className="text-sm text-gray-400 text-center">
                     <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
-                    Checking BASE stake status...
+                    Checking TEAM stake status...
                   </p>
                 </div>
                   );

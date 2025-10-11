@@ -2,8 +2,9 @@ import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'w
 import { Address, parseAbi } from 'viem';
 import { useState, useEffect } from 'react';
 import { PoolTicker } from '@/config/perpetual-pools';
+import { normalizeChainId } from '@/config/testing';
 
-// HEX contract address on PulseChain
+// HEX contract address
 const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
 
 // Hedron contract address on PulseChain
@@ -53,9 +54,35 @@ const HEX_ABI = parseAbi([
 ]);
 
 // ABI for Hedron contract - for checking minting status
-const HEDRON_ABI = parseAbi([
-  'function claimableByStake(address, uint256, uint40) view returns (uint256)',
-]);
+// Using the actual JSON ABI since parseAbi doesn't support complex tuple syntax
+const HEDRON_ABI = [
+  {
+    "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "name": "shareList",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint40", "name": "stakeId", "type": "uint40"},
+          {"internalType": "uint72", "name": "stakeShares", "type": "uint72"},
+          {"internalType": "uint16", "name": "lockedDay", "type": "uint16"},
+          {"internalType": "uint16", "name": "stakedDays", "type": "uint16"}
+        ],
+        "internalType": "struct HEXStakeMinimal",
+        "name": "stake",
+        "type": "tuple"
+      },
+      {"internalType": "uint16", "name": "mintedDays", "type": "uint16"},
+      {"internalType": "uint8", "name": "launchBonus", "type": "uint8"},
+      {"internalType": "uint16", "name": "loanStart", "type": "uint16"},
+      {"internalType": "uint16", "name": "loanedDays", "type": "uint16"},
+      {"internalType": "uint32", "name": "interestRate", "type": "uint32"},
+      {"internalType": "uint8", "name": "paymentsMade", "type": "uint8"},
+      {"internalType": "bool", "name": "isLoaned", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
 
 export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) {
   const { address, chain } = useAccount();
@@ -64,20 +91,31 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const [isLoading, setIsLoading] = useState(false);
   const [endStakeTxHash, setEndStakeTxHash] = useState<string | null>(null);
 
+  // 🔍 LOG: Perpetual pool hook initialization
+  const normalizedChainId = normalizeChainId(chain?.id);
+  console.log('🔍 [usePerpetualPool] Hook initialized', {
+    ticker,
+    contractAddress,
+    userAddress: address,
+    chainId: chain?.id,
+    normalizedChainId,
+    chainName: chain?.name,
+  });
+
   // Read contract state
-  const { data: stakeIsActiveRaw } = useContractRead({
+  const { data: stakeIsActiveRaw, refetch: refetchStakeIsActive } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_IS_ACTIVE',
   });
 
-  const { data: stakeEndDayRaw } = useContractRead({
+  const { data: stakeEndDayRaw, refetch: refetchStakeEndDay } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_END_DAY',
   });
 
-  const { data: stakeStartDayRaw } = useContractRead({
+  const { data: stakeStartDayRaw, refetch: refetchStakeStartDay } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'STAKE_START_DAY',
@@ -89,7 +127,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     functionName: 'getHexDay',
   });
 
-  const { data: currentPeriodRaw } = useContractRead({
+  const { data: currentPeriodRaw, refetch: refetchCurrentPeriod } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'getCurrentPeriod',
@@ -101,7 +139,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     functionName: 'CURRENT_STAKE_PRINCIPAL',
   });
 
-  const { data: hexRedemptionRateRaw } = useContractRead({
+  const { data: hexRedemptionRateRaw, refetch: refetchHexRedemptionRate } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'HEX_REDEMPTION_RATE',
@@ -139,7 +177,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     query: { enabled: !!address },
   });
 
-  const { data: totalSupplyRaw } = useContractRead({
+  const { data: totalSupplyRaw, refetch: refetchTotalSupply } = useContractRead({
     address: contractAddress,
     abi: PERPETUAL_POOL_ABI,
     functionName: 'totalSupply',
@@ -193,13 +231,16 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     query: { enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0 },
   });
 
-  // Check if Hedron has been minted for this stake
-  const { data: claimableHedronRaw } = useContractRead({
+  // Query Hedron's shareList to check if Hedron was minted for THIS stake
+  // shareList returns the share info including mintedDays
+  // If mintedDays > 0, Hedron has been minted for this stake
+  const stakeId = stakeInfoRaw?.[0]; // First element is the stake ID (bigint)
+  const { data: hedronShareDataRaw, refetch: refetchHedronShareData } = useContractRead({
     address: HEDRON_CONTRACT_ADDRESS,
     abi: HEDRON_ABI,
-    functionName: 'claimableByStake',
-    args: stakeInfoRaw ? [contractAddress, 0n, stakeInfoRaw[0]] : undefined,
-    query: { enabled: !!stakeInfoRaw },
+    functionName: 'shareList',
+    args: stakeId !== undefined ? [BigInt(stakeId)] : undefined,
+    query: { enabled: !!stakeId },
   });
 
   // Query user's HEX balance
@@ -240,14 +281,54 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const teamContractAddress = teamContractAddressRaw;
   const decimals = decimalsRaw;
   
-  // Determine if Hedron has been minted
-  // If claimableHedron is 0, it means either already minted or no Hedron to mint
-  // We consider it minted if claimable is 0 (safer to assume minted than unminted)
-  const hasHedronMinted = claimableHedronRaw === 0n;
+  // Calculate claimable Hedron amount using the same logic as the check script
+  // Formula: claimableHedron = stakeShares * (servedDays - mintedDays)
+  const stakeShares = stakeInfoRaw?.[2]; // Third element is stakeShares
+  const lockedDay = stakeInfoRaw?.[3]; // Fourth element is lockedDay
+  const stakedDays = stakeInfoRaw?.[4]; // Fifth element is stakedDays
+  const mintedDays = hedronShareDataRaw ? (hedronShareDataRaw as any)[1] : 0;
+  
+  // Calculate served days
+  const servedDays = 
+    currentHexDay && lockedDay !== undefined && stakedDays !== undefined
+      ? Math.min(Number(currentHexDay) - Number(lockedDay), Number(stakedDays))
+      : 0;
+  
+  // Calculate claimable Hedron
+  const claimableHedron = 
+    stakeShares && servedDays > Number(mintedDays)
+      ? stakeShares * BigInt(servedDays - Number(mintedDays))
+      : 0n;
+  
+  // If claimableHedron is 0, then all Hedron has been minted (or there's no Hedron to mint yet)
+  const hasHedronMinted = claimableHedron === 0n && servedDays > 0;
   
   // These values are not overridden - always use real contract data
   const tokenName = tokenNameRaw;
   const tokenSymbol = tokenSymbolRaw;
+
+  // 🔍 LOG: Contract data after transformation
+  console.log('🔍 [usePerpetualPool] Contract data', {
+    ticker,
+    tokenName,
+    tokenSymbol,
+    stakeIsActive,
+    stakeStartDay: stakeStartDay?.toString(),
+    stakeEndDay: stakeEndDay?.toString(),
+    currentHexDay: currentHexDay?.toString(),
+    currentPeriod: currentPeriod?.toString(),
+    userBalance: userBalance?.toString(),
+    hexRedemptionRate: hexRedemptionRate?.toString(),
+    stakeCount: stakeCount?.toString(),
+    stakeId: stakeId?.toString(),
+    stakeShares: stakeShares?.toString(),
+    lockedDay: lockedDay?.toString(),
+    stakedDays: stakedDays?.toString(),
+    servedDays,
+    mintedDays: mintedDays?.toString(),
+    claimableHedron: claimableHedron?.toString(),
+    hasHedronMinted,
+  });
 
   // Fetch end stake transaction hash when stake is ended
   useEffect(() => {
@@ -330,6 +411,15 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchHedronShareData(),
+        refetchHexBalance(),
+        refetchStakeIsActive(),
+        refetchCurrentPeriod(),
+        refetchHexRedemptionRate(),
+      ]);
+      
       return { hash, receipt };
     } catch (error: any) {
       throw error;
@@ -358,8 +448,13 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
-      // Refetch balance after redemption
-      await refetchBalance();
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchBalance(),
+        refetchHexBalance(),
+        refetchTotalSupply(),
+        refetchHexRedemptionRate(),
+      ]);
       
       return { hash, receipt };
     } catch (error: any) {
@@ -388,6 +483,9 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       const hash = await walletClient.writeContract(request);
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+      
+      // Refetch hedron data to update button states
+      await refetchHedronShareData();
       
       return { hash, receipt };
     } catch (error: any) {
@@ -448,10 +546,13 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
-      // Refetch balances after pledging
-      await refetchBalance();
-      await refetchHexBalance();
-      await refetchAllowance();
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchBalance(),
+        refetchHexBalance(),
+        refetchAllowance(),
+        refetchTotalSupply(),
+      ]);
       
       return { hash, receipt };
     } catch (error: any) {
@@ -479,9 +580,18 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
       const hash = await walletClient.writeContract(request);
       
       // Wait for transaction
-      await publicClient!.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
-      return { hash };
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchStakeIsActive(),
+        refetchStakeStartDay(),
+        refetchStakeEndDay(),
+        refetchCurrentPeriod(),
+        refetchHexRedemptionRate(),
+      ]);
+      
+      return { hash, receipt };
     } catch (error: any) {
       throw error;
     } finally {
@@ -515,6 +625,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     hexBalance: hexBalanceRaw as bigint | undefined,
     hexAllowance: hexAllowanceRaw as bigint | undefined,
     hasHedronMinted: hasHedronMinted as boolean,
+    claimableHedron: claimableHedron as bigint,
     
     // Functions
     endStake,

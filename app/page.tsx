@@ -40,6 +40,12 @@ function HomeContent() {
 
   // Determine which interface to render
   const renderInterface = () => {
+    // 🔍 LOG: Determine which interface to render
+    console.log('🔍 [page.tsx] Rendering interface', {
+      selectedTicker,
+      willRenderMaxiInterface: selectedTicker === 'MAXI' || selectedTicker === 'eMAXI',
+    });
+
     const sharedProps = {
       activeTab,
       setActiveTab,
@@ -61,9 +67,14 @@ function HomeContent() {
         });
       },
       onTransactionError: (error: string) => {
+        // Check if user cancelled/rejected the transaction
+        const isCancelled = error?.toLowerCase().includes('rejected') || 
+                           error?.toLowerCase().includes('denied') ||
+                           error?.toLowerCase().includes('user rejected');
+        
         toast({
-          title: "Transaction Failed",
-          description: error || "An error occurred while processing your transaction.",
+          title: isCancelled ? "Cancelled" : "Transaction Failed",
+          description: isCancelled ? undefined : (error || "An error occurred while processing your transaction."),
           variant: "destructive",
         });
       },
@@ -96,13 +107,14 @@ function HomeContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="w-full px-2 md:px-8 bg-transparent flex items-center justify-center py-16 md:py-32"
+            className="w-full px-2 md:px-8 bg-transparent flex items-center justify-center"
+            style={{ minHeight: 'calc(100vh - 200px)' }}
           >
             <div className="max-w-6xl mx-auto text-center">
-              <h2 className="text-3xl md:text-5xl md:leading-[90px] font-bold text-white mb-2">
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 md:mb-6">
                 Pooled Stake Management Dapp
               </h2>
-              <p className="text-md md:text-xl text-gray-400 max-w-2xl mx-auto mb-6">
+              <p className="text-lg md:text-2xl text-gray-400 max-w-2xl mx-auto">
                 End pooled stakes. Redeem HEX rewards.
               </p>
             </div>

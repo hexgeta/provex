@@ -1,15 +1,16 @@
 import { useAccount, usePublicClient, useWalletClient, useContractRead } from 'wagmi';
 import { Address, parseAbi } from 'viem';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { normalizeChainId } from '@/config/testing';
 
-// HEX contract addresses by chain
-const HEX_CONTRACT_ADDRESSES: Record<number, Address> = {
-  1: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' as Address, // Ethereum
-  369: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' as Address, // PulseChain (same checksum as ETH)
-};
+// HEX contract address
+const HEX_CONTRACT_ADDRESS = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39' as Address;
 
-// MAXI contract address (same on both chains)
-const MAXI_CONTRACT_ADDRESS = '0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b' as Address;
+// MAXI contract address
+const MAXI_CONTRACT_ADDRESS = '0x0d86eb9f43c57f6ff3bc9e23d8f9d82503f0e84b' as Address;
+
+// Hedron contract address on PulseChain
+const HEDRON_CONTRACT_ADDRESS = '0x3819f64f282bf135d62168C1e513280dAF905e06' as Address;
 
 // ABI for the MAXI contract - different from perpetual pools
 const MAXI_ABI = parseAbi([
@@ -43,6 +44,36 @@ const HEX_ABI = parseAbi([
   'function stakeLists(address, uint256) view returns (uint40 stakeId, uint72 stakedHearts, uint72 stakeShares, uint16 lockedDay, uint16 stakedDays, uint16 unlockedDay, bool isAutoStake)',
 ]);
 
+// ABI for Hedron contract - for checking minting status
+const HEDRON_ABI = [
+  {
+    "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "name": "shareList",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint40", "name": "stakeId", "type": "uint40"},
+          {"internalType": "uint72", "name": "stakeShares", "type": "uint72"},
+          {"internalType": "uint16", "name": "lockedDay", "type": "uint16"},
+          {"internalType": "uint16", "name": "stakedDays", "type": "uint16"}
+        ],
+        "internalType": "struct HEXStakeMinimal",
+        "name": "stake",
+        "type": "tuple"
+      },
+      {"internalType": "uint16", "name": "mintedDays", "type": "uint16"},
+      {"internalType": "uint8", "name": "launchBonus", "type": "uint8"},
+      {"internalType": "uint16", "name": "loanStart", "type": "uint16"},
+      {"internalType": "uint16", "name": "loanedDays", "type": "uint16"},
+      {"internalType": "uint32", "name": "interestRate", "type": "uint32"},
+      {"internalType": "uint8", "name": "paymentsMade", "type": "uint8"},
+      {"internalType": "bool", "name": "isLoaned", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+
 export function useMaxiPool() {
   const { address, chain } = useAccount();
   const publicClient = usePublicClient();
@@ -50,11 +81,16 @@ export function useMaxiPool() {
   const [isLoading, setIsLoading] = useState(false);
   const [endStakeTxHash, setEndStakeTxHash] = useState<string | null>(null);
 
-  // Get the correct HEX contract address for the current chain
-  const HEX_CONTRACT_ADDRESS = useMemo(() => {
-    const chainId = chain?.id || 369; // Default to PulseChain
-    return HEX_CONTRACT_ADDRESSES[chainId] || HEX_CONTRACT_ADDRESSES[369];
-  }, [chain?.id]);
+  // 🔍 LOG: Initial hook state
+  const normalizedChainId = normalizeChainId(chain?.id);
+  console.log('🔍 [useMaxiPool] Hook initialized', {
+    address,
+    chainId: chain?.id,
+    normalizedChainId,
+    chainName: chain?.name,
+    publicClient: !!publicClient,
+    walletClient: !!walletClient,
+  });
 
   // Read contract state
   const { data: userBalance, refetch: refetchBalance } = useContractRead({
@@ -85,19 +121,19 @@ export function useMaxiPool() {
     functionName: 'decimals',
   });
 
-  const { data: totalSupply } = useContractRead({
+  const { data: totalSupply, refetch: refetchTotalSupply } = useContractRead({
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'totalSupply',
   });
 
-  const { data: endStaker } = useContractRead({
+  const { data: endStaker, refetch: refetchEndStaker } = useContractRead({
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'getEndStaker',
   });
 
-  const { data: hexRedemptionRate } = useContractRead({
+  const { data: hexRedemptionRate, refetch: refetchHexRedemptionRate } = useContractRead({
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'getHEXRedemptionRate',
@@ -109,7 +145,7 @@ export function useMaxiPool() {
     functionName: 'getHexDay',
   });
 
-  const { data: stakeEndDay } = useContractRead({
+  const { data: stakeEndDay, refetch: refetchStakeEndDay } = useContractRead({
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'getStakeEndDay',
@@ -131,6 +167,19 @@ export function useMaxiPool() {
     address: MAXI_CONTRACT_ADDRESS,
     abi: MAXI_ABI,
     functionName: 'getMintingPhaseEndDay',
+  });
+
+  // 🔍 LOG: Contract read results
+  console.log('🔍 [useMaxiPool] Contract reads completed', {
+    tokenName,
+    tokenSymbol,
+    userBalance: userBalance?.toString(),
+    currentHexDay: currentHexDay?.toString(),
+    stakeStartDay: stakeStartDay?.toString(),
+    stakeEndDay: stakeEndDay?.toString(),
+    hexRedemptionRate: hexRedemptionRate?.toString(),
+    endStaker,
+    decimals,
   });
 
   // Query HEX contract for stake information
@@ -155,11 +204,69 @@ export function useMaxiPool() {
     },
   });
 
+  // Query Hedron's shareList to check if Hedron was minted for THIS stake
+  const stakeId = stakeInfo?.[0]; // First element is the stake ID (bigint)
+  const { data: hedronShareDataRaw, refetch: refetchHedronShareData } = useContractRead({
+    address: HEDRON_CONTRACT_ADDRESS,
+    abi: HEDRON_ABI,
+    functionName: 'shareList',
+    args: stakeId !== undefined ? [BigInt(stakeId)] : undefined,
+    query: { enabled: !!stakeId },
+  });
+
+  // 🔍 LOG: Stake information
+  console.log('🔍 [useMaxiPool] Stake information', {
+    stakeCount: stakeCount?.toString(),
+    stakeInfo: stakeInfo ? {
+      stakeId: stakeInfo[0]?.toString(),
+      stakedHearts: stakeInfo[1]?.toString(),
+      stakeShares: stakeInfo[2]?.toString(),
+      lockedDay: stakeInfo[3],
+      stakedDays: stakeInfo[4],
+      unlockedDay: stakeInfo[5],
+      isAutoStake: stakeInfo[6],
+    } : 'No stake info',
+  });
+
+  // Calculate claimable Hedron amount using the same logic as perpetual pools
+  // Formula: claimableHedron = stakeShares * (servedDays - mintedDays)
+  const stakeShares = stakeInfo?.[2]; // Third element is stakeShares
+  const lockedDay = stakeInfo?.[3]; // Fourth element is lockedDay
+  const stakedDays = stakeInfo?.[4]; // Fifth element is stakedDays
+  const mintedDays = hedronShareDataRaw ? (hedronShareDataRaw as any)[1] : 0;
+  
+  // Calculate served days
+  const servedDays = 
+    currentHexDay && lockedDay !== undefined && stakedDays !== undefined
+      ? Math.min(Number(currentHexDay) - Number(lockedDay), Number(stakedDays))
+      : 0;
+  
+  // Calculate claimable Hedron
+  const claimableHedron = 
+    stakeShares && servedDays > Number(mintedDays)
+      ? stakeShares * BigInt(servedDays - Number(mintedDays))
+      : 0n;
+
   // Determine if stake is active based on MAXI logic
   // MAXI stake is active if current day is between start and end
   const stakeIsActive = currentHexDay && stakeStartDay && stakeEndDay 
     ? currentHexDay >= stakeStartDay && currentHexDay <= stakeEndDay
     : false;
+
+  // 🔍 LOG: Computed state
+  console.log('🔍 [useMaxiPool] Computed state', {
+    stakeIsActive,
+    currentHexDayValue: currentHexDay?.toString(),
+    stakeStartDayValue: stakeStartDay?.toString(),
+    stakeEndDayValue: stakeEndDay?.toString(),
+    stakeShares: stakeShares?.toString(),
+    lockedDay: lockedDay?.toString(),
+    stakedDays: stakedDays?.toString(),
+    servedDays,
+    mintedDays: mintedDays?.toString(),
+    claimableHedron: claimableHedron?.toString(),
+    hasHedronMinted: stakeInfo ? stakeInfo[5] !== 0 : false,
+  });
 
   // Fetch end stake transaction hash when stake is ended
   useEffect(() => {
@@ -235,6 +342,13 @@ export function useMaxiPool() {
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchEndStaker(),
+        refetchStakeEndDay(),
+        refetchHexRedemptionRate(),
+      ]);
+      
       return { hash, receipt };
     } catch (error: any) {
       throw error;
@@ -262,6 +376,9 @@ export function useMaxiPool() {
       const hash = await walletClient.writeContract(request);
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
+      
+      // Refetch hedron data to update button states
+      await refetchHedronShareData();
       
       return { hash, receipt };
     } catch (error: any) {
@@ -291,7 +408,12 @@ export function useMaxiPool() {
       
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       
-      await refetchBalance();
+      // Refetch contract data to update UI
+      await Promise.all([
+        refetchBalance(),
+        refetchTotalSupply(),
+        refetchHexRedemptionRate(),
+      ]);
       
       return { hash, receipt };
     } catch (error: any) {
@@ -301,9 +423,8 @@ export function useMaxiPool() {
     }
   };
 
-  // Check if Hedron has been minted by checking if unlockedDay is 0
-  // unlockedDay is at index 5 in the stakeInfo tuple
-  const hasHedronMinted = stakeInfo ? stakeInfo[5] !== 0 : false;
+  // Check if Hedron has been minted - if claimableHedron is 0, then all Hedron has been minted
+  const hasHedronMinted = claimableHedron === 0n && servedDays > 0;
 
   return {
     // Contract state
@@ -324,6 +445,7 @@ export function useMaxiPool() {
     mintingPhaseStartDay: mintingPhaseStartDay as bigint | undefined,
     mintingPhaseEndDay: mintingPhaseEndDay as bigint | undefined,
     hasHedronMinted,
+    claimableHedron: claimableHedron as bigint,
     
     // Functions
     endStake,

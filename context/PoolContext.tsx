@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAccount } from 'wagmi';
 import { PERPETUAL_POOLS, PerpetualPoolConfig, PoolTicker, getPoolOptionsForChain, getLatestPoolByPrefix } from '@/config/perpetual-pools';
+import { normalizeChainId } from '@/config/testing';
 
 interface PoolContextType {
   selectedPool: PerpetualPoolConfig;
@@ -20,11 +21,14 @@ export function PoolProvider({ children }: { children: ReactNode }) {
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [lastChainId, setLastChainId] = useState<number | undefined>(undefined);
 
+  // Normalize chain ID for testing (31337 -> 369)
+  const normalizedChainId = normalizeChainId(chain?.id);
+
   // Auto-select pool ending soonest using hardcoded deadlineUTC values
   useEffect(() => {
     if (hasAutoSelected) return;
     
-    const poolOptions = getPoolOptionsForChain(chain?.id).filter(Boolean);
+    const poolOptions = getPoolOptionsForChain(normalizedChainId).filter(Boolean);
     if (poolOptions.length === 0) return; // No pools available yet
     
     const pools = poolOptions
@@ -43,19 +47,19 @@ export function PoolProvider({ children }: { children: ReactNode }) {
 
     setSelectedTicker(soonestPool.ticker);
     setHasAutoSelected(true);
-  }, [hasAutoSelected, chain?.id]);
+  }, [hasAutoSelected, normalizedChainId]);
 
   // Handle chain changes - switch to equivalent pool on new chain
   useEffect(() => {
-    if (!chain?.id || lastChainId === chain?.id) {
-      if (chain?.id) setLastChainId(chain.id);
+    if (!normalizedChainId || lastChainId === normalizedChainId) {
+      if (normalizedChainId) setLastChainId(normalizedChainId);
       return;
     }
 
-    setLastChainId(chain.id);
+    setLastChainId(normalizedChainId);
 
     // Map current ticker to equivalent on new chain
-    const poolOptions = getPoolOptionsForChain(chain.id);
+    const poolOptions = getPoolOptionsForChain(normalizedChainId);
     const poolTickers = poolOptions.map(p => p.ticker);
 
     // If current ticker is not available on new chain, switch to equivalent
@@ -65,17 +69,29 @@ export function PoolProvider({ children }: { children: ReactNode }) {
       let baseTicker = selectedTicker.replace(/^e/, '').replace(/\d+$/, '');
       
       // Get the latest pool for this base ticker on the new chain
-      const latestPool = getLatestPoolByPrefix(baseTicker, chain.id);
+      const latestPool = getLatestPoolByPrefix(baseTicker, normalizedChainId);
       
       if (latestPool) {
         setSelectedTicker(latestPool.ticker as PoolTicker);
       }
       // For other pools (MAXI, DECI, LUCKY), they're available on both chains with same ticker, so keep as is
     }
-  }, [chain?.id, selectedTicker, lastChainId]);
+  }, [normalizedChainId, selectedTicker, lastChainId]);
 
   // Ensure selectedPool exists, fallback to MAXI if not found
   const selectedPool = PERPETUAL_POOLS[selectedTicker] || PERPETUAL_POOLS.MAXI;
+  
+  // 🔍 LOG: Pool context state
+  console.log('🔍 [PoolContext] Current state', {
+    selectedTicker,
+    selectedPool: {
+      ticker: selectedPool.ticker,
+      name: selectedPool.name,
+      contractAddress: selectedPool.contractAddress,
+    },
+    chainId: chain?.id,
+    chainName: chain?.name,
+  });
   
   const value = {
     selectedPool,
