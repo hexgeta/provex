@@ -1696,35 +1696,33 @@ export default function StakeInterface({
 
             {stakeIsActive && (
               <div className="space-y-4">
-                {/* Show Mint Hedron button if there's Hedron to claim */}
-                {claimableHedron > 0n && (
-                  <div className="space-y-2">
-                    <button
-                      onClick={handleMintHedron}
-                      disabled={!canEndStake || isMintingHedron || isEndingStake}
-                      className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                        canEndStake && !isMintingHedron && !isEndingStake
-                          ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
-                          : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      {isMintingHedron ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Processing...
-                        </span>
-                      ) : (
-                        'Mint Hedron'
-                      )}
-                    </button>
-                    {/* Only show claimable amount when stake can be ended */}
-                    {canEndStake && (
-                      <p className="text-sm text-gray-400 text-center">
-                        Claimable: {(Number(claimableHedron) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 2 })} HDRN
-                      </p>
+                {/* Always show Mint Hedron button - ghosted if stake can't be ended or if there's no Hedron to claim */}
+                <div className="space-y-2">
+                  <button
+                    onClick={handleMintHedron}
+                    disabled={!canEndStake || claimableHedron === 0n || isMintingHedron || isEndingStake}
+                    className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                      canEndStake && claimableHedron > 0n && !isMintingHedron && !isEndingStake
+                        ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
+                        : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    {isMintingHedron ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      'Mint Hedron'
                     )}
-                  </div>
-                )}
+                  </button>
+                  {/* Only show claimable amount when stake can be ended and there's Hedron to claim */}
+                  {canEndStake && claimableHedron > 0n && (
+                    <p className="text-sm text-gray-400 text-center">
+                      Claimable: {(Number(claimableHedron) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 2 })} HDRN
+                    </p>
+                  )}
+                </div>
 
                 {/* Always show End Stake button - ghosted if Hedron hasn't been minted yet */}
                 <button

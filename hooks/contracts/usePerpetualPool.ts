@@ -230,6 +230,12 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     args: [contractAddress, 0n],
     query: { enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0 },
   });
+  
+  console.log('🔍 [usePerpetualPool] StakeLists query for', ticker, {
+    contractAddress,
+    stakeCountRaw: stakeCountRaw?.toString(),
+    stakeInfoRaw,
+  });
 
   // Query Hedron's shareList to check if Hedron was minted for THIS stake
   // shareList returns the share info including mintedDays
@@ -240,7 +246,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
     abi: HEDRON_ABI,
     functionName: 'shareList',
     args: stakeId !== undefined ? [BigInt(stakeId)] : undefined,
-    query: { enabled: !!stakeId },
+    query: { enabled: stakeId !== undefined },
   });
 
   // Query user's HEX balance
@@ -288,11 +294,28 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   const stakedDays = stakeInfoRaw?.[4]; // Fifth element is stakedDays
   const mintedDays = hedronShareDataRaw ? (hedronShareDataRaw as any)[1] : 0;
   
+  console.log('🔍 [usePerpetualPool] Hedron raw data for', ticker, {
+    stakeId: stakeId?.toString(),
+    hedronShareDataRaw: hedronShareDataRaw,
+    mintedDays: mintedDays?.toString(),
+    stakeShares: stakeShares?.toString(),
+  });
+  
   // Calculate served days
   const servedDays = 
     currentHexDay && lockedDay !== undefined && stakedDays !== undefined
       ? Math.min(Number(currentHexDay) - Number(lockedDay), Number(stakedDays))
       : 0;
+  
+  console.log('🔍 [usePerpetualPool] Hedron calculation for', ticker, {
+    currentHexDay: currentHexDay?.toString(),
+    lockedDay: lockedDay?.toString(),
+    stakedDays: stakedDays?.toString(),
+    servedDays,
+    mintedDays: mintedDays?.toString(),
+    stakeShares: stakeShares?.toString(),
+    servedDaysMinusMintedDays: servedDays - Number(mintedDays),
+  });
   
   // Calculate claimable Hedron
   const claimableHedron = 
