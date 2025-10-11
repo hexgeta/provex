@@ -20,12 +20,12 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Staking Column */}
+          {/* Staking Column
           <div>
             <h4 className="text-s font-semibold mb-2 text-white">
               More
             </h4>
-            <ul className="space-y-1">
+            {/* <ul className="space-y-1">
               <li>
                 <Link 
                   href="/team" 
@@ -34,8 +34,8 @@ const Footer = () => {
                   TEAM
                 </Link>
               </li>
-            </ul>
-          </div>
+            </ul> */}
+          {/* </div> */}
 
           {/* Legal Column */}
           <div>

@@ -388,7 +388,7 @@ export default function StakeInterface({
             return {
               period,
               stakeNumber: (period + 1) / 2, // Calculate stake number from period: 1→1, 3→2, 5→3, etc.
-              amount: (Number(amount) / 1e8).toFixed(2),
+              amount: (Number(amount) / 1e8).toString(),
               status,
             };
           })
@@ -439,8 +439,8 @@ export default function StakeInterface({
               }) as any;
 
               const claimableAmount = Array.isArray(claimableData) && claimableData.length >= 1 
-                ? (Number(claimableData[0] as bigint) / 1e8).toFixed(2)
-                : '0.00';
+                ? (Number(claimableData[0] as bigint) / 1e8).toString()
+                : '0';
 
               // Get period end balance (check if prepared)
               const periodBalance = await publicClient.readContract({
@@ -450,7 +450,7 @@ export default function StakeInterface({
                 args: [rewardToken, BigInt(selectedStakePeriod)],
               }) as bigint;
 
-              const periodEndBalance = (Number(periodBalance) / 1e8).toFixed(2);
+              const periodEndBalance = (Number(periodBalance) / 1e8).toString();
 
               // Check if already claimed
               const hasClaimed = await publicClient.readContract({
@@ -549,11 +549,11 @@ export default function StakeInterface({
               }
 
               const formattedGlobalStaked = globalStaked 
-                ? (Number(globalStaked) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : '0.00';
+                ? formatNumberSmart(Number(globalStaked) / 1e8)
+                : '0';
 
               // For active period, we'll use the live reward bucket balance instead of periodEndBalance
-              const formattedRewards = (Number(periodRewards) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const formattedRewards = formatNumberSmart(Number(periodRewards) / 1e8);
 
               return {
                 period,
@@ -750,10 +750,19 @@ export default function StakeInterface({
     };
   }, [activeTab, stakeIsActive, currentHexDay, stakeEndDay]);
 
-  // Format user balance for display (2 decimals)
+  // Smart number formatting - only show decimals when needed
+  const formatNumberSmart = (value: number): string => {
+    const hasDecimals = value % 1 !== 0;
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: hasDecimals ? 2 : 0,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  // Format user balance for display
   const formattedBalance = userBalance 
-    ? (Number(userBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart(Number(userBalance) / 1e8)
+    : '0';
   
   // Get full precision balance for MAX button (8 decimals)
   const getFullPrecisionBalance = () => {
@@ -771,7 +780,7 @@ export default function StakeInterface({
       const cleanAmount = removeCommas(amount);
       const amountInMini = parseFloat(cleanAmount) * 1e8;
       const redeemableHearts = (amountInMini * Number(hexRedemptionRate)) / 1e8;
-      return (redeemableHearts / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return formatNumberSmart(redeemableHearts / 1e8);
     } catch {
       return '0';
     }
@@ -779,8 +788,8 @@ export default function StakeInterface({
 
   // Format HEX balance
   const formattedHexBalance = hexBalance 
-    ? (Number(hexBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart(Number(hexBalance) / 1e8)
+    : '0';
   
   // Get full precision HEX balance for MAX button
   const getFullPrecisionHexBalance = () => {
@@ -799,7 +808,7 @@ export default function StakeInterface({
       const hexInHearts = parseFloat(cleanAmount) * 1e8;
       // Pool tokens minted = (HEX hearts * 1e8) / redemption rate
       const tokensInMini = (hexInHearts * 1e8) / Number(hexRedemptionRate);
-      return (tokensInMini / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return formatNumberSmart(tokensInMini / 1e8);
     } catch {
       return '0';
     }
@@ -1068,23 +1077,22 @@ export default function StakeInterface({
         setWithdrawAmount('');
         setDhUnlockDialogOpen(false);
       } else {
-        // For ACTIVE/PENDING stakes, calculate penalty and show confirmation
+        // For ACTIVE/PENDING stakes, calculate penalty and show confirmation dialog
         const penalty = await calculatePenalty(amountInMini);
-          const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
-          const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
-          
-        if (!confirm(`Early withdrawal incurs a penalty of ${penaltyAmount} ${formatTickerName(selectedPool.ticker)}. You will receive ${willReceive} ${formatTickerName(selectedPool.ticker)}. Continue?`)) {
-            onTransactionEnd?.();
-            return;
-          }
-          
-          const result = await withdrawEarly(stakeID, amountInMini);
-          onTransactionSuccess?.(
-          `Successfully withdrew ${formatNumberWithCommas(cleanAmount)} ${formatTickerName(selectedPool.ticker)} (with penalty)`,
-            result.hash
-          );
-        setWithdrawAmount('');
-        setDhUnlockDialogOpen(false);
+        const penaltyAmount = (Number(penalty) / 1e8).toFixed(2);
+        const willReceive = (Number(amountInMini - penalty) / 1e8).toFixed(2);
+        const penaltyPercentage = ((Number(penalty) / Number(amountInMini)) * 100).toFixed(2);
+        
+        // Set early withdraw details and show dialog (store clean values)
+        setEarlyWithdrawDetails({
+          amount: cleanAmount,
+          penalty: penaltyAmount,
+          penaltyPercentage: penaltyPercentage,
+          afterPenalty: willReceive,
+        });
+        setShowEarlyWithdrawDialog(true);
+        onTransactionEnd?.(); // End loading state while waiting for user confirmation
+        return;
       }
     } catch (error: any) {
       onTransactionError?.(
@@ -1144,7 +1152,14 @@ export default function StakeInterface({
   };
 
   const confirmEarlyDHWithdraw = async () => {
-    const cleanAmount = removeCommas(earlyWithdrawDetails.amount);
+    // Amount is already clean (no commas), no need to remove them
+    const cleanAmount = earlyWithdrawDetails.amount;
+    
+    // Use the selected stake period as stakeID
+    if (selectedStakePeriod === null) {
+      onTransactionError?.('Please select a stake to withdraw from');
+      return;
+    }
     
     try {
       onTransactionStart?.();
@@ -1155,23 +1170,8 @@ export default function StakeInterface({
       const paddedDecimal = decimal.padEnd(8, '0').slice(0, 8);
       const amountInMini = BigInt(whole + paddedDecimal);
       
-      // Determine the correct stakeID based on where user has funds
-      // If user has funds in "next period", use next period as stakeID
-      let stakeID: bigint;
-      if (currentPeriod) {
-        // Check if user has funds in next period
-        if (Number(userStakedForNextPeriod) > 0) {
-          // Calculate next staking period
-          stakeID = currentPeriod % 2n === 1n 
-            ? currentPeriod + 2n  // If odd (staking period), next staking is +2
-            : currentPeriod + 1n; // If even (reload period), next staking is +1
-        } else {
-          // Use current period if they have funds there
-          stakeID = currentPeriod;
-        }
-      } else {
-        stakeID = 1n;
-      }
+      // Use selected stake period as stakeID
+      const stakeID = BigInt(selectedStakePeriod);
       
       const result = await withdrawEarly(stakeID, amountInMini);
       
@@ -1270,8 +1270,8 @@ export default function StakeInterface({
 
   // Format Diamond Hands balance
   const formattedDHBalance = userStakedAmount 
-    ? (Number(userStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart(Number(userStakedAmount) / 1e8)
+    : '0';
   
   // Get full precision DH balance for MAX button
   const getFullPrecisionDHBalance = () => {
@@ -1284,8 +1284,8 @@ export default function StakeInterface({
 
   // Format global staked amount in DH contract
   const formattedGlobalStaked = globalStakedAmount 
-    ? (Number(globalStakedAmount) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart(Number(globalStakedAmount) / 1e8)
+    : '0';
 
   // Calculate user's percentage of total staked (using period-specific amounts for accuracy)
   const userPercentage = userStakedForActivePeriod && globalStakedForActivePeriod && Number(globalStakedForActivePeriod) > 0
@@ -1299,8 +1299,8 @@ export default function StakeInterface({
 
   // Format reward bucket balance
   const formattedRewardBucket = rewardBucketBalance 
-    ? (Number(rewardBucketBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart(Number(rewardBucketBalance) / 1e8)
+    : '0';
 
   // Calculate reward bucket percentage of total in DH contract
   const rewardBucketPercentage = rewardBucketBalance && globalStakedAmount && Number(globalStakedAmount) > 0
@@ -1309,36 +1309,36 @@ export default function StakeInterface({
 
   // Calculate pending rewards for user (using period-specific amounts)
   const pendingRewards = userStakedForActivePeriod && globalStakedForActivePeriod && rewardBucketBalance && Number(globalStakedForActivePeriod) > 0
-    ? ((Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * (Number(rewardBucketBalance) / 1e8)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '0.00';
+    ? formatNumberSmart((Number(userStakedForActivePeriod) / Number(globalStakedForActivePeriod)) * (Number(rewardBucketBalance) / 1e8))
+    : '0';
 
   // Format next period staking amounts (memoized to prevent flashing)
   const formattedUserNextPeriod = useMemo(() =>
     userStakedForNextPeriod
-      ? (Number(userStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : '0.00',
+      ? formatNumberSmart(Number(userStakedForNextPeriod) / 1e8)
+      : '0',
     [userStakedForNextPeriod]
   );
 
   const formattedGlobalNextPeriod = useMemo(() =>
     globalStakedForNextPeriod
-      ? (Number(globalStakedForNextPeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : '0.00',
+      ? formatNumberSmart(Number(globalStakedForNextPeriod) / 1e8)
+      : '0',
     [globalStakedForNextPeriod]
   );
 
   // Format current active period staking amounts (memoized to prevent flashing)
   const formattedGlobalActivePeriod = useMemo(() => 
     globalStakedForActivePeriod
-      ? (Number(globalStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : '0.00',
+      ? formatNumberSmart(Number(globalStakedForActivePeriod) / 1e8)
+      : '0',
     [globalStakedForActivePeriod]
   );
 
   const formattedUserActivePeriod = useMemo(() =>
     userStakedForActivePeriod
-      ? (Number(userStakedForActivePeriod) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : '0.00',
+      ? formatNumberSmart(Number(userStakedForActivePeriod) / 1e8)
+      : '0',
     [userStakedForActivePeriod]
   );
 
@@ -1847,7 +1847,7 @@ export default function StakeInterface({
                                       </span>
                             </div>
                             </div>
-                                  <div className="text-sm font-semibold text-slate-200">{amount} {formatTickerName(selectedPool.ticker)}</div>
+                                  <div className="text-sm font-semibold text-slate-200">{formatNumberSmart(parseFloat(amount))} {formatTickerName(selectedPool.ticker)}</div>
                                 </label>
                               );
                             })}
@@ -1901,7 +1901,7 @@ export default function StakeInterface({
                                 {allHistoricalPeriods.map(({ period, stakeNumber, status, globalStaked, rewards }) => {
                                   // For active period, show live reward bucket balance
                                   const displayRewards = status === 'active' && rewardBucketBalance
-                                    ? (Number(rewardBucketBalance) / 1e8).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                    ? formatNumberSmart(Number(rewardBucketBalance) / 1e8)
                                     : rewards;
                                   
                                   // Calculate APY based on stake length
@@ -1985,7 +1985,7 @@ export default function StakeInterface({
                             {/* Balance and MAX button */}
                             <div className="flex items-center gap-2 mt-2">
                               <span className="text-gray-400 text-xs">
-                                  Available: {maxAmount} {formatTickerName(selectedPool.ticker)}
+                                  Available: {formatNumberSmart(parseFloat(maxAmount))} {formatTickerName(selectedPool.ticker)}
                               </span>
                               <button
                                 type="button"
@@ -2389,8 +2389,8 @@ export default function StakeInterface({
                                 disabled={isDHLoading || !hasValidAmount}
                                 className={`w-full py-3 rounded-xl font-semibold text-lg transition-all ${
                                   !isDHLoading && hasValidAmount
-                                    ? 'bg-[#2D82F3] text-white hover:bg-[#3D92FF]'
-                                    : 'bg-white text-black cursor-not-allowed'
+                                    ? 'bg-white text-black hover:bg-gray-200'
+                                    : 'bg-white text-black cursor-not-allowed opacity-50'
                                 }`}
                               >
                                 {isDHLoading ? (
@@ -2556,9 +2556,9 @@ export default function StakeInterface({
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-400">
+            <DialogTitle className="flex items-center gap-2 text-red-400 text-2xl">
               <AlertTriangle className="w-6 h-6" />
-              Confirm Early Unlock
+              EARLY WITHDRAWAL WARNING
             </DialogTitle>
             <DialogDescription className="text-gray-300">
               You are about to unlock tokens from Diamond Hands while the stake is still active. This will incur a penalty.
@@ -2569,34 +2569,33 @@ export default function StakeInterface({
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-400">Unlock Amount:</span>
-                <span className="text-white font-semibold">{earlyWithdrawDetails.amount} {formatTickerName(selectedPool.ticker)}</span>
+                <span className="text-white font-semibold">{formatNumberWithCommas(earlyWithdrawDetails.amount)} {formatTickerName(selectedPool.ticker)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-red-400">Penalty:</span>
                 <span className="text-red-400 font-semibold">
-                  -{earlyWithdrawDetails.penalty} {formatTickerName(selectedPool.ticker)} <span className="text-xs text-red-400/80">({earlyWithdrawDetails.penaltyPercentage}%)</span>
+                  -{formatNumberWithCommas(earlyWithdrawDetails.penalty)} {formatTickerName(selectedPool.ticker)} <span className="text-xs text-red-400/80">({earlyWithdrawDetails.penaltyPercentage}%)</span>
                 </span>
               </div>
               <div className="border-t border-red-500/30 pt-3 flex justify-between">
                 <span className="text-white font-semibold">You Will Receive:</span>
-                <span className="text-white font-bold text-lg">{earlyWithdrawDetails.afterPenalty} {formatTickerName(selectedPool.ticker)}</span>
+                <span className="text-white font-bold text-lg">{formatNumberWithCommas(earlyWithdrawDetails.afterPenalty)} {formatTickerName(selectedPool.ticker)}</span>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="flex gap-3">
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button
-              variant="outline"
               onClick={() => setShowEarlyWithdrawDialog(false)}
-              className="flex-1 bg-gray-800 hover:bg-gray-700 text-white hover:text-white border-gray-600"
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmEarlyDHWithdraw}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50"
             >
-              Confirm Early Unlock
+              Confirm Withdrawal
             </Button>
           </DialogFooter>
           </DialogPrimitive.Content>

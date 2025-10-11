@@ -77,7 +77,7 @@ export default async function RootLayout({
       <head>
         <FontLoader weight="regular" priority={true} />
         <FontLoader weight="bold" />
-        <script defer data-domain="otc.lookintomaxi.com" src="https://plausible.io/js/script.js"></script>
+        <script defer data-domain="stake.lookintomaxi.com" src="https://plausible.io/js/script.js"></script>
       </head>
       <body className="bg-black text-white">
         <AppKitProvider cookies={cookies}>

@@ -112,7 +112,7 @@ function HomeContent() {
           >
             <div className="max-w-6xl mx-auto text-center">
               <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 md:mb-6">
-                Pooled Stake Management Dapp
+                Unlock Your Future
               </h2>
               <p className="text-lg md:text-2xl text-gray-400 max-w-2xl mx-auto">
                 End pooled stakes. Redeem HEX rewards.

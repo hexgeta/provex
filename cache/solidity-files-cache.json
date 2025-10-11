@@ -227,6 +227,66 @@
         "SafeERC20",
         "SafeMath"
       ]
+    },
+    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/hdrn.sol": {
+      "lastModificationDate": 1760215918721,
+      "contentHash": "b4f13b39e5773a75228d2b531631dcf7",
+      "sourceName": "contracts/core/hdrn.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.9"
+      ],
+      "artifacts": [
+        "AbstractRoyalties",
+        "Address",
+        "Clones",
+        "Context",
+        "Counters",
+        "ERC165",
+        "ERC20",
+        "ERC721",
+        "ERC721Enumerable",
+        "HEXStakeInstance",
+        "HEXStakeInstanceManager",
+        "Hedron",
+        "IERC165",
+        "IERC20",
+        "IERC20Metadata",
+        "IERC721",
+        "IERC721Enumerable",
+        "IERC721Metadata",
+        "IERC721Receiver",
+        "IHEX",
+        "IHedron",
+        "LibPart",
+        "LibRoyaltiesV2",
+        "RoyaltiesV2",
+        "RoyaltiesV2Impl",
+        "Strings"
+      ]
     }
   }
 }
