@@ -1638,7 +1638,21 @@ export default function StakeInterface({
                             </span>
                           </>
                         : `Stake cannot be ended yet. Stake ends in: ${daysUntilEnd} days.`
-                      : 'Stake is not currently active or has already been ended.'}
+                      : <>
+                          The stake has been ended.
+                          {!isReloadPhaseOver && (
+                            <>
+                              {' '}The stake can be started again after the reload phase ends in:{' '}
+                              <span className="font-mono">
+                                {reloadPhaseTimeRemaining.days}d{' '}
+                                {String(reloadPhaseTimeRemaining.hours).padStart(2, '0')}h{' '}
+                                {String(reloadPhaseTimeRemaining.minutes).padStart(2, '0')}m{' '}
+                                {String(reloadPhaseTimeRemaining.seconds).padStart(2, '0')}s
+                              </span>
+                            </>
+                          )}
+                        </>
+                    }
                   </span>
                 </div>
               )}
