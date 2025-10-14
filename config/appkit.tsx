@@ -7,6 +7,11 @@ import { shouldIncludeLocalFork } from '@/config/testing'
 // Get projectId from centralized env validation
 export const projectId = env.projectId
 
+// Validate projectId is available
+if (!projectId) {
+  console.error('❌ NEXT_PUBLIC_PROJECT_ID is not set. WalletConnect will not work properly.')
+}
+
 // Define PulseChain network
 const pulsechain: AppKitNetwork = {
   id: 369,

@@ -1779,8 +1779,8 @@ export default function StakeInterface({
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-white">Burn {formatTickerName(selectedPool.ticker)}. Claim HEX.</h2>
               
-              {/* Diamond Hands Button - Only show if pool has a DH contract AND user has tokens locked */}
-              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && userStakedAmount && Number(userStakedAmount) > 0 && (
+              {/* Diamond Hands Button - Show if pool has DH contract */}
+              {DIAMOND_HANDS_CONTRACTS[selectedTicker] && (
                 <Dialog open={dhUnlockDialogOpen} onOpenChange={setDhUnlockDialogOpen}>
                   <DialogTrigger asChild>
                     <button className="flex items-center justify-center p-2 text-gray-400 rounded-lg hover:text-gray-300">

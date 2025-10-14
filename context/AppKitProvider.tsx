@@ -18,6 +18,11 @@ const metadata = {
   icons: ['https://otc.lookintomaxi.com/favicon.png']
 }
 
+// Validate projectId before creating modal
+if (!projectId) {
+  console.error('❌ Cannot create AppKit modal: NEXT_PUBLIC_PROJECT_ID is missing')
+}
+
 // Create the modal
 export const modal = createAppKit({
   adapters: [wagmiAdapter],
@@ -25,6 +30,10 @@ export const modal = createAppKit({
   networks,
   metadata,
   themeMode: 'dark',
+  allowUnsupportedChain: true, // Allow unsupported chains (PulseChain)
+  enableWalletConnect: true, // Explicitly enable WalletConnect
+  enableInjected: true, // Enable browser extension wallets
+  enableCoinbase: false, // Disable Coinbase Wallet
   features: {
     analytics: false, // Disable analytics to avoid conflicts
     email: false, // Disable email login/onboarding

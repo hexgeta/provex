@@ -41,9 +41,9 @@ if (typeof window === 'undefined') {
 // Export validated environment variables with type safety
 // On client side, NEXT_PUBLIC_ vars will be available at runtime
 export const env = {
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID!,
-  supabaseUrl: process.env.SUPABASE_URL!,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY!,
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID || '',
+  supabaseUrl: process.env.SUPABASE_URL || '',
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
 } as const;
 
 // Export type for use in other files
