@@ -1,9 +1,8 @@
 /**
  *Submitted for verification at Etherscan.io on 2022-09-05
-*/
+ */
 
 // File: @openzeppelin/contracts/security/ReentrancyGuard.sol
-
 
 // OpenZeppelin Contracts v4.4.1 (security/ReentrancyGuard.sol)
 
@@ -70,7 +69,6 @@ abstract contract ReentrancyGuard {
 
 // File: @openzeppelin/contracts/utils/math/SafeMath.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
 
 pragma solidity ^0.8.0;
@@ -91,7 +89,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryAdd(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         unchecked {
             uint256 c = a + b;
             if (c < a) return (false, 0);
@@ -104,7 +105,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function trySub(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         unchecked {
             if (b > a) return (false, 0);
             return (true, a - b);
@@ -116,7 +120,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryMul(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         unchecked {
             // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
             // benefit is lost if 'b' is also tested.
@@ -133,7 +140,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryDiv(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         unchecked {
             if (b == 0) return (false, 0);
             return (true, a / b);
@@ -145,7 +155,10 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+    function tryMod(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool, uint256) {
         unchecked {
             if (b == 0) return (false, 0);
             return (true, a % b);
@@ -300,7 +313,6 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/utils/Address.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (utils/Address.sol)
 
 pragma solidity ^0.8.0;
@@ -355,10 +367,16 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 
     /**
@@ -379,7 +397,10 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -413,7 +434,13 @@ library Address {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -428,10 +455,15 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
         require(isContract(target), "Address: call to non-contract");
 
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
         return verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -441,8 +473,16 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
     }
 
     /**
@@ -468,8 +508,16 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
     }
 
     /**
@@ -520,7 +568,6 @@ library Address {
 
 // File: @openzeppelin/contracts/utils/Context.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
 pragma solidity ^0.8.0;
@@ -547,7 +594,6 @@ abstract contract Context {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/IERC20.sol)
 
 pragma solidity ^0.8.0;
@@ -573,7 +619,10 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -582,7 +631,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -627,17 +679,18 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 // File: @openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/utils/SafeERC20.sol)
 
 pragma solidity ^0.8.0;
-
-
 
 /**
  * @title SafeERC20
@@ -651,12 +704,11 @@ pragma solidity ^0.8.0;
 library SafeERC20 {
     using Address for address;
 
-    function safeTransfer(
-        IERC20 token,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
     function safeTransferFrom(
@@ -665,7 +717,10 @@ library SafeERC20 {
         address to,
         uint256 value
     ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
     /**
@@ -687,7 +742,10 @@ library SafeERC20 {
             (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
     function safeIncreaseAllowance(
@@ -696,7 +754,14 @@ library SafeERC20 {
         uint256 value
     ) internal {
         uint256 newAllowance = token.allowance(address(this), spender) + value;
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     function safeDecreaseAllowance(
@@ -706,9 +771,19 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+            require(
+                oldAllowance >= value,
+                "SafeERC20: decreased allowance below zero"
+            );
             uint256 newAllowance = oldAllowance - value;
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+            _callOptionalReturn(
+                token,
+                abi.encodeWithSelector(
+                    token.approve.selector,
+                    spender,
+                    newAllowance
+                )
+            );
         }
     }
 
@@ -723,21 +798,25 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        bytes memory returndata = address(token).functionCall(
+            data,
+            "SafeERC20: low-level call failed"
+        );
         if (returndata.length > 0) {
             // Return data is optional
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
 
 // File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/IERC20Metadata.sol)
 
 pragma solidity ^0.8.0;
-
 
 /**
  * @dev Interface for the optional metadata functions from the ERC20 standard.
@@ -763,13 +842,9 @@ interface IERC20Metadata is IERC20 {
 
 // File: @openzeppelin/contracts/token/ERC20/ERC20.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/ERC20.sol)
 
 pragma solidity ^0.8.0;
-
-
-
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -862,7 +937,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view virtual override returns (uint256) {
         return _balances[account];
     }
 
@@ -874,7 +951,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -882,7 +962,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -893,7 +976,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(
+        address spender,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -919,7 +1005,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         _transfer(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        require(
+            currentAllowance >= amount,
+            "ERC20: transfer amount exceeds allowance"
+        );
         unchecked {
             _approve(sender, _msgSender(), currentAllowance - amount);
         }
@@ -939,8 +1028,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) public virtual returns (bool) {
+        _approve(
+            _msgSender(),
+            spender,
+            _allowances[_msgSender()][spender] + addedValue
+        );
         return true;
     }
 
@@ -958,9 +1054,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    ) public virtual returns (bool) {
         uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
         unchecked {
             _approve(_msgSender(), spender, currentAllowance - subtractedValue);
         }
@@ -993,7 +1095,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         _beforeTokenTransfer(sender, recipient, amount);
 
         uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        require(
+            senderBalance >= amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         unchecked {
             _balances[sender] = senderBalance - amount;
         }
@@ -1121,12 +1226,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
 // File: @openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol
 
-
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/ERC20Burnable.sol)
 
 pragma solidity ^0.8.0;
-
-
 
 /**
  * @dev Extension of {ERC20} that allows token holders to destroy both their own
@@ -1156,7 +1258,10 @@ abstract contract ERC20Burnable is Context, ERC20 {
      */
     function burnFrom(address account, uint256 amount) public virtual {
         uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
+        require(
+            currentAllowance >= amount,
+            "ERC20: burn amount exceeds allowance"
+        );
         unchecked {
             _approve(account, _msgSender(), currentAllowance - amount);
         }
@@ -1166,32 +1271,49 @@ abstract contract ERC20Burnable is Context, ERC20 {
 
 // File: contracts/PerpetualPool.sol
 
-
 pragma solidity ^0.8.2;
 
-
-
-
-
-
-
-
 contract HedronToken {
-  function approve(address spender, uint256 amount) external returns (bool) {}
-  function transfer(address recipient, uint256 amount) external returns (bool) {}
-  function mintNative(uint256 stakeIndex, uint40 stakeId) external returns (uint256) {}
-  function claimNative(uint256 stakeIndex, uint40 stakeId) external returns (uint256) {}
-  function currentDay() external view returns (uint256) {}
+    function approve(address spender, uint256 amount) external returns (bool) {}
+
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool) {}
+
+    function mintNative(
+        uint256 stakeIndex,
+        uint40 stakeId
+    ) external returns (uint256) {}
+
+    function claimNative(
+        uint256 stakeIndex,
+        uint40 stakeId
+    ) external returns (uint256) {}
+
+    function currentDay() external view returns (uint256) {}
 }
 
 contract HEXToken {
-  function currentDay() external view returns (uint256){}
-  function stakeStart(uint256 newStakedHearts, uint256 newStakedDays) external {}
-  function approve(address spender, uint256 amount) external returns (bool) {}
-  function transfer(address recipient, uint256 amount) public returns (bool) {}
-  function stakeEnd(uint256 stakeIndex, uint40 stakeIdParam) public {}
-  function stakeCount(address stakerAddr) external view returns (uint256) {}
+    function currentDay() external view returns (uint256) {}
+
+    function stakeStart(
+        uint256 newStakedHearts,
+        uint256 newStakedDays
+    ) external {}
+
+    function approve(address spender, uint256 amount) external returns (bool) {}
+
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public returns (bool) {}
+
+    function stakeEnd(uint256 stakeIndex, uint40 stakeIdParam) public {}
+
+    function stakeCount(address stakerAddr) external view returns (uint256) {}
 }
+
 /*
  /$$      /$$                     /$$                                         /$$$$$$$$ /$$$$$$$$  /$$$$$$  /$$      /$$
 | $$$    /$$$                    |__/                                        |__  $$__/| $$_____/ /$$__  $$| $$$    /$$$
@@ -1255,7 +1377,6 @@ YOU SHALL HAVE NO EXPECTATION OF PROFIT OR ANY TYPE OF GAIN FROM THE WORK OF OTH
 
 */
 
-
 contract PerpetualPool is ERC20, ERC20Burnable, ReentrancyGuard {
     // all days are measured in terms of the HEX contract day number
     uint256 public RELOAD_PHASE_DURATION; // How many days are between each stake
@@ -1271,52 +1392,64 @@ contract PerpetualPool is ERC20, ERC20Burnable, ReentrancyGuard {
     uint256 public CURRENT_STAKE_PRINCIPAL; // Principal of current stake, updated whenever a stake starts and reset to zero when a stake ends.
     uint256 public CURRENT_PERIOD; // even numbers are Reload Period, odd numbers are staking periods.
 
-    
-    constructor(uint256 initial_mint_duration, uint256 stake_duration, uint256 reload_duration,address team_address, string memory name, string memory ticker) ERC20(name, ticker) ReentrancyGuard() {
-        RELOAD_PHASE_DURATION=reload_duration;
-        uint256 start_day=hex_token.currentDay();
+    constructor(
+        uint256 initial_mint_duration,
+        uint256 stake_duration,
+        uint256 reload_duration,
+        address team_address,
+        string memory name,
+        string memory ticker
+    ) ERC20(name, ticker) ReentrancyGuard() {
+        RELOAD_PHASE_DURATION = reload_duration;
+        uint256 start_day = hex_token.currentDay();
         RELOAD_PHASE_START = start_day;
-        RELOAD_PHASE_END = start_day+initial_mint_duration; // The initial RELOAD PHASE may be set to be different than the ongoing reload phases.
-        STAKE_LENGTH=stake_duration; 
-        STAKE_IS_ACTIVE=false;
-        TEAM_CONTRACT_ADDRESS=team_address;
-        HEX_REDEMPTION_RATE=100000000; // HEX and MINI are 1:1 convertible during first minting/redemption phase. Then this will scale based on treasury value.
-        CURRENT_STAKE_PRINCIPAL=0;
-        CURRENT_PERIOD=0;
+        RELOAD_PHASE_END = start_day + initial_mint_duration; // The initial RELOAD PHASE may be set to be different than the ongoing reload phases.
+        STAKE_LENGTH = stake_duration;
+        STAKE_IS_ACTIVE = false;
+        TEAM_CONTRACT_ADDRESS = team_address;
+        HEX_REDEMPTION_RATE = 100000000; // HEX and MINI are 1:1 convertible during first minting/redemption phase. Then this will scale based on treasury value.
+        CURRENT_STAKE_PRINCIPAL = 0;
+        CURRENT_PERIOD = 0;
     }
-    
-    address POOL_ADDRESS =address(this);
+
+    address POOL_ADDRESS = address(this);
     address constant HEX_ADDRESS = 0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39; // "2b, 5 9 1e? that is the question..."
-    address constant HEDRON_ADDRESS=0x3819f64f282bf135d62168C1e513280dAF905e06; 
+    address constant HEDRON_ADDRESS =
+        0x3819f64f282bf135d62168C1e513280dAF905e06;
 
     IERC20 hex_contract = IERC20(HEX_ADDRESS);
-    IERC20 hedron_contract=IERC20(HEDRON_ADDRESS);
+    IERC20 hedron_contract = IERC20(HEDRON_ADDRESS);
     HEXToken hex_token = HEXToken(HEX_ADDRESS);
     HedronToken hedron_token = HedronToken(HEDRON_ADDRESS);
-    
-    /**
-    * @dev View number of decimal places the Pool Token is divisible to. Manually overwritten from default 18 to 8 to match that of HEX. 1 Pool Token = 10^8 mini
-    */
-    function decimals() public view virtual override returns (uint8) {return 8;}
 
     /**
-    * @dev Returns the current Period. Even numbers are Reload Phases, Odd numbers are staking phases."
-    * @return Current Period
-    */
-    function getCurrentPeriod() external view returns (uint256){
+     * @dev View number of decimal places the Pool Token is divisible to. Manually overwritten from default 18 to 8 to match that of HEX. 1 Pool Token = 10^8 mini
+     */
+    function decimals() public view virtual override returns (uint8) {
+        return 8;
+    }
+
+    /**
+     * @dev Returns the current Period. Even numbers are Reload Phases, Odd numbers are staking phases."
+     * @return Current Period
+     */
+    function getCurrentPeriod() external view returns (uint256) {
         return CURRENT_PERIOD;
     }
+
     // @dev Returns the current day from the hex contract.
-    function getHexDay() external view returns (uint256){
+    function getHexDay() external view returns (uint256) {
         uint256 day = hex_token.currentDay();
         return day;
     }
 
-     /**
-    * @dev Returns the address of the person who ends stake. May be used by external gas pooling contracts. If stake has not been ended yet will return 0x000...000"
-    * @return end_staker_address This person should be honored and celebrated as a hero.
-    */
-    function getEndStaker() external view returns (address end_staker_address) {return END_STAKER;}
+    /**
+     * @dev Returns the address of the person who ends stake. May be used by external gas pooling contracts. If stake has not been ended yet will return 0x000...000"
+     * @return end_staker_address This person should be honored and celebrated as a hero.
+     */
+    function getEndStaker() external view returns (address end_staker_address) {
+        return END_STAKER;
+    }
 
     // Pool Token Issuance and Redemption Functions
     /**
@@ -1326,33 +1459,50 @@ contract PerpetualPool is ERC20, ERC20Burnable, ReentrancyGuard {
     function mint(uint256 amount) private {
         _mint(msg.sender, amount);
     }
-     /**
+
+    /**
      * @dev Ensures that Pool Token Minting Phase is ongoing and that the user has allowed the Perpetual Pool Contract address to spend the amount of HEX the user intends to pledge to The Perpetual Pool. Then sends the designated HEX from the user to the Perpetual Pool Contract address and mints 1 Pool Token per HEX pledged.
      * @param amount of HEX user chose to pledge, measured in hearts
      */
-    function pledgeHEX(uint256 amount) nonReentrant external {
-        require(STAKE_IS_ACTIVE==false, "Minting may only be done if a stake is not active");
-        require(hex_token.currentDay()<=RELOAD_PHASE_END, "Minting Phase is Done");
-        require(hex_contract.allowance(msg.sender, POOL_ADDRESS)>=amount, "Please approve contract address as allowed spender in the hex contract.");
+    function pledgeHEX(uint256 amount) external nonReentrant {
+        require(
+            STAKE_IS_ACTIVE == false,
+            "Minting may only be done if a stake is not active"
+        );
+        require(
+            hex_token.currentDay() <= RELOAD_PHASE_END,
+            "Minting Phase is Done"
+        );
+        require(
+            hex_contract.allowance(msg.sender, POOL_ADDRESS) >= amount,
+            "Please approve contract address as allowed spender in the hex contract."
+        );
         address from = msg.sender;
         hex_contract.transferFrom(from, POOL_ADDRESS, amount);
-        uint256 mintable_amount = (10**8)*amount/HEX_REDEMPTION_RATE;
+        uint256 mintable_amount = ((10 ** 8) * amount) / HEX_REDEMPTION_RATE;
         mint(mintable_amount);
     }
-     /**
+
+    /**
      * @dev Ensures that it is currently a redemption period (before stake starts or after stake ends) and that the user has at least the number of Pool Tokens they entered. Then it calculates how much hex may be redeemed, burns the Pool Token, and transfers them the hex.
      * @param amount number of Pool Tokens that the user is redeeming, measured in mini
      */
-    function redeemHEX(uint256 amount) nonReentrant external {
-        require(STAKE_IS_ACTIVE==false, "Redemption can not happen while stake is active");
+    function redeemHEX(uint256 amount) external nonReentrant {
+        require(
+            STAKE_IS_ACTIVE == false,
+            "Redemption can not happen while stake is active"
+        );
         uint256 your_balance = balanceOf(msg.sender);
-        require(your_balance>=amount, "You do not have that much of the Pool Token.");
-        uint256 raw_redeemable_amount = amount*HEX_REDEMPTION_RATE;
-        uint256 redeemable_amount = raw_redeemable_amount/(10**8); //scaled back down to handle integer rounding
+        require(
+            your_balance >= amount,
+            "You do not have that much of the Pool Token."
+        );
+        uint256 raw_redeemable_amount = amount * HEX_REDEMPTION_RATE;
+        uint256 redeemable_amount = raw_redeemable_amount / (10 ** 8); //scaled back down to handle integer rounding
         burn(amount);
         hex_token.transfer(msg.sender, redeemable_amount);
-        
     }
+
     //Staking Functions
     // Anyone may run these functions during the allowed time, so long as they pay the gas.
     // While nothing is forcing you to, gracious Perpetual Pool members will tip the sender some ETH for paying gas to end your stake.
@@ -1362,169 +1512,197 @@ contract PerpetualPool is ERC20, ERC20Burnable, ReentrancyGuard {
      * @notice This will trigger the start of the HEX stake. If you run this, you will pay the gas on behalf of the contract and you should not expect reimbursement.
      
      */
-    function stakeHEX() nonReentrant external {
-        require(STAKE_IS_ACTIVE==false, "Stake has already started.");
+    function stakeHEX() external nonReentrant {
+        require(STAKE_IS_ACTIVE == false, "Stake has already started.");
         uint256 current_day = hex_token.currentDay();
-        require(current_day>RELOAD_PHASE_END, "Minting Phase is still ongoing - see RELOAD_PHASE_END day.");
+        require(
+            current_day > RELOAD_PHASE_END,
+            "Minting Phase is still ongoing - see RELOAD_PHASE_END day."
+        );
         uint256 amount = hex_contract.balanceOf(address(this));
         _stakeHEX(amount);
-        CURRENT_STAKE_PRINCIPAL=amount;
-        STAKE_START_DAY=current_day;
-        STAKE_END_DAY=current_day+STAKE_LENGTH;
-        STAKE_IS_ACTIVE=true;
-        CURRENT_PERIOD = CURRENT_PERIOD+1;
+        CURRENT_STAKE_PRINCIPAL = amount;
+        STAKE_START_DAY = current_day;
+        STAKE_END_DAY = current_day + STAKE_LENGTH;
+        STAKE_IS_ACTIVE = true;
+        CURRENT_PERIOD = CURRENT_PERIOD + 1;
     }
-    function _stakeHEX(uint256 amount) private  {
-        hex_token.stakeStart(amount,STAKE_LENGTH);
-        }
-    
-    function _endStakeHEX(uint256 stakeIndex,uint40 stakeIdParam ) private  {
+
+    function _stakeHEX(uint256 amount) private {
+        hex_token.stakeStart(amount, STAKE_LENGTH);
+    }
+
+    function _endStakeHEX(uint256 stakeIndex, uint40 stakeIdParam) private {
         hex_token.stakeEnd(stakeIndex, stakeIdParam);
-        }
+    }
+
     /**
      * @dev Ensures that the stake is fully complete and that it has not already been ended. Then it ends the hex stake and updates the redemption rate.
      * @notice This will trigger the ending of the HEX stake and calculate the new redemption rate. This may be very expensive. If you run this, you will pay the gas on behalf of the contract and you should not expect reimbursement.
      * @param stakeIndex index of stake found in stakeLists[contract_address] in hex contract.
      * @param stakeIdParam stake identifier found in stakeLists[contract_address] in hex contract.
      */
-    function endStakeHEX(uint256 stakeIndex,uint40 stakeIdParam ) nonReentrant external {
-        require(hex_token.currentDay()>STAKE_END_DAY, "Stake is not complete yet.");
-        require(STAKE_IS_ACTIVE==true, "Stake must be active.");
+    function endStakeHEX(
+        uint256 stakeIndex,
+        uint40 stakeIdParam
+    ) external nonReentrant {
+        require(
+            hex_token.currentDay() > STAKE_END_DAY,
+            "Stake is not complete yet."
+        );
+        require(STAKE_IS_ACTIVE == true, "Stake must be active.");
         _endStakeHEX(stakeIndex, stakeIdParam);
         uint256 hex_balance = hex_contract.balanceOf(address(this));
-        uint256 bpb_bonus_sharing_amount = get_bonus_sharing_amount(CURRENT_STAKE_PRINCIPAL, hex_balance,STAKE_LENGTH);
+        uint256 bpb_bonus_sharing_amount = get_bonus_sharing_amount(
+            CURRENT_STAKE_PRINCIPAL,
+            hex_balance,
+            STAKE_LENGTH
+        );
         hex_token.transfer(TEAM_CONTRACT_ADDRESS, bpb_bonus_sharing_amount);
-        hedron_token.transfer(TEAM_CONTRACT_ADDRESS,hedron_contract.balanceOf(address(this)));
+        hedron_token.transfer(
+            TEAM_CONTRACT_ADDRESS,
+            hedron_contract.balanceOf(address(this))
+        );
         uint256 total_supply = IERC20(address(this)).totalSupply();
-        HEX_REDEMPTION_RATE  = calculate_redemption_rate(hex_contract.balanceOf(address(this)), total_supply);
-        END_STAKER=msg.sender;
-        CURRENT_STAKE_PRINCIPAL=0;
-        STAKE_IS_ACTIVE=false;
-        RELOAD_PHASE_START=hex_token.currentDay();
-        RELOAD_PHASE_END=RELOAD_PHASE_START+RELOAD_PHASE_DURATION;
-        CURRENT_PERIOD = CURRENT_PERIOD+1;
-         
-        
+        HEX_REDEMPTION_RATE = calculate_redemption_rate(
+            hex_contract.balanceOf(address(this)),
+            total_supply
+        );
+        END_STAKER = msg.sender;
+        CURRENT_STAKE_PRINCIPAL = 0;
+        STAKE_IS_ACTIVE = false;
+        RELOAD_PHASE_START = hex_token.currentDay();
+        RELOAD_PHASE_END = RELOAD_PHASE_START + RELOAD_PHASE_DURATION;
+        CURRENT_PERIOD = CURRENT_PERIOD + 1;
     }
 
     //@dev This calculates the amount of HEX to send to the Maximus TEAM Contract. See HEX Staking Bonuses for Details about BPB and LPB Bonuses
-    function get_bonus_sharing_amount(uint256 principal,uint256 end_value, uint256 stake_length) private pure returns(uint256) {
-        
-        
+    function get_bonus_sharing_amount(
+        uint256 principal,
+        uint256 end_value,
+        uint256 stake_length
+    ) private pure returns (uint256) {
         uint256 bpb_effective_hex;
-        
-        uint256 bpb_threshold = 150000000*(10**8);
-        if (principal>bpb_threshold) {
-            bpb_effective_hex = principal/10;
+
+        uint256 bpb_threshold = 150000000 * (10 ** 8);
+        if (principal > bpb_threshold) {
+            bpb_effective_hex = principal / 10;
+        } else {
+            uint256 scaled_bpb_multiplier = (((10 ** 8) * (principal)) /
+                (10 * bpb_threshold));
+            bpb_effective_hex =
+                (principal * (scaled_bpb_multiplier)) /
+                (10 ** 8);
         }
-        else {
-            uint256 scaled_bpb_multiplier = (((10**8)*(principal))/(10*bpb_threshold));
-            bpb_effective_hex = principal * (scaled_bpb_multiplier)/(10**8);
-        }   
         uint256 lpb_effective_hex;
         uint256 scaled_lpb_multiplier;
         uint256 lpb_threshold = 3650;
-        if (stake_length>lpb_threshold) {
-            scaled_lpb_multiplier = 2*(10**8);
+        if (stake_length > lpb_threshold) {
+            scaled_lpb_multiplier = 2 * (10 ** 8);
+        } else {
+            scaled_lpb_multiplier =
+                (2 * ((10 ** 8) * (stake_length))) /
+                lpb_threshold;
         }
-        else {
-            scaled_lpb_multiplier = 2*((10**8)*(stake_length))/lpb_threshold;
-            
-        }   
-        lpb_effective_hex = principal * (scaled_lpb_multiplier)/(10**8);
-        uint256 scalar = 10**8;
-        uint256 earnings = end_value-principal;
-        uint256 bpb_makeup_scaled = (scalar * bpb_effective_hex)/(bpb_effective_hex+principal+lpb_effective_hex);
-        uint256 bpb_earnings_scaled = earnings *bpb_makeup_scaled;
-        uint256 bpb_earnings = bpb_earnings_scaled/scalar;
-        return bpb_earnings/2;
-
+        lpb_effective_hex = (principal * (scaled_lpb_multiplier)) / (10 ** 8);
+        uint256 scalar = 10 ** 8;
+        uint256 earnings = end_value - principal;
+        uint256 bpb_makeup_scaled = (scalar * bpb_effective_hex) /
+            (bpb_effective_hex + principal + lpb_effective_hex);
+        uint256 bpb_earnings_scaled = earnings * bpb_makeup_scaled;
+        uint256 bpb_earnings = bpb_earnings_scaled / scalar;
+        return bpb_earnings / 2;
     }
+
     /**
      * @dev Calculates the pro-rata redemption rate of any coin per Pool Token. Scales value by 10^8 to handle integer rounding.
      * @param treasury_balance The balance of coins in contract address (either HEX or HEDRON)
      * @param token_supply total Pool Token supply
      * @return redemption_rate Number of units redeemable per 10^8 decimal units of Pool Tokens. Is scaled back down by 10^8 on redemption transaction.
      */
-    function calculate_redemption_rate(uint treasury_balance, uint token_supply) private pure returns (uint redemption_rate) {
-        uint256 scalar = 10**8;
+    function calculate_redemption_rate(
+        uint treasury_balance,
+        uint token_supply
+    ) private pure returns (uint redemption_rate) {
+        uint256 scalar = 10 ** 8;
         uint256 scaled = (treasury_balance * scalar) / token_supply; // scale value to calculate redemption amount per Pool Token and then divide by same scalar after multiplication
         return scaled;
     }
-    
+
     /**
-     * @dev Public function which calls the private function which is used for minting available HDRN accumulated by the contract stake. 
+     * @dev Public function which calls the private function which is used for minting available HDRN accumulated by the contract stake.
      * @notice This will trigger the minting of the mintable Hedron earned by the stake. If you run this, you will pay the gas on behalf of the contract and you should not expect reimbursement. If check to make sure this has not been run yet already or the transaction will fail.
      * @param stakeIndex index of stake found in stakeLists[contract_address] in hex contract.
      * @param stakeId stake identifier found in stakeLists[contract_address] in hex contract.
      */
-  function mintHedron(uint256 stakeIndex,uint40 stakeId ) external  {
-      _mintHedron(stakeIndex, stakeId);
-        }
-   /**
+    function mintHedron(uint256 stakeIndex, uint40 stakeId) external {
+        _mintHedron(stakeIndex, stakeId);
+    }
+
+    /**
      * @dev Private function used for minting available HDRN accumulated by the contract stake.
      * @param stakeIndex index of stake found in stakeLists[contract_address] in hex contract.
      * @param stakeId stake identifier found in stakeLists[contract_address] in hex contract.
      */
-  function _mintHedron(uint256 stakeIndex,uint40 stakeId ) private  {
+    function _mintHedron(uint256 stakeIndex, uint40 stakeId) private {
         hedron_token.mintNative(stakeIndex, stakeId);
-        }
+    }
 }
 // File: contracts/Team.sol
 
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.2;
 
-
-
-
-
-
-
-
 /// @title Maximus DAO TEAM Contract
 /// @author Dip Catcher @TantoNomini
 /// @notice Contract for Minting and Staking TEAM.
 /// @dev Deploys Perpetual HEX Stake Pool Contracts, Mystery Box Contract, 369 MAXI Escrow contract, Stake Rewards Claiming Contract. It also governs the minting and staking of TEAM.
 contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
-/// Initialization
+    /// Initialization
     // Events - used for analysis and offchain UI
-    event Mint(
-        address indexed minter,
-        uint256 amount);
+    event Mint(address indexed minter, uint256 amount);
     event Stake(
         address indexed staker,
-        uint256 amount, 
+        uint256 amount,
         uint256 current_period,
-        uint256 stakeID, 
-        bool is_initial);
+        uint256 stakeID,
+        bool is_initial
+    );
     event ExtendStake(
         address indexed staker,
-        uint256 amount, 
-        uint256 staking_period, 
-        uint256 stakeID);
-    event EarlyEndStake(address indexed staker,
-        uint256 amount, 
-        uint256 staking_period, 
-        uint256 stakeID);
-    event EndExpiredStake(address indexed staker,
-        uint256 amount, 
-        uint256 staking_period, 
-        uint256 stakeID);
-    event RestakeExpiredStake(address indexed staker,
-        uint256 amount, 
-        uint256 staking_period, 
-        uint256 stakeID);
-    
+        uint256 amount,
+        uint256 staking_period,
+        uint256 stakeID
+    );
+    event EarlyEndStake(
+        address indexed staker,
+        uint256 amount,
+        uint256 staking_period,
+        uint256 stakeID
+    );
+    event EndExpiredStake(
+        address indexed staker,
+        uint256 amount,
+        uint256 staking_period,
+        uint256 stakeID
+    );
+    event RestakeExpiredStake(
+        address indexed staker,
+        uint256 amount,
+        uint256 staking_period,
+        uint256 stakeID
+    );
+
     // Global Variables Setup
     address TEAM_ADDRESS = address(this);
     address constant MAXI_ADDRESS = 0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b;
-    address constant HEX_ADDRESS  = 0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39; // "2b, 5 9 1e? that is the question..."
-    address constant HEDRON_ADDRESS = 0x3819f64f282bf135d62168C1e513280dAF905e06; 
-    
+    address constant HEX_ADDRESS = 0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39; // "2b, 5 9 1e? that is the question..."
+    address constant HEDRON_ADDRESS =
+        0x3819f64f282bf135d62168C1e513280dAF905e06;
+
     // Token Interfaces
-    IERC20 hex_contract = IERC20(HEX_ADDRESS);  //things like TransferFrom
-    IERC20 hedron_contract=IERC20(HEDRON_ADDRESS);
+    IERC20 hex_contract = IERC20(HEX_ADDRESS); //things like TransferFrom
+    IERC20 hedron_contract = IERC20(HEDRON_ADDRESS);
     HEXToken hex_token = HEXToken(HEX_ADDRESS); //things like stakeStart
     HedronToken hedron_token = HedronToken(HEDRON_ADDRESS);
     IERC20 maxi_contract = IERC20(MAXI_ADDRESS);
@@ -1538,34 +1716,37 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
     address public MYSTERY_BOX_ADDRESS;
     address public STAKE_REWARD_DISTRIBUTION_ADDRESS;
     bool HAVE_POOLS_DEPLOYED;
-    
+
     constructor() ERC20("Maximus Team", "TEAM") ReentrancyGuard() {
-        IS_MINTING_ONGOING=true;
-        uint256 start_day=hex_token.currentDay();
-        uint256 mint_duration=21;
+        IS_MINTING_ONGOING = true;
+        uint256 start_day = hex_token.currentDay();
+        uint256 mint_duration = 21;
         MINTING_PHASE_START = start_day;
-        MINTING_PHASE_END = start_day+mint_duration;
+        MINTING_PHASE_END = start_day + mint_duration;
         HAVE_POOLS_DEPLOYED = false;
-        GLOBAL_AMOUNT_STAKED=0;
+        GLOBAL_AMOUNT_STAKED = 0;
         deployPools(); // deploy the perpetual pools
-        declareSupportedTokens();  // designate the tokens supported by the staking reward distribution contract.
+        declareSupportedTokens(); // designate the tokens supported by the staking reward distribution contract.
         deployStakeRewardDistributionContract(); // activate the staking reward distribution contract.
         deployMAXIEscrow();
         deployMysteryBox();
     }
-/// Pool Deployment 
-    mapping (string =>address) public poolAddresses; // poolAddresses[ticker] = address
+
+    /// Pool Deployment
+    mapping(string => address) public poolAddresses; // poolAddresses[ticker] = address
+
     /*
     @notice Deploys the Perpetual Stake Pools.
     */
     function deployPools() private {
-        require(HAVE_POOLS_DEPLOYED==false);
+        require(HAVE_POOLS_DEPLOYED == false);
         deployPool("Maximus Base", "BASE", 369, 21, 7);
         deployPool("Maximus Trio", "TRIO", 1111, 21, 7);
         deployPool("Maximus Lucky", "LUCKY", 2555, 21, 14);
         deployPool("Maximus Decimus", "DECI", 3696, 21, 14);
-        HAVE_POOLS_DEPLOYED=true;
-    }  
+        HAVE_POOLS_DEPLOYED = true;
+    }
+
     /*
     @dev Deploys the Perpetual Pool contract and saves the address to the poolAddresses mapping
     @param name Full contract name
@@ -1573,53 +1754,72 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
     @param stake_length length of stake cycle in days
     @param mint_length length of period between stakes
     */
-    function deployPool(string memory name, string memory ticker, uint stake_length, uint256 initial_mint_length, uint256 reload_length) private {
-        PerpetualPool pool = new PerpetualPool(initial_mint_length, stake_length, reload_length, address(this) ,name,  ticker);
-        poolAddresses[ticker] =address(pool);
+    function deployPool(
+        string memory name,
+        string memory ticker,
+        uint stake_length,
+        uint256 initial_mint_length,
+        uint256 reload_length
+    ) private {
+        PerpetualPool pool = new PerpetualPool(
+            initial_mint_length,
+            stake_length,
+            reload_length,
+            address(this),
+            name,
+            ticker
+        );
+        poolAddresses[ticker] = address(pool);
     }
 
-/// Declaring Supported Tokens
+    /// Declaring Supported Tokens
     // Income received by the TEAM Contract in tokens from the below declared supported tokens list are split up and claimable
-    mapping (string => address) supportedTokens;
+    mapping(string => address) supportedTokens;
+
     /*
     @dev Declares which tokens that will be supported by the reward distribution contract.
     */
     function declareSupportedTokens() private {
         supportedTokens["HEX"] = HEX_ADDRESS;
-        supportedTokens["MAXI"]=MAXI_ADDRESS;
-        supportedTokens["HDRN"]=HEDRON_ADDRESS;
-        supportedTokens["BASE"]=poolAddresses["BASE"];
-        supportedTokens["TRIO"]=poolAddresses["TRIO"];
-        supportedTokens["LUCKY"]=poolAddresses["LUCKY"];
-        supportedTokens["DECI"]=poolAddresses["DECI"];
-        supportedTokens["TEAM"]=address(this);
-        supportedTokens["ICSA"]=0xfc4913214444aF5c715cc9F7b52655e788A569ed;
-        
+        supportedTokens["MAXI"] = MAXI_ADDRESS;
+        supportedTokens["HDRN"] = HEDRON_ADDRESS;
+        supportedTokens["BASE"] = poolAddresses["BASE"];
+        supportedTokens["TRIO"] = poolAddresses["TRIO"];
+        supportedTokens["LUCKY"] = poolAddresses["LUCKY"];
+        supportedTokens["DECI"] = poolAddresses["DECI"];
+        supportedTokens["TEAM"] = address(this);
+        supportedTokens["ICSA"] = 0xfc4913214444aF5c715cc9F7b52655e788A569ed;
     }
+
     /*
     @dev Alternative way to get the address of a supported token. If token is not declared via declareSupportedTokens() it will return 0x0000...00000
     @return token_address of supported token.
     */
-    function getSupportedTokens(string memory ticker) public view returns(address) {
-            return supportedTokens[ticker];
-        }
-/// Activating Stake Reward Distribution Contract
+    function getSupportedTokens(
+        string memory ticker
+    ) public view returns (address) {
+        return supportedTokens[ticker];
+    }
+
+    /// Activating Stake Reward Distribution Contract
     /*
     @dev deploys StakeRewardDistribution contract, detailed below. Saves STAKE_REWARD_DISTRIBUTION_CONTRACT which is used to hold and distribute staker rewards.
     */
     function deployStakeRewardDistributionContract() private {
-        StakeRewardDistribution srd = new StakeRewardDistribution(address(this));
+        StakeRewardDistribution srd = new StakeRewardDistribution(
+            address(this)
+        );
         STAKE_REWARD_DISTRIBUTION_ADDRESS = address(srd);
     }
 
     // MINTING
     /**
-     * @dev Ensures that TEAM Minting Phase is ongoing and that the user has allowed the Team Contract address to spend the amount of MAXI the user intends to pledge to Maximus Team. 
+     * @dev Ensures that TEAM Minting Phase is ongoing and that the user has allowed the Team Contract address to spend the amount of MAXI the user intends to pledge to Maximus Team.
      ** Then sends the designated MAXI from the user to the Maximus Team Contract address and mints 1 TEAM per MAXI pledged.
      * @param amount of MAXI user chose to mint with, measured in mini (minimum divisible unit of MAXI 10^-8)
      */
-    function mintTEAM(uint256 amount) nonReentrant external {
-        require(IS_MINTING_ONGOING==true);
+    function mintTEAM(uint256 amount) external nonReentrant {
+        require(IS_MINTING_ONGOING == true);
         maxi_contract.transferFrom(msg.sender, TEAM_ADDRESS, amount);
         mint(amount);
         emit Mint(msg.sender, amount);
@@ -1632,22 +1832,27 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
      **   50% goes to the Mystery Box
      ** Deploys the 369 MAXI escrow contract, deploys the mystery box contract, completes the burn, sends the correct amount to the Escrow address and Mystery Box. Also, mints a copy of TEAM into the mystery box. Schedules the 369 MAXI Rebate.
      */
-    function finalizeMinting() nonReentrant external {
-        require(hex_token.currentDay()>MINTING_PHASE_END);
-        require(IS_MINTING_ONGOING==true);
-        uint256 total_MAXI = maxi_contract.balanceOf(address(this)); 
+    function finalizeMinting() external nonReentrant {
+        require(hex_token.currentDay() > MINTING_PHASE_END);
+        require(IS_MINTING_ONGOING == true);
+        uint256 total_MAXI = maxi_contract.balanceOf(address(this));
         uint256 burn_factor = 20; // 20% of the MAXI used to mint TEAM is burnt.
         uint256 rebate_factor = 30; // 30% of the MAXI used to mint TEAM is redistributed to TEAM stakers during years 3, 6, and 9.
         uint256 mb_factor = 50; // 50% of the MAXI used to mint TEAM is allocated to the Mystery Box.
-        maxi_token.burn(burn_factor*total_MAXI/100); // burn 20% of the MAXI in the TEAM contract
-        maxi_contract.transfer(ESCROW_ADDRESS, rebate_factor*total_MAXI/100); // transfer 30% of the MAXI to the 369 ESCROW address
-        maxi_contract.transfer(MYSTERY_BOX_ADDRESS, mb_factor*total_MAXI/100); // Transfer 50% of the MAXI to the Mystery Box
+        maxi_token.burn((burn_factor * total_MAXI) / 100); // burn 20% of the MAXI in the TEAM contract
+        maxi_contract.transfer(
+            ESCROW_ADDRESS,
+            (rebate_factor * total_MAXI) / 100
+        ); // transfer 30% of the MAXI to the 369 ESCROW address
+        maxi_contract.transfer(
+            MYSTERY_BOX_ADDRESS,
+            (mb_factor * total_MAXI) / 100
+        ); // Transfer 50% of the MAXI to the Mystery Box
         uint256 current_TEAM_supply = IERC20(address(this)).totalSupply();
-        _mint(MYSTERY_BOX_ADDRESS,current_TEAM_supply+GLOBAL_AMOUNT_STAKED); // mint a copy of all TEAM into the Mystery Box. Include Liquid and Staked TEAM.
-        IS_MINTING_ONGOING=false;
+        _mint(MYSTERY_BOX_ADDRESS, current_TEAM_supply + GLOBAL_AMOUNT_STAKED); // mint a copy of all TEAM into the Mystery Box. Include Liquid and Staked TEAM.
+        IS_MINTING_ONGOING = false;
         MAXIEscrow(ESCROW_ADDRESS).scheduleRebates();
     }
-    
 
     function deployMAXIEscrow() private {
         MAXIEscrow newEscrow = new MAXIEscrow(address(this), MAXI_ADDRESS);
@@ -1657,9 +1862,9 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
     function deployMysteryBox() private {
         MysteryBox newMB = new MysteryBox(address(this), MAXI_ADDRESS);
         MYSTERY_BOX_ADDRESS = address(newMB);
-    } 
+    }
 
-/// Staking
+    /// Staking
     // A StakeRecord is created for each user when they stake into a new period.
     // If a stake record for a user has already been created for a particular period, the existing one will be updated.
     struct StakeRecord {
@@ -1671,208 +1876,290 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
         bool initiated;
     }
     uint256 public GLOBAL_AMOUNT_STAKED; // Running total number of TEAM staked by all users. Incremented when any user stakes TEAM and decremented when any user end-stakes TEAM.
-    mapping (address=> uint256) public USER_AMOUNT_STAKED;// Running total number of TEAM staked per user. Incremented when user stakes TEAM and decremented when user end-stakes TEAM.
-    mapping (uint => uint256) public globalStakedTeamPerPeriod; // A record of the number of TEAM that are successfully staked for each stake period. Value crystallizes in each period as period ends.
-    mapping (address =>mapping(uint => StakeRecord)) public stakes; // Mapping of all users stake records.
-    
+    mapping(address => uint256) public USER_AMOUNT_STAKED; // Running total number of TEAM staked per user. Incremented when user stakes TEAM and decremented when user end-stakes TEAM.
+    mapping(uint => uint256) public globalStakedTeamPerPeriod; // A record of the number of TEAM that are successfully staked for each stake period. Value crystallizes in each period as period ends.
+    mapping(address => mapping(uint => StakeRecord)) public stakes; // Mapping of all users stake records.
+
     /*
     @notice stakeTeam(amount) User facing function for staking TEAM. 
     @dev 1) Checks if user balance exceeds input stake amount. 2) Saves stake data via newStakeRecord(). 3) Burns the staked TEAM. 4) Update global and user stake tally.
     @param amount number of TEAM staked, include enough zeros to support 8 decimal units. to stake 1 TEAM, enter amount = 100000000
     */
     function stakeTeam(uint256 amount) external nonReentrant {
-        require(amount>0);
+        require(amount > 0);
         newStakeRecord(amount); // updates the stake record
         burn(amount); //when TEAM is staked, it is burnt and then is reminted when it is unstaked.
         GLOBAL_AMOUNT_STAKED = GLOBAL_AMOUNT_STAKED + amount;
-        USER_AMOUNT_STAKED[msg.sender]=USER_AMOUNT_STAKED[msg.sender] + amount;
+        USER_AMOUNT_STAKED[msg.sender] =
+            USER_AMOUNT_STAKED[msg.sender] +
+            amount;
     }
-        /*
+
+    /*
         @dev Function that determines which is the next staking period, and creates or updates the users stake record for that period.
         */
-        function newStakeRecord(uint256 amount) private {
-            uint256 next_staking_period = getNextStakingPeriod(); // the contract period number for each staking period is used as a unique identifier for a stake. 
-            StakeRecord storage stake = stakes[msg.sender][next_staking_period]; // retrieves the existing stake record for this upcoming staking period, or render a new one if this is the first time.
-            bool is_initial;
-            if (stake.initiated==false){ // first time setup. values that should not change if this user stakes again in this period.
-                stake.stakeID = next_staking_period;
-                stake.initiated = true;
-                stake.staker = msg.sender;
-                stake.stake_expiry_period = next_staking_period;
-                is_initial = true;
-            }
-            stake.balance = amount + stake.balance;
-            stake.stakedTeamPerPeriod[next_staking_period] = amount + stake.stakedTeamPerPeriod[next_staking_period];
-            globalStakedTeamPerPeriod[next_staking_period] = amount + globalStakedTeamPerPeriod[next_staking_period];
-            emit Stake(msg.sender, amount, getCurrentPeriod(), stake.stakeID, is_initial);
+    function newStakeRecord(uint256 amount) private {
+        uint256 next_staking_period = getNextStakingPeriod(); // the contract period number for each staking period is used as a unique identifier for a stake.
+        StakeRecord storage stake = stakes[msg.sender][next_staking_period]; // retrieves the existing stake record for this upcoming staking period, or render a new one if this is the first time.
+        bool is_initial;
+        if (stake.initiated == false) {
+            // first time setup. values that should not change if this user stakes again in this period.
+            stake.stakeID = next_staking_period;
+            stake.initiated = true;
+            stake.staker = msg.sender;
+            stake.stake_expiry_period = next_staking_period;
+            is_initial = true;
         }
+        stake.balance = amount + stake.balance;
+        stake.stakedTeamPerPeriod[next_staking_period] =
+            amount +
+            stake.stakedTeamPerPeriod[next_staking_period];
+        globalStakedTeamPerPeriod[next_staking_period] =
+            amount +
+            globalStakedTeamPerPeriod[next_staking_period];
+        emit Stake(
+            msg.sender,
+            amount,
+            getCurrentPeriod(),
+            stake.stakeID,
+            is_initial
+        );
+    }
+
     /*
     @notice earlyEndStakeTeam(stakeID, amount) User facing function for ending a part or all of a stake either before or during its expiry period. A 3.69% penalty is applied to the amount reminted to the user.
     @dev checks that they have this stake, updates the stake record via earlyEndStakeRecord() function, updates the global tallies, calculates the early end stake penalty, and remints back into existance the amount requested minus penalty.
     @param stakeID the ID of the stake the user wants to early end stake
     @param amount number of TEAM early end staked, include enough zeros to support 8 decimal units. to end stake 1 TEAM, enter amount = 100000000
     */
-    function earlyEndStakeTeam(uint256 stakeID, uint256 amount) external nonReentrant {
+    function earlyEndStakeTeam(
+        uint256 stakeID,
+        uint256 amount
+    ) external nonReentrant {
         earlyEndStakeRecord(stakeID, amount); // update the stake record
-        uint256 current_potential_penalty_scaled = 369*(10**4)*amount; // scaled up before division 
-        uint256 penalty = current_potential_penalty_scaled/(10**8); 
+        uint256 current_potential_penalty_scaled = 369 * (10 ** 4) * amount; // scaled up before division
+        uint256 penalty = current_potential_penalty_scaled / (10 ** 8);
         GLOBAL_AMOUNT_STAKED = GLOBAL_AMOUNT_STAKED - amount;
-        USER_AMOUNT_STAKED[msg.sender]=USER_AMOUNT_STAKED[msg.sender] - amount;
-        mint(amount-penalty);
+        USER_AMOUNT_STAKED[msg.sender] =
+            USER_AMOUNT_STAKED[msg.sender] -
+            amount;
+        mint(amount - penalty);
     }
-         /*
+
+    /*
         @dev Determines if stake is pending, or in progress and updates the record to reflect the amount of TEAM that remains actively staked from that particular stake.
         @param stakeID the ID of the stake the user wants to early end stake
         @param amount number of TEAM early end staked, include enough zeros to support 8 decimal units. to end stake 1 TEAM, enter amount = 100000000
         */
-        function earlyEndStakeRecord(uint256 stakeID, uint256 amount) private {
-            uint256 current_period = getCurrentPeriod();
-            uint256 next_staking_period = getNextStakingPeriod();
-            StakeRecord storage stake = stakes[msg.sender][stakeID];
-            require(stake.initiated==true);
-            require(stake.stake_expiry_period>=current_period); // must be before the stake has expired
-            require(stake.balance>=amount);
-            stake.balance = stake.balance - amount;
-            // Decrement staked TEAM from next staking period
-            if (stake.stakedTeamPerPeriod[next_staking_period]>0){
-                globalStakedTeamPerPeriod[next_staking_period]=globalStakedTeamPerPeriod[next_staking_period]-amount;
-                stake.stakedTeamPerPeriod[next_staking_period]=stake.stakedTeamPerPeriod[next_staking_period]-amount;
-            }
-            // Decrement staked TEAM from current staking period.
-            if (stake.stakedTeamPerPeriod[current_period]>0) {
-                globalStakedTeamPerPeriod[current_period]=globalStakedTeamPerPeriod[current_period]-amount;
-                stake.stakedTeamPerPeriod[current_period]=stake.stakedTeamPerPeriod[current_period]-amount;
-            }
-            emit EarlyEndStake(msg.sender, amount, stake.stake_expiry_period, stakeID);
+    function earlyEndStakeRecord(uint256 stakeID, uint256 amount) private {
+        uint256 current_period = getCurrentPeriod();
+        uint256 next_staking_period = getNextStakingPeriod();
+        StakeRecord storage stake = stakes[msg.sender][stakeID];
+        require(stake.initiated == true);
+        require(stake.stake_expiry_period >= current_period); // must be before the stake has expired
+        require(stake.balance >= amount);
+        stake.balance = stake.balance - amount;
+        // Decrement staked TEAM from next staking period
+        if (stake.stakedTeamPerPeriod[next_staking_period] > 0) {
+            globalStakedTeamPerPeriod[next_staking_period] =
+                globalStakedTeamPerPeriod[next_staking_period] -
+                amount;
+            stake.stakedTeamPerPeriod[next_staking_period] =
+                stake.stakedTeamPerPeriod[next_staking_period] -
+                amount;
         }
+        // Decrement staked TEAM from current staking period.
+        if (stake.stakedTeamPerPeriod[current_period] > 0) {
+            globalStakedTeamPerPeriod[current_period] =
+                globalStakedTeamPerPeriod[current_period] -
+                amount;
+            stake.stakedTeamPerPeriod[current_period] =
+                stake.stakedTeamPerPeriod[current_period] -
+                amount;
+        }
+        emit EarlyEndStake(
+            msg.sender,
+            amount,
+            stake.stake_expiry_period,
+            stakeID
+        );
+    }
+
     /*
     @notice End a stake which has already served its full staking period. This function updates your stake record and remints your staked TEAM back into your address.
     @param stakeID the ID of the stake the user wants to end stake
     @param amount number of TEAM end staked, include enough zeros to support 8 decimal units. to end stake 1 TEAM, enter amount = 100000000
             
     */
-    function endCompletedStake(uint256 stakeID, uint256 amount) external nonReentrant {
+    function endCompletedStake(
+        uint256 stakeID,
+        uint256 amount
+    ) external nonReentrant {
         endExpiredStake(stakeID, amount);
         GLOBAL_AMOUNT_STAKED = GLOBAL_AMOUNT_STAKED - amount;
-        USER_AMOUNT_STAKED[msg.sender]=USER_AMOUNT_STAKED[msg.sender] - amount;
+        USER_AMOUNT_STAKED[msg.sender] =
+            USER_AMOUNT_STAKED[msg.sender] -
+            amount;
         mint(amount);
     }
-        function endExpiredStake(uint256 stakeID, uint256 amount) private {
-            uint256 current_period=getCurrentPeriod();
-            StakeRecord storage stake = stakes[msg.sender][stakeID];
-            require(stake.stake_expiry_period<current_period);
-            require(stake.balance>=amount);
-            stake.balance = stake.balance-amount;
-            emit EndExpiredStake(msg.sender, amount, stake.stake_expiry_period, stakeID);
-        }
+
+    function endExpiredStake(uint256 stakeID, uint256 amount) private {
+        uint256 current_period = getCurrentPeriod();
+        StakeRecord storage stake = stakes[msg.sender][stakeID];
+        require(stake.stake_expiry_period < current_period);
+        require(stake.balance >= amount);
+        stake.balance = stake.balance - amount;
+        emit EndExpiredStake(
+            msg.sender,
+            amount,
+            stake.stake_expiry_period,
+            stakeID
+        );
+    }
 
     /*
     @notice This function extends a currently active stake into the next staking period. It can only be run during the expiry period of a stake. This extends the entire stake into the next period.
     @param stakeID the ID of the stake the user wants to extend into the next staking period.
 */
-        function extendStake(uint256 stakeID) external nonReentrant {
-            uint256 current_period=getCurrentPeriod();
-            uint256 next_staking_period = getNextStakingPeriod();
-            StakeRecord storage stake = stakes[msg.sender][stakeID];
-            require(isStakingPeriod());
-            require(stake.stake_expiry_period==current_period);
-            stake.stake_expiry_period=next_staking_period;
-            stake.stakedTeamPerPeriod[next_staking_period] = stake.stakedTeamPerPeriod[next_staking_period] + stake.balance;
-            globalStakedTeamPerPeriod[next_staking_period] = globalStakedTeamPerPeriod[next_staking_period] + stake.balance;
-            emit ExtendStake(msg.sender, stake.balance, next_staking_period, stakeID);
-        }
+    function extendStake(uint256 stakeID) external nonReentrant {
+        uint256 current_period = getCurrentPeriod();
+        uint256 next_staking_period = getNextStakingPeriod();
+        StakeRecord storage stake = stakes[msg.sender][stakeID];
+        require(isStakingPeriod());
+        require(stake.stake_expiry_period == current_period);
+        stake.stake_expiry_period = next_staking_period;
+        stake.stakedTeamPerPeriod[next_staking_period] =
+            stake.stakedTeamPerPeriod[next_staking_period] +
+            stake.balance;
+        globalStakedTeamPerPeriod[next_staking_period] =
+            globalStakedTeamPerPeriod[next_staking_period] +
+            stake.balance;
+        emit ExtendStake(
+            msg.sender,
+            stake.balance,
+            next_staking_period,
+            stakeID
+        );
+    }
+
     /*
     @notice This function ends and restakes a stake which has been completed (if current period is greater than stake expiry period). It ends the stake but does not remint your TEAM, instead it rolls those team into a brand new stake record starting in the next staking period.
     @param stakeID the ID of the stake the user wants to extend into the next staking period.
     */
     function restakeExpiredStake(uint256 stakeID) public nonReentrant {
-        uint256 current_period=getCurrentPeriod();
+        uint256 current_period = getCurrentPeriod();
         StakeRecord storage stake = stakes[msg.sender][stakeID];
-        require(stake.stake_expiry_period<current_period);
+        require(stake.stake_expiry_period < current_period);
         require(stake.balance > 0);
         newStakeRecord(stake.balance);
         uint256 amount = stake.balance;
         stake.balance = 0;
-        emit RestakeExpiredStake(msg.sender, amount, stake.stake_expiry_period, stakeID);
+        emit RestakeExpiredStake(
+            msg.sender,
+            amount,
+            stake.stake_expiry_period,
+            stakeID
+        );
     }
-  
-/// Rewards Allocation   
-    mapping (string => mapping (uint => bool)) didRecordPeriodEndBalance; // didRecordPeriodEndBalance[TICKER][period]
-    mapping (string =>mapping (uint => uint256)) periodEndBalance; //periodEndBalance[TICKER][period]
-    mapping (string => mapping (uint => uint256)) public periodRedemptionRates; //periodRedemptionRates[TICKER][period] Number of coins claimable per team staked 
+
+    /// Rewards Allocation
+    mapping(string => mapping(uint => bool)) didRecordPeriodEndBalance; // didRecordPeriodEndBalance[TICKER][period]
+    mapping(string => mapping(uint => uint256)) periodEndBalance; //periodEndBalance[TICKER][period]
+    mapping(string => mapping(uint => uint256)) public periodRedemptionRates; //periodRedemptionRates[TICKER][period] Number of coins claimable per team staked
 
     /*
     @notice This function checks to make sure that a staking period just ended, and then measures and saves the TEAM Contracts balance of the designated token.
     @param ticker is the ticker that is to be 
-    */ 
+    */
     function prepareClaim(string memory ticker) external nonReentrant {
-        require(isStakingPeriod()==false);
-        uint256 latest_staking_period = getCurrentPeriod()-1;
-        require(didRecordPeriodEndBalance[ticker][latest_staking_period]==false);
-        periodEndBalance[ticker][latest_staking_period] = IERC20(supportedTokens[ticker]).balanceOf(address(this)); //measures how many of the designated token are in the TEAM contract address
-        IERC20(supportedTokens[ticker]).transfer(STAKE_REWARD_DISTRIBUTION_ADDRESS, periodEndBalance[ticker][latest_staking_period]);
-        didRecordPeriodEndBalance[ticker][latest_staking_period]=true;
-        uint256 scaled_rate = periodEndBalance[ticker][latest_staking_period] *(10**8)/globalStakedTeamPerPeriod[latest_staking_period];
+        require(isStakingPeriod() == false);
+        uint256 latest_staking_period = getCurrentPeriod() - 1;
+        require(
+            didRecordPeriodEndBalance[ticker][latest_staking_period] == false
+        );
+        periodEndBalance[ticker][latest_staking_period] = IERC20(
+            supportedTokens[ticker]
+        ).balanceOf(address(this)); //measures how many of the designated token are in the TEAM contract address
+        IERC20(supportedTokens[ticker]).transfer(
+            STAKE_REWARD_DISTRIBUTION_ADDRESS,
+            periodEndBalance[ticker][latest_staking_period]
+        );
+        didRecordPeriodEndBalance[ticker][latest_staking_period] = true;
+        uint256 scaled_rate = (periodEndBalance[ticker][latest_staking_period] *
+            (10 ** 8)) / globalStakedTeamPerPeriod[latest_staking_period];
         periodRedemptionRates[ticker][latest_staking_period] = scaled_rate;
     }
-    
 
-    function getAddressPeriodEndTotal(address staker_address, uint256 period, uint stakeID) public view returns (uint256) {
+    function getAddressPeriodEndTotal(
+        address staker_address,
+        uint256 period,
+        uint stakeID
+    ) public view returns (uint256) {
         StakeRecord storage stake = stakes[staker_address][stakeID];
-        return stake.stakedTeamPerPeriod[period]; 
+        return stake.stakedTeamPerPeriod[period];
     }
-    function getPeriodRedemptionRates(string memory ticker, uint256 period) public view returns (uint256) {
+
+    function getPeriodRedemptionRates(
+        string memory ticker,
+        uint256 period
+    ) public view returns (uint256) {
         return periodRedemptionRates[ticker][period];
     }
-    
-    function getPoolAddresses(string memory ticker) public view returns (address) {
+
+    function getPoolAddresses(
+        string memory ticker
+    ) public view returns (address) {
         return poolAddresses[ticker];
     }
 
-
-    function getClaimableAmount(address user, uint256 period, string memory ticker, uint stakeID) public view returns (uint256, address) {
-        uint256 total_amount_succesfully_staked = getAddressPeriodEndTotal(user, period, stakeID);
-        uint256 redeemable_amount = getPeriodRedemptionRates(ticker,period) * total_amount_succesfully_staked / (10**8);
+    function getClaimableAmount(
+        address user,
+        uint256 period,
+        string memory ticker,
+        uint stakeID
+    ) public view returns (uint256, address) {
+        uint256 total_amount_succesfully_staked = getAddressPeriodEndTotal(
+            user,
+            period,
+            stakeID
+        );
+        uint256 redeemable_amount = (getPeriodRedemptionRates(ticker, period) *
+            total_amount_succesfully_staked) / (10 ** 8);
         return (redeemable_amount, getSupportedTokens(ticker));
     }
 
-    
-/// Utilities
+    /// Utilities
     /*
     @notice The current period of the TEAM Contract is the current period of the BASE Contract.
     */
-    function getCurrentPeriod() public view returns (uint current_period){
-        
-        return PerpetualPool(poolAddresses["BASE"]).getCurrentPeriod(); 
+    function getCurrentPeriod() public view returns (uint current_period) {
+        return PerpetualPool(poolAddresses["BASE"]).getCurrentPeriod();
     }
-    
-    
+
     function isStakingPeriod() public view returns (bool) {
-        uint remainder = getCurrentPeriod()%2;
-        if(remainder==0){
+        uint remainder = getCurrentPeriod() % 2;
+        if (remainder == 0) {
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
 
-    function getNextStakingPeriod() private view returns(uint256) {
-        uint256 current_period=getCurrentPeriod();
+    function getNextStakingPeriod() private view returns (uint256) {
+        uint256 current_period = getCurrentPeriod();
         uint256 next_staking_period;
-        if (isStakingPeriod()==true) {
-            next_staking_period = current_period+2;
-        }
-        else {
-            next_staking_period=current_period+1;
+        if (isStakingPeriod() == true) {
+            next_staking_period = current_period + 2;
+        } else {
+            next_staking_period = current_period + 1;
         }
         return next_staking_period;
     }
-    
+
     function decimals() public view virtual override returns (uint8) {
         return 8;
-	}
-    
+    }
+
     // TEAM Issuance and Redemption Functions
     /**
      * @dev Mints TEAM.
@@ -1889,34 +2176,47 @@ contract Team is ERC20, ERC20Burnable, ReentrancyGuard {
 contract StakeRewardDistribution is ReentrancyGuard {
     address public TEAM_ADDRESS;
     TEAMToken team_token;
-    mapping (string => address) public supportedTokens;
-    mapping (address => mapping(uint => mapping(uint => mapping (string => bool)))) public didUserStakeClaimFromPeriod; // log which periods and which tokens a user's stake has claimed rewards from
-    constructor(address team_address) ReentrancyGuard(){
-      TEAM_ADDRESS=team_address;
-      team_token = TEAMToken(TEAM_ADDRESS); 
+    mapping(string => address) public supportedTokens;
+    mapping(address => mapping(uint => mapping(uint => mapping(string => bool))))
+        public didUserStakeClaimFromPeriod; // log which periods and which tokens a user's stake has claimed rewards from
+
+    constructor(address team_address) ReentrancyGuard() {
+        TEAM_ADDRESS = team_address;
+        team_token = TEAMToken(TEAM_ADDRESS);
     }
+
     /*
     @notice Claim Rewards in the designated ticker for a period served by a stake record designated by stake ID. You can only run this function if you have not already claimed and if you have redeemable rewards for that coin from that period.
     @param period is the period you want to claim rewards from
     @param ticker is the ticker symbol for the token you want to claim
     @param stakeID is the stakeID of the stake record that contains TEAM that was succesfully staked during the period you input.
     */
-    function claimRewards(uint256 period, string memory ticker, uint stakeID) nonReentrant external {
-        (uint256 redeemable_amount, address token_address) = team_token.getClaimableAmount(msg.sender,period, ticker, stakeID);
-        require(didUserStakeClaimFromPeriod[msg.sender][stakeID][period][ticker]==false, "You must not have already claimed from this stake on this period.");
-        require(redeemable_amount>0, "No rewards from this period.");
+    function claimRewards(
+        uint256 period,
+        string memory ticker,
+        uint stakeID
+    ) external nonReentrant {
+        (uint256 redeemable_amount, address token_address) = team_token
+            .getClaimableAmount(msg.sender, period, ticker, stakeID);
+        require(
+            didUserStakeClaimFromPeriod[msg.sender][stakeID][period][ticker] ==
+                false,
+            "You must not have already claimed from this stake on this period."
+        );
+        require(redeemable_amount > 0, "No rewards from this period.");
         IERC20(token_address).transfer(msg.sender, redeemable_amount);
-        didUserStakeClaimFromPeriod[msg.sender][stakeID][period][ticker]=true;
+        didUserStakeClaimFromPeriod[msg.sender][stakeID][period][ticker] = true;
     }
 
     function collectSupportedTokenAddress(string memory ticker) private {
-        require(supportedTokens[ticker]==address(0));
-        supportedTokens[ticker]=team_token.getSupportedTokens(ticker);
+        require(supportedTokens[ticker] == address(0));
+        supportedTokens[ticker] = team_token.getSupportedTokens(ticker);
     }
+
     /*
     @notice Run this function to retrieve and save all of the supported token addresses from the TEAM contract into the Stake Reward Distribution contract. This should be run once after the supported tokens are declared in the team contract.
     */
-    function prepareSupportedTokens() nonReentrant public {
+    function prepareSupportedTokens() public nonReentrant {
         collectSupportedTokenAddress("HEX");
         collectSupportedTokenAddress("MAXI");
         collectSupportedTokenAddress("HDRN");
@@ -1928,108 +2228,158 @@ contract StakeRewardDistribution is ReentrancyGuard {
         collectSupportedTokenAddress("ICSA");
     }
 }
+
 /// @title 369 MAXI Escrow Contract
 /// @author Dip Catcher @TantoNomini
 /// @notice Contract for scheduling and releasing the MAXI rebates in years 3,6, and 9 to the TEAM Contract.
-contract  MAXIEscrow is ReentrancyGuard{
-  mapping (uint => uint256) public rebateSchedule;
-  address MAXI_ADDRESS;
-  IERC20 maxi_contract; 
-  TEAMToken team_token;
-  address TEAM_ADDRESS;
-  bool IS_SCHEDULED;
-  constructor(address team_address, address maxi_address) ReentrancyGuard(){
-      TEAM_ADDRESS=team_address;
-      MAXI_ADDRESS = maxi_address;
-      IS_SCHEDULED=false;
-      team_token = TEAMToken(TEAM_ADDRESS);  
-      maxi_contract = IERC20(MAXI_ADDRESS);
-  }
-  /**
-     * @dev Schedules the 369 MAXI Rebate by calculating amount of MAXI to send to TEAM during years 3, 6, and 9. 
-  **/
-  function scheduleRebates() public {
-      require(IS_SCHEDULED==false, "Rebates have already been scheduled.");
-      require(team_token.getCurrentPeriod()>0, "TEAM minting must be complete in order to schedule rebates.");
-      uint256 total_maxi = maxi_contract.balanceOf(address(this)); // total amount of MAXI that is in the escrow contract
-      uint256 scalar = 10**8;
-      uint256 scaled_rebate_3 = total_maxi * 3 * scalar;
-      rebateSchedule[3] = scaled_rebate_3 / (18 * scalar);
-      uint256 scaled_rebate_6 = total_maxi * 6 * scalar;
-      rebateSchedule[6] = scaled_rebate_6 / (18 * scalar);
+contract MAXIEscrow is ReentrancyGuard {
+    mapping(uint => uint256) public rebateSchedule;
+    address MAXI_ADDRESS;
+    IERC20 maxi_contract;
+    TEAMToken team_token;
+    address TEAM_ADDRESS;
+    bool IS_SCHEDULED;
 
+    constructor(address team_address, address maxi_address) ReentrancyGuard() {
+        TEAM_ADDRESS = team_address;
+        MAXI_ADDRESS = maxi_address;
+        IS_SCHEDULED = false;
+        team_token = TEAMToken(TEAM_ADDRESS);
+        maxi_contract = IERC20(MAXI_ADDRESS);
+    }
 
-      
-      uint256 remaining = total_maxi - (rebateSchedule[3]+rebateSchedule[6]);
-      rebateSchedule[9] = remaining;
-      IS_SCHEDULED=true;
-  }
-  /**
+    /**
+     * @dev Schedules the 369 MAXI Rebate by calculating amount of MAXI to send to TEAM during years 3, 6, and 9.
+     **/
+    function scheduleRebates() public {
+        require(IS_SCHEDULED == false, "Rebates have already been scheduled.");
+        require(
+            team_token.getCurrentPeriod() > 0,
+            "TEAM minting must be complete in order to schedule rebates."
+        );
+        uint256 total_maxi = maxi_contract.balanceOf(address(this)); // total amount of MAXI that is in the escrow contract
+        uint256 scalar = 10 ** 8;
+        uint256 scaled_rebate_3 = total_maxi * 3 * scalar;
+        rebateSchedule[3] = scaled_rebate_3 / (18 * scalar);
+        uint256 scaled_rebate_6 = total_maxi * 6 * scalar;
+        rebateSchedule[6] = scaled_rebate_6 / (18 * scalar);
+
+        uint256 remaining = total_maxi -
+            (rebateSchedule[3] + rebateSchedule[6]);
+        rebateSchedule[9] = remaining;
+        IS_SCHEDULED = true;
+    }
+
+    /**
      * @dev Uses current period to determine if it is year 3, 6, or 9. Then Sends the MAXI to the TEAM contract address.
-  **/
-  function releaseMAXI() external {
-      require(IS_SCHEDULED==true, "Rebates must be scheduled before release.");
-      uint256 period=team_token.getCurrentPeriod();
-      require((period==5 || period==11 || period==17), "Rebates may only happen in years 3, 6, or 9.");
-      uint year = (period+1)/2;
-      require(rebateSchedule[year]>0, "Rebate cant be zero.");
-      maxi_contract.transfer(TEAM_ADDRESS,rebateSchedule[year]);
-      rebateSchedule[year]=0;
-
-  }
+     **/
+    function releaseMAXI() external {
+        require(
+            IS_SCHEDULED == true,
+            "Rebates must be scheduled before release."
+        );
+        uint256 period = team_token.getCurrentPeriod();
+        require(
+            (period == 5 || period == 11 || period == 17),
+            "Rebates may only happen in years 3, 6, or 9."
+        );
+        uint year = (period + 1) / 2;
+        require(rebateSchedule[year] > 0, "Rebate cant be zero.");
+        maxi_contract.transfer(TEAM_ADDRESS, rebateSchedule[year]);
+        rebateSchedule[year] = 0;
+    }
 }
+
 /// @title Mystery Box
 /// @author Dip Catcher @TantoNomini
-/// @notice The Mystery Box is and always will be a mystery. You can't possibly have any expectations of profit resulting from the Mystery Box because it is a mystery. how could you expect anything of a mystery? you cant! Please do not run these functions because they are expensive to run and you do not benefit in any way from running them. 
-contract MysteryBox is ReentrancyGuard{
+/// @notice The Mystery Box is and always will be a mystery. You can't possibly have any expectations of profit resulting from the Mystery Box because it is a mystery. how could you expect anything of a mystery? you cant! Please do not run these functions because they are expensive to run and you do not benefit in any way from running them.
+contract MysteryBox is ReentrancyGuard {
     address MAXI_ADDRESS;
     IERC20 maxi_contract;
     IERC20 team_contract;
-    address constant public MYSTERY_BOX_HOT_ADDRESS=0x00C055Ee792B5bC9AeB06ced73bB71ce7E5773Ce;
+    address public constant MYSTERY_BOX_HOT_ADDRESS =
+        0x00C055Ee792B5bC9AeB06ced73bB71ce7E5773Ce;
     address TEAM_ADDRESS;
+
     constructor(address team_address, address maxi_address) ReentrancyGuard() {
-        TEAM_ADDRESS=team_address;
+        TEAM_ADDRESS = team_address;
         MAXI_ADDRESS = maxi_address;
-        
+
         team_contract = IERC20(TEAM_ADDRESS);
-        maxi_contract= IERC20(MAXI_ADDRESS);
+        maxi_contract = IERC20(MAXI_ADDRESS);
     }
-    
+
     /**
      * @dev Sends TEAM to the MYSTERY_BOX_HOT_ADDRESS
      * ALTHOUGH ANYONE CAN RUN THSEE PUBLIC FUNCTIONS YOU ABSOLUTELY SHOULD NOT DO IT BECAUSE IT WILL COST YOU A NON-REFUNDABLE MAXI TRANSFER TO THE MYSTERY BOX HOT ADDRESS.
-     * THE CONTENTS OF THE MYSTERY BOX ARE NOT YOURS. 
+     * THE CONTENTS OF THE MYSTERY BOX ARE NOT YOURS.
      * THERE IS OBVIOUSLY NO BENEFIT FOR ANYONE TO RUN THIS.
      * SERIOUSLY DON'T RUN IT, THERE ARE NO REFUNDS SO DO NOT EVEN ASK IF YOU MESS THIS UP - THERE IS NO ONE TO EVEN ASK.
      * IT IS DELIBERATELY DIFFICULT TO RUN TO PREVENT PEOPLE FROM ACCIDENTALLY RUNNING IT.
      * @param amount of MAXI SEND TO THE MYSTERY_BOX_HOT_ADDRESS
      *@param confirmation the message you have to deliberately type and broadcast stating that you know this function costs a non refundable MAXI equal to the amount you are flushing to run.
      */
-    function flushTEAM(uint256 amount, string memory confirmation) nonReentrant public {
-        require(amount < 1000000*(10**8), "No more than 1M TEAM may be flushed in any one transaction.");
-        require(keccak256(bytes(confirmation)) == keccak256(bytes("I UNDERSTAND I WILL NOT GET THIS MAXI BACK")));
+    function flushTEAM(
+        uint256 amount,
+        string memory confirmation
+    ) public nonReentrant {
+        require(
+            amount < 1000000 * (10 ** 8),
+            "No more than 1M TEAM may be flushed in any one transaction."
+        );
+        require(
+            keccak256(bytes(confirmation)) ==
+                keccak256(bytes("I UNDERSTAND I WILL NOT GET THIS MAXI BACK"))
+        );
         maxi_contract.transferFrom(msg.sender, MYSTERY_BOX_HOT_ADDRESS, amount);
         team_contract.transfer(MYSTERY_BOX_HOT_ADDRESS, amount);
     }
 
-    function flushMAXI(uint256 amount, string memory confirmation) nonReentrant public {
-        require(amount < 1000000*(10**8), "No more than 1M MAXI may be flushed in any one transaction.");
-        require(keccak256(bytes(confirmation)) == keccak256(bytes("I UNDERSTAND I WILL NOT GET THIS MAXI BACK")));
+    function flushMAXI(
+        uint256 amount,
+        string memory confirmation
+    ) public nonReentrant {
+        require(
+            amount < 1000000 * (10 ** 8),
+            "No more than 1M MAXI may be flushed in any one transaction."
+        );
+        require(
+            keccak256(bytes(confirmation)) ==
+                keccak256(bytes("I UNDERSTAND I WILL NOT GET THIS MAXI BACK"))
+        );
         maxi_contract.transferFrom(msg.sender, MYSTERY_BOX_HOT_ADDRESS, amount);
         maxi_contract.transfer(MYSTERY_BOX_HOT_ADDRESS, amount);
     }
 }
 
 contract MAXIToken {
-  function approve(address spender, uint256 amount) external returns (bool) {}
-  function transfer(address recipient, uint256 amount) public returns (bool) {}
-  function burn(uint256 amount) public {}
-  
+    function approve(address spender, uint256 amount) external returns (bool) {}
+
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public returns (bool) {}
+
+    function burn(uint256 amount) public {}
 }
+
 contract TEAMToken {
     function getCurrentPeriod() public view returns (uint) {}
-    function getAddressPeriodEndTotal(address staker_address, uint256 period, uint stakeID) public view returns (uint256) {}
-    function getSupportedTokens(string memory ticker) public view returns(address) {}
-    
-    function getClaimableAmount(address user, uint256 period, string memory ticker, uint stakeID) public view returns (uint256, address){}
+
+    function getAddressPeriodEndTotal(
+        address staker_address,
+        uint256 period,
+        uint stakeID
+    ) public view returns (uint256) {}
+
+    function getSupportedTokens(
+        string memory ticker
+    ) public view returns (address) {}
+
+    function getClaimableAmount(
+        address user,
+        uint256 period,
+        string memory ticker,
+        uint stakeID
+    ) public view returns (uint256, address) {}
 }

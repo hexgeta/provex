@@ -37,7 +37,7 @@ export default function TeamStakingInterface() {
   const rewardTokenAddresses = Object.values(REWARD_TOKEN_ADDRESSES);
   const { prices: tokenPrices } = useTokenPrices(rewardTokenAddresses);
 
-  // Check connection status
+  // Check connection status and wait for initial data load
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsCheckingConnection(false);
@@ -133,6 +133,7 @@ export default function TeamStakingInterface() {
   const [isLoadingRewards, setIsLoadingRewards] = useState(false);
   const [selectedClaimPeriod, setSelectedClaimPeriod] = useState<number | null>(null);
   const [rewardsLoaded, setRewardsLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("stake");
   
   const stakeAmountRef = useRef<HTMLInputElement>(null);
   const unstakeAmountRef = useRef<HTMLInputElement>(null);
@@ -203,7 +204,6 @@ export default function TeamStakingInterface() {
           .sort((a, b) => a.stakeNumber - b.stakeNumber); // Sort by stake number ascending
 
         setAllPeriodCommitments(formatted);
-        setStakesLoaded(true);
         
         // Auto-select stake: priority is Active → Expired → Pending
         if (formatted.length > 0) {
@@ -215,9 +215,12 @@ export default function TeamStakingInterface() {
           setSelectedStakePeriod(defaultStake.period);
         }
       } catch (error) {
-        // Silent error handling
+        console.error('Error fetching stakes:', error);
+        // Set empty array if error
+        setAllPeriodCommitments([]);
       } finally {
         setIsLoadingStakes(false);
+        setStakesLoaded(true); // Always set to true, even on error
       }
     };
 
@@ -415,10 +418,17 @@ export default function TeamStakingInterface() {
       toast({
         title: "Success!",
         description: "Successfully staked TEAM! Click to view transaction.",
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
@@ -465,10 +475,17 @@ export default function TeamStakingInterface() {
       toast({
         title: "Success!",
         description: "Successfully unstaked TEAM (with penalty)! Click to view transaction.",
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
@@ -498,10 +515,17 @@ export default function TeamStakingInterface() {
       toast({
         title: "Success!",
         description: "Successfully unstaked TEAM! Click to view transaction.",
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
@@ -529,10 +553,17 @@ export default function TeamStakingInterface() {
       toast({
         title: "Success!",
         description: "Successfully extended stake to next period! Click to view transaction.",
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
@@ -560,10 +591,17 @@ export default function TeamStakingInterface() {
       toast({
         title: "Success!",
         description: "Successfully restaked for next period! Click to view transaction.",
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch stakes
       setTimeout(() => {
@@ -581,11 +619,23 @@ export default function TeamStakingInterface() {
   };
 
   const completedPeriod = currentPeriod ? Number(currentPeriod) - 1 : 0;
+  const completedStakeNumber = completedPeriod > 0 ? Math.ceil(completedPeriod / 2) : 0;
+  
+  // Set default tab when stakes are loaded
+  useEffect(() => {
+    if (stakesLoaded && activeTab === "stake") {
+      // Check if user has completed or expired stakes
+      const hasCompletedStakes = allPeriodCommitments.some((c: any) => c.status === 'expired' || c.status === 'completed');
+      if (hasCompletedStakes) {
+        setActiveTab("rewards");
+      }
+    }
+  }, [stakesLoaded, allPeriodCommitments]);
 
     return (
     <AnimatePresence mode="wait">
-      {/* Loading State */}
-      {isCheckingConnection && (
+      {/* Loading State - wait for connection check OR (if connected, wait for stakes to load) */}
+      {(isCheckingConnection || (isConnected && !stakesLoaded)) && (
         <div
           key="loading"
           className="w-full flex items-center justify-center py-16 md:py-32"
@@ -611,7 +661,7 @@ export default function TeamStakingInterface() {
       )}
 
       {/* Main Content */}
-      {!isCheckingConnection && isConnected && (
+      {!isCheckingConnection && isConnected && stakesLoaded && (
         <motion.div 
           key="content"
           initial={{ opacity: 0 }}
@@ -623,7 +673,7 @@ export default function TeamStakingInterface() {
       {!isStakingPeriod && currentPeriod && Number(currentPeriod) > 0 && (
         <div className="mb-6 p-4 bg-black border-1 border-white/50 rounded-xl">
           <p className="text-white font-semibold text-center">
-            🎉 Period {completedPeriod} has ended! Rewards are available to claim below
+            🎉 Stake {completedStakeNumber} has ended! Rewards are available to claim below
           </p>
         </div>
       )}
@@ -676,7 +726,7 @@ export default function TeamStakingInterface() {
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="stake" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex w-full justify-center bg-transparent rounded-none h-auto p-0 gap-0 mb-0">
           <TabsTrigger 
             value="stake" 
@@ -707,6 +757,29 @@ export default function TeamStakingInterface() {
             <h2 className="text-3xl font-bold text-white mb-6">Stake TEAM to Earn Rewards</h2>
             
             <div className="space-y-4">
+              {/* Info banner based on BASE stake status */}
+              {baseStakeIsActive ? (
+                <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <p className="text-sm text-yellow-400 leading-5">
+                    ⚠️ <strong>Pre-commitment:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
+                    <br />
+                    <span className="text-xs mt-1 inline-block">
+                      You can early unstake (EES) at any time with a 3.69% penalty.
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-400 leading-5">
+                    ℹ️ <strong>Reload Phase:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
+                    <br />
+                    <span className="text-xs mt-1 inline-block">
+                      You can early unstake (EES) at any time with a 3.69% penalty.
+                    </span>
+                  </p>
+                </div>
+              )}
+
               <div>
                 <input
                   ref={stakeAmountRef}
@@ -848,7 +921,79 @@ export default function TeamStakingInterface() {
                 const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
                 const stakeStatus = selectedStake?.status;
 
-                // For expired stakes, always show direct withdrawal (no penalty check needed)
+                // Pre-committed stakes - allow EES with penalty
+                if (stakeStatus === 'pending') {
+                  return (
+                    <>
+                      <button
+                        onClick={handleEarlyEndStake}
+                        disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
+                        className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                          selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </span>
+                        ) : (
+                          'Early Unstake (3.69% penalty)'
+                        )}
+                      </button>
+
+                      <div className="p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg mt-4">
+                        <p className="text-sm text-blue-400 leading-5">
+                          ℹ️ This is a pre-committed stake for a future period. You can early unstake (EES) with a 3.69% penalty. Penalty-free unstaking is only available after the period ends.
+                        </p>
+                      </div>
+                    </>
+                  );
+                }
+
+                // Active stakes - allow EES with penalty
+                if (stakeStatus === 'active') {
+                  return (
+                    <>
+                      <button
+                        onClick={handleEarlyEndStake}
+                        disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
+                        className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                          selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </span>
+                        ) : (
+                          'Early Unstake (3.69% penalty)'
+                        )}
+                      </button>
+
+                      <div className="p-4 bg-green-500/20 border border-green-500/30 rounded-lg mt-4">
+                        <p className="text-sm text-green-400 leading-5">
+                          ✅ This stake is currently active and earning rewards. You can early unstake with a 3.69% penalty, or wait for the BASE stake to end for penalty-free unstaking.
+                          <br />
+                          <span className="text-xs mt-1 inline-block">
+                            Stake ends in:{' '}
+                            <span className="font-mono font-semibold">
+                              {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
+                              {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
+                            </span>
+                          </span>
+                        </p>
+                      </div>
+                    </>
+                  );
+                }
+
+                // For expired stakes, show withdrawal button (no penalty)
                 if (stakeStatus === 'expired') {
                   return (
                     <>
@@ -867,102 +1012,29 @@ export default function TeamStakingInterface() {
                             Processing...
                           </span>
                         ) : (
-                          'Withdraw TEAM'
+                          'Unstake TEAM'
                         )}
                       </button>
 
                       <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
                         <p className="text-sm text-gray-300">
-                          ✅ This stake has expired. You can withdraw without penalty.
+                          ✅ BASE stake has ended. You can now unstake without penalty.
                         </p>
                       </div>
                     </>
                   );
                 }
 
-                // For active/pending stakes, check BASE stake status
-                if (baseStakeIsActive === undefined) {
-                  return (
-                <div className="p-4 bg-gray-700/30 border border-gray-600/30 rounded-lg">
-                  <p className="text-sm text-gray-400 text-center">
-                    <Loader2 className="w-4 h-4 inline animate-spin mr-2 text-white" />
-                    Checking TEAM stake status...
-                  </p>
-                </div>
-                  );
-                }
-
-                if (baseStakeIsActive === true) {
-                  return (
-                <>
-                  <button
-                    onClick={handleEarlyEndStake}
-                    disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
-                    className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                      selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
-                        ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50'
-                        : 'bg-gray-700/50 text-gray-500 cursor-not-allowed border-2 border-gray-700/50'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-white" />
-                        Processing...
-                      </span>
-                    ) : (
-                      '⚠️ Early Unstake (3.69% Penalty)'
-                    )}
-                  </button>
-
-                      <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg mt-4">
-                        <p className="text-sm text-yellow-400 leading-5">
-                          ⚠️ TEAM stake is still active. Early unstaking incurs a 3.69% penalty. Wait for the TEAM stake to end (same time as BASE) to unstake without penalty.
-                          <br />
-                          <span className="text-xs mt-1 inline-block">
-                            Stake ends in:{' '}
-                            <span className="font-mono font-semibold">
-                              {stakeEndCountdown.days > 0 && `${stakeEndCountdown.days}d `}
-                              {stakeEndCountdown.hours}h {stakeEndCountdown.minutes}m {stakeEndCountdown.seconds}s
-                            </span>
-                          </span>
-                    </p>
-                  </div>
-                </>
-                  );
-                }
-
-                return (
-                <>
-                  <button
-                    onClick={handleEndCompleted}
-                    disabled={!selectedStakePeriod || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || isLoading}
-                    className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-                      selectedStakePeriod && unstakeAmount && parseFloat(unstakeAmount) > 0 && !isLoading
-                          ? 'bg-white text-black hover:bg-gray-200'
-                        : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        Processing...
-                      </span>
-                    ) : (
-                      'Unstake TEAM'
-                    )}
-                  </button>
-
-                  <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
-                    <p className="text-sm text-gray-300">
-                      ✅ BASE stake has ended. You can now unstake without penalty.
-                    </p>
-                  </div>
-                </>
-                );
+                // Default: no action available
+                return null;
               })()}
 
-              {/* Show Extend during reload phase (even periods) only */}
-              {!isStakingPeriod && selectedStakePeriod !== null && (
+              {/* Show Extend during reload phase (even periods) only - but only for expired stakes */}
+              {(() => {
+                const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
+                const stakeStatus = selectedStake?.status;
+                return !isStakingPeriod && selectedStakePeriod !== null && stakeStatus === 'expired';
+              })() && (
                 <>
                   <button
                     onClick={handleExtend}
@@ -1131,22 +1203,66 @@ function RewardsClaimSection({
       toast({
         title: "Success!",
         description: `Successfully prepared ${ticker} rewards! Click to view transaction.`,
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch rewards
-      setTimeout(() => {
+      setTimeout(async () => {
         setRewardsLoaded(false);
+        // Force refetch of prepare status for this specific token
+        if (selectedClaimPeriod !== null) {
+          const isPreparedNew = await checkPrepareClaimStatus(ticker, BigInt(selectedClaimPeriod));
+          setPeriodRewardsData(prev => ({
+            ...prev,
+            [selectedClaimPeriod]: {
+              ...prev[selectedClaimPeriod],
+              prepareStatuses: {
+                ...prev[selectedClaimPeriod]?.prepareStatuses,
+                [ticker]: isPreparedNew,
+              },
+            },
+          }));
+        }
       }, 2000);
     } catch (error: any) {
       if (!isUserRejection(error)) {
-        toast({
-          title: "Error",
-          description: error.message || `Failed to prepare ${ticker} rewards`,
-          variant: "destructive",
-        });
+        // Check if error is due to no rewards (contract reverts without reason)
+        const isNoRewardsError = error.message?.includes('reverted without a reason') || 
+                                 error.message?.includes('Transaction reverted');
+        
+        if (isNoRewardsError && selectedClaimPeriod !== null) {
+          // Silently mark as prepared with 0 amount so it gets hidden
+          setPeriodRewardsData(prev => ({
+            ...prev,
+            [selectedClaimPeriod]: {
+              ...prev[selectedClaimPeriod],
+              prepareStatuses: {
+                ...prev[selectedClaimPeriod]?.prepareStatuses,
+                [ticker]: true,
+              },
+              claimableAmounts: {
+                ...prev[selectedClaimPeriod]?.claimableAmounts,
+                [ticker]: 0n,
+              },
+            },
+          }));
+        } else {
+          // Show error toast for other types of errors
+          toast({
+            title: "Error",
+            description: error.message || `Failed to prepare ${ticker} rewards`,
+            variant: "destructive",
+          });
+        }
       }
     } finally {
       setLoadingToken(null);
@@ -1165,10 +1281,17 @@ function RewardsClaimSection({
       toast({
         title: "Success!",
         description: `Successfully claimed ${ticker} rewards! Click to view transaction.`,
-        action: {
-          label: "View TX",
-          onClick: () => window.open(txUrl, '_blank'),
-        } as any,
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
       });
       // Wait a bit for blockchain to update, then refetch rewards
       setTimeout(() => {
@@ -1321,7 +1444,13 @@ function RewardsClaimSection({
                 const isPrepared = currentPeriodData.prepareStatuses?.[token];
                 const isLoadingThisToken = loadingToken === token;
                 
-                // Rewards not prepared yet
+                // Skip tokens that are prepared but have 0 rewards and haven't been claimed
+                if (isPrepared && amount === 0n && !hasClaimed) {
+                  return null;
+                }
+                
+                // Rewards not prepared yet - show "Prepare Claim" button
+                // Note: If prepare fails due to 0 balance, the error will be shown
                 if (!isPrepared && !hasClaimed) {
               return (
                     <div key={token} className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
@@ -1354,7 +1483,7 @@ function RewardsClaimSection({
                   );
                 }
 
-                // Rewards prepared and claimable
+                // Rewards prepared and claimable (only show if amount > 0)
                 if (isPrepared && amount > 0n && !hasClaimed) {
                   return (
                     <div key={token} className="p-4 bg-green-900/30 border border-green-600/40 rounded-lg">

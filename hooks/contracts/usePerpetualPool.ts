@@ -214,7 +214,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
   });
 
   // Query HEX contract for stake information
-  const { data: stakeCountRaw } = useContractRead({
+  const { data: stakeCountRaw, isLoading: stakeCountLoading, error: stakeCountError } = useContractRead({
     address: HEX_CONTRACT_ADDRESS,
     abi: HEX_ABI,
     functionName: 'stakeCount',
@@ -223,18 +223,28 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
 
   // Query the first (and typically only) stake for the pool
   // Most perpetual pools have their main stake at index 0
-  const { data: stakeInfoRaw } = useContractRead({
+  const { data: stakeInfoRaw, isLoading: stakeInfoLoading, error: stakeInfoError, refetch: refetchStakeInfo } = useContractRead({
     address: HEX_CONTRACT_ADDRESS,
     abi: HEX_ABI,
     functionName: 'stakeLists',
     args: [contractAddress, 0n],
-    query: { enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0 },
+    query: { 
+      enabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
+      // Force refetch on every call to ensure fresh data
+      refetchInterval: false,
+      refetchOnWindowFocus: true,
+    },
   });
   
   console.log('🔍 [usePerpetualPool] StakeLists query for', ticker, {
     contractAddress,
     stakeCountRaw: stakeCountRaw?.toString(),
+    stakeCountLoading,
+    stakeCountError,
     stakeInfoRaw,
+    stakeInfoLoading,
+    stakeInfoError,
+    queryEnabled: !!stakeCountRaw && Number(stakeCountRaw) > 0,
   });
 
   // Query Hedron's shareList to check if Hedron was minted for THIS stake
@@ -441,6 +451,7 @@ export function usePerpetualPool(contractAddress: Address, ticker?: PoolTicker) 
         refetchStakeIsActive(),
         refetchCurrentPeriod(),
         refetchHexRedemptionRate(),
+        refetchStakeInfo(),
       ]);
       
       return { hash, receipt };

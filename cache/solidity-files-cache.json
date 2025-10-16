@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/DH.sol": {
+    "/Users/michaelschroder/Desktop/Coding/stake/contracts/core/DH.sol": {
       "lastModificationDate": 1759833839258,
       "contentHash": "c7a14d2443b0971c6606236757000fb6",
       "sourceName": "contracts/core/DH.sol",
@@ -53,7 +53,7 @@
         "TEAMContract"
       ]
     },
-    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/MAXIcontract.sol": {
+    "/Users/michaelschroder/Desktop/Coding/stake/contracts/core/MAXIcontract.sol": {
       "lastModificationDate": 1759402482089,
       "contentHash": "2236d63f6476a00ddbe2b0183cb74837",
       "sourceName": "contracts/core/MAXIcontract.sol",
@@ -109,9 +109,9 @@
         "SafeMath"
       ]
     },
-    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/Team.sol": {
-      "lastModificationDate": 1759924549477,
-      "contentHash": "dbfb764cb43f69053d2b2d465b399f6c",
+    "/Users/michaelschroder/Desktop/Coding/stake/contracts/core/Team.sol": {
+      "lastModificationDate": 1760529721792,
+      "contentHash": "e21399d591e5e132bad9fae251c7adfe",
       "sourceName": "contracts/core/Team.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -172,7 +172,7 @@
         "Team"
       ]
     },
-    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/triocontract.sol": {
+    "/Users/michaelschroder/Desktop/Coding/stake/contracts/core/triocontract.sol": {
       "lastModificationDate": 1759360667305,
       "contentHash": "2c0560537799508a30df9097059ae441",
       "sourceName": "contracts/core/triocontract.sol",
@@ -228,7 +228,7 @@
         "SafeMath"
       ]
     },
-    "/Users/michaelschroder/Desktop/Coding/perp-end-stake/contracts/core/hdrn.sol": {
+    "/Users/michaelschroder/Desktop/Coding/stake/contracts/core/hdrn.sol": {
       "lastModificationDate": 1760215918721,
       "contentHash": "b4f13b39e5773a75228d2b531631dcf7",
       "sourceName": "contracts/core/hdrn.sol",

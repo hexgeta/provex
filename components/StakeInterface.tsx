@@ -230,8 +230,11 @@ export default function StakeInterface({
   // Check if reload phase is over (matches contract requirement: current_day > RELOAD_PHASE_END)
   const isReloadPhaseOver = currentHexDay && reloadPhaseEnd ? currentHexDay > reloadPhaseEnd : false;
   
-  // Only show "Start the Stake" button after reload phase is over
-  const shouldShowStartStake = !stakeIsActive && isReloadPhaseOver;
+  // Only show "Start the Stake" button when:
+  // 1. Stake is definitively NOT active (false, not undefined)
+  // 2. Reload phase is definitively over
+  // 3. We have the data loaded (currentHexDay exists)
+  const shouldShowStartStake = stakeIsActive === false && isReloadPhaseOver && currentHexDay !== undefined;
   const canStartStake = shouldShowStartStake;
 
   // Get the correct block explorer URL based on chain
