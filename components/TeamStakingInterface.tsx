@@ -542,43 +542,6 @@ export default function TeamStakingInterface() {
     }
   };
 
-  const handleExtend = async () => {
-    if (!currentStakeID) return;
-    
-    try {
-      const stakeIDBigInt = BigInt(currentStakeID);
-      const { hash } = await extendStake(stakeIDBigInt);
-      
-      const txUrl = getTxUrl(hash);
-      toast({
-        title: "Success!",
-        description: "Successfully extended stake to next period! Click to view transaction.",
-        variant: "success",
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white text-black hover:bg-gray-100 border-white"
-            onClick={() => window.open(txUrl, '_blank')}
-          >
-            View TX
-          </Button>
-        ),
-      });
-      // Wait a bit for blockchain to update, then refetch stakes
-      setTimeout(() => {
-      setStakesLoaded(false);
-      }, 2000);
-    } catch (error: any) {
-      if (!isUserRejection(error)) {
-        toast({
-          title: "Error",
-          description: error.message || 'Failed to extend stake',
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleRestake = async () => {
     if (!currentStakeID) return;
@@ -757,29 +720,6 @@ export default function TeamStakingInterface() {
             <h2 className="text-3xl font-bold text-white mb-6">Stake TEAM to Earn Rewards</h2>
             
             <div className="space-y-4">
-              {/* Info banner based on BASE stake status */}
-              {baseStakeIsActive ? (
-                <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                  <p className="text-sm text-yellow-400 leading-5">
-                    ⚠️ <strong>Pre-commitment:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
-                    <br />
-                    <span className="text-xs mt-1 inline-block">
-                      You can early unstake (EES) at any time with a 3.69% penalty.
-                    </span>
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-                  <p className="text-sm text-blue-400 leading-5">
-                    ℹ️ <strong>Reload Phase:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
-                    <br />
-                    <span className="text-xs mt-1 inline-block">
-                      You can early unstake (EES) at any time with a 3.69% penalty.
-                    </span>
-                  </p>
-                </div>
-              )}
-
               <div>
                 <input
                   ref={stakeAmountRef}
@@ -821,6 +761,29 @@ export default function TeamStakingInterface() {
                   'Stake TEAM'
                 )}
               </button>
+
+              {/* Info banner based on BASE stake status - moved below button */}
+              {baseStakeIsActive ? (
+                <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <p className="text-sm text-yellow-400 leading-5">
+                    ⚠️ <strong>Pre-commitment:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
+                    <br />
+                    <span className="text-xs mt-1 inline-block">
+                      You can early unstake (EES) at any time with a 3.69% penalty.
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-400 leading-5">
+                    ℹ️ <strong>Reload Phase:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
+                    <br />
+                    <span className="text-xs mt-1 inline-block">
+                      You can early unstake (EES) at any time with a 3.69% penalty.
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -1028,28 +991,6 @@ export default function TeamStakingInterface() {
                 // Default: no action available
                 return null;
               })()}
-
-              {/* Show Extend during reload phase (even periods) only - but only for expired stakes */}
-              {(() => {
-                const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
-                const stakeStatus = selectedStake?.status;
-                return !isStakingPeriod && selectedStakePeriod !== null && stakeStatus === 'expired';
-              })() && (
-                <>
-                  <button
-                    onClick={handleExtend}
-                    disabled={!selectedStakePeriod || isLoading}
-                    className="w-full py-3 rounded-xl font-semibold bg-white text-black hover:bg-gray-200 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
-                  >
-                    Extend Stake
-                  </button>
-                  <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
-                    <p className="text-sm text-gray-300">
-                      <strong>Extend Stake:</strong> Roll Stake {(selectedStakePeriod + 1) / 2} to the next period during the expiry window.
-                    </p>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </TabsContent>
