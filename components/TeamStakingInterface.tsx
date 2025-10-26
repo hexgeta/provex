@@ -92,6 +92,7 @@ export default function TeamStakingInterface() {
     checkHasClaimed,
     getUserStakedForPeriod,
     getAllUserStakes,
+    checkRedemptionRate,
   } = useTeamStaking();
 
   // Use BASE pool hook to get stake status and countdown data
@@ -242,7 +243,7 @@ export default function TeamStakingInterface() {
   useEffect(() => {
     const loadAllRewardsData = async () => {
       if (!allPeriodCommitments || allPeriodCommitments.length === 0 || rewardsLoaded) return;
-      if (!checkPrepareClaimStatus || !getClaimableAmount || !checkHasClaimed) return;
+      if (!checkPrepareClaimStatus || !getClaimableAmount || !checkHasClaimed || !checkRedemptionRate) return;
 
       setIsLoadingRewards(true);
       const newPeriodData: Record<number, any> = {};
@@ -254,13 +255,20 @@ export default function TeamStakingInterface() {
         const prepareStatuses: Record<string, boolean> = {};
         const claimableAmounts: Record<string, bigint> = {};
         const claimedStatuses: Record<string, boolean> = {};
+        const hasRedemptionRate: Record<string, boolean> = {};
         let totalClaimable = 0;
 
         for (const token of REWARD_TOKENS) {
           try {
+            // Check if this token has any rewards for this period
+            const hasRewards = await checkRedemptionRate(token, period);
+            hasRedemptionRate[token] = hasRewards;
+
+            // Always check prepare status
             const isPrepared = await checkPrepareClaimStatus(token, period);
             prepareStatuses[token] = Boolean(isPrepared);
 
+            // If prepared, get claimable amounts and check if claimed
             if (isPrepared) {
               const { amount } = await getClaimableAmount(period, token, stakeID);
               claimableAmounts[token] = amount;
@@ -281,6 +289,7 @@ export default function TeamStakingInterface() {
           prepareStatuses,
           claimableAmounts,
           claimedStatuses,
+          hasRedemptionRate,
           totalClaimable,
           hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
         };
@@ -303,7 +312,7 @@ export default function TeamStakingInterface() {
     };
 
     loadAllRewardsData();
-  }, [allPeriodCommitments, checkPrepareClaimStatus, getClaimableAmount, checkHasClaimed, rewardsLoaded, selectedClaimPeriod]);
+  }, [allPeriodCommitments, checkPrepareClaimStatus, getClaimableAmount, checkHasClaimed, checkRedemptionRate, rewardsLoaded, selectedClaimPeriod]);
 
   // Update selected period balance when selection changes
   useEffect(() => {
@@ -543,6 +552,44 @@ export default function TeamStakingInterface() {
   };
 
 
+  const handleExtend = async () => {
+    if (!currentStakeID) return;
+    
+    try {
+      const stakeIDBigInt = BigInt(currentStakeID);
+      const { hash } = await extendStake(stakeIDBigInt);
+      
+      const txUrl = getTxUrl(hash);
+      toast({
+        title: "Success!",
+        description: "Successfully extended stake to next period! Click to view transaction.",
+        variant: "success",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white text-black hover:bg-gray-100 border-white"
+            onClick={() => window.open(txUrl, '_blank')}
+          >
+            View TX
+          </Button>
+        ),
+      });
+      // Wait a bit for blockchain to update, then refetch stakes
+      setTimeout(() => {
+      setStakesLoaded(false);
+      }, 2000);
+    } catch (error: any) {
+      if (!isUserRejection(error)) {
+        toast({
+          title: "Error",
+          description: error.message || 'Failed to extend stake',
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleRestake = async () => {
     if (!currentStakeID) return;
     
@@ -766,7 +813,7 @@ export default function TeamStakingInterface() {
               {baseStakeIsActive ? (
                 <div className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                   <p className="text-sm text-yellow-400 leading-5">
-                    ⚠️ <strong>Pre-commitment:</strong> Staking now commits your TEAM for the next BASE stake period (369 days).
+                    ⚠️ <strong>Pre-commitment:</strong> Staking now commits your TEAM for the next BASE stake period (369 days). Not the current active one.
                     <br />
                     <span className="text-xs mt-1 inline-block">
                       You can early unstake (EES) at any time with a 3.69% penalty.
@@ -836,7 +883,7 @@ export default function TeamStakingInterface() {
                                 status === 'pending' ? 'bg-blue-500/20 text-blue-300' :
                                 'bg-gray-500/20 text-gray-400'
                               }`}>
-                                {status === 'active' ? 'Active' : status === 'pending' ? 'Pre-committed' : 'Expired'}
+                                {status === 'active' ? 'Active' : status === 'pending' ? 'Pre-committed' : 'Completed'}
                               </span>
                             </div>
                           </div>
@@ -939,9 +986,9 @@ export default function TeamStakingInterface() {
                         )}
                       </button>
 
-                      <div className="p-4 bg-green-500/20 border border-green-500/30 rounded-lg mt-4">
-                        <p className="text-sm text-green-400 leading-5">
-                          ✅ This stake is currently active and earning rewards. You can early unstake with a 3.69% penalty, or wait for the BASE stake to end for penalty-free unstaking.
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-4">
+                        <p className="text-sm text-yellow-300 leading-5">
+                          ⚠️ This stake is currently active and earning rewards. You can early unstake with a 3.69% penalty, or wait for the BASE stake to end for penalty-free unstaking.
                           <br />
                           <span className="text-xs mt-1 inline-block">
                             Stake ends in:{' '}
@@ -981,7 +1028,7 @@ export default function TeamStakingInterface() {
 
                       <div className="p-4 bg-white/5 border border-white/20 rounded-lg mt-4">
                         <p className="text-sm text-gray-300">
-                          ✅ BASE stake has ended. You can now unstake without penalty.
+                          ✅ This TEAM stake has ended. You can now unstake without penalty.
                         </p>
                       </div>
                     </>
@@ -991,6 +1038,58 @@ export default function TeamStakingInterface() {
                 // Default: no action available
                 return null;
               })()}
+
+              {/* Extend Stake - for active stakes during staking period when expiring in current period */}
+              {(() => {
+                const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
+                const stakeStatus = selectedStake?.status;
+                // Can only extend if: staking period (odd) AND stake is active AND expiring in current period
+                return isStakingPeriod && selectedStakePeriod !== null && stakeStatus === 'active' && selectedStakePeriod === Number(currentPeriod);
+              })() && (
+                <>
+                  <button
+                    onClick={handleExtend}
+                    disabled={!selectedStakePeriod || isLoading}
+                    className="w-full py-3 rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
+                  >
+                    Extend Stake
+                  </button>
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-4">
+                    <p className="text-sm text-yellow-300">
+                      ⚠️ <strong>Extend Stake:</strong> Roll your active Stake {(selectedStakePeriod + 1) / 2} to the next staking period. There is a 3.69% penalty if you wish to withdraw early.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Restake - for expired/completed stakes with balance */}
+              {(() => {
+                const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
+                const stakeStatus = selectedStake?.status;
+                const hasBalance = selectedStake && Number(selectedStake.amount) > 0;
+                // Can restake if: stake is expired or completed AND has balance AND expired in a past period
+                return selectedStakePeriod !== null && 
+                       (stakeStatus === 'expired' || stakeStatus === 'completed') && 
+                       hasBalance &&
+                       selectedStakePeriod < Number(currentPeriod);
+              })() && (
+                <>
+                  <button
+                    onClick={handleRestake}
+                    disabled={!selectedStakePeriod || isLoading}
+                    className="w-full py-3 rounded-xl font-semibold bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-700/50 disabled:text-gray-500 mt-4"
+                  >
+                    Restake for Next Period
+                  </button>
+                  {isStakingPeriod && (
+                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-4">
+                      <p className="text-sm text-yellow-300">
+                        ⚠️ Since we're currently in a staking period, your restake will be committed for the <strong>next</strong> staking period, not the current active one.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -1383,16 +1482,21 @@ function RewardsClaimSection({
                 const amount = currentPeriodData.claimableAmounts?.[token] || 0n;
                 const hasClaimed = currentPeriodData.claimedStatuses?.[token];
                 const isPrepared = currentPeriodData.prepareStatuses?.[token];
+                const hasRewards = currentPeriodData.hasRedemptionRate?.[token];
                 const isLoadingThisToken = loadingToken === token;
+                
+                // Skip tokens that don't have any rewards for this period (unless already prepared or claimed)
+                if (!hasRewards && !isPrepared && !hasClaimed) {
+                  return null;
+                }
                 
                 // Skip tokens that are prepared but have 0 rewards and haven't been claimed
                 if (isPrepared && amount === 0n && !hasClaimed) {
                   return null;
                 }
                 
-                // Rewards not prepared yet - show "Prepare Claim" button
-                // Note: If prepare fails due to 0 balance, the error will be shown
-                if (!isPrepared && !hasClaimed) {
+                // Rewards not prepared yet - show "Prepare Claim" button (only if rewards exist)
+                if (!isPrepared && !hasClaimed && hasRewards) {
               return (
                     <div key={token} className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                       <div className="flex items-center justify-between">

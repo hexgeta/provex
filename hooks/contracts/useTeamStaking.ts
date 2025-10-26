@@ -114,8 +114,8 @@ export function useTeamStaking() {
   const fullPrecisionTeamBalance = teamBalance ? formatUnits(teamBalance, 8) : '0';
   const fullPrecisionUserStaked = userStaked ? formatUnits(userStaked, 8) : '0';
 
-  // Check if prepareClaim has been called for a token/period
-  const checkPrepareClaimStatus = async (ticker: string, period: bigint) => {
+  // Check if a token has rewards for a period (redemption rate > 0)
+  const checkRedemptionRate = async (ticker: string, period: bigint) => {
     if (!publicClient) return false;
     try {
       const rate = await publicClient.readContract({
@@ -128,6 +128,12 @@ export function useTeamStaking() {
     } catch (error) {
       return false;
     }
+  };
+
+  // Check if prepareClaim has been called for a token/period
+  // This is the same as checkRedemptionRate since prepareClaim sets the redemption rate
+  const checkPrepareClaimStatus = async (ticker: string, period: bigint) => {
+    return checkRedemptionRate(ticker, period);
   };
 
   // Get claimable amount for user
@@ -468,6 +474,7 @@ export function useTeamStaking() {
     checkHasClaimed,
     getUserStakedForPeriod,
     getAllUserStakes,
+    checkRedemptionRate,
     
     // Write functions
     stakeTeam,
