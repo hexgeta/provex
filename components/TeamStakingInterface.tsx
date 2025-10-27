@@ -962,9 +962,9 @@ export default function TeamStakingInterface() {
                         )}
                       </button>
 
-                      <div className="p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg mt-4">
-                        <p className="text-sm text-blue-400 leading-5">
-                          ℹ️ This is a pre-committed stake for a future period. You can early unstake (EES) with a 3.69% penalty. Penalty-free unstaking is only available after the period ends.
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-4">
+                        <p className="text-sm text-yellow-300 leading-5">
+                          ⚠️ This is a pre-committed stake for a future period. You can early unstake (EES) with a 3.69% penalty. Penalty-free unstaking is only available after the period ends.
                         </p>
                       </div>
                     </>
