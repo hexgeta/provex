@@ -1053,7 +1053,7 @@ export default function TeamStakingInterface() {
                   </button>
                   <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-4">
                     <p className="text-sm text-yellow-300">
-                      ⚠️ <strong>Extend Stake:</strong> Roll your active Stake {(selectedStakePeriod + 1) / 2} to the next staking period. There is a 3.69% penalty if you wish to withdraw early.
+                      ⚠️ <strong>Extend Stake:</strong> Roll your active Stake {selectedStakePeriod !== null ? (selectedStakePeriod + 1) / 2 : ''} to the next staking period. There is a 3.69% penalty if you wish to withdraw early.
                     </p>
                   </div>
                 </>
