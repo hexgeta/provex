@@ -115,7 +115,7 @@ export function useTeamStaking() {
   const fullPrecisionUserStaked = userStaked ? formatUnits(userStaked, 8) : '0';
 
   // Check if a token has rewards for a period (redemption rate > 0)
-  const checkRedemptionRate = async (ticker: string, period: bigint) => {
+  const checkRedemptionRate = async (ticker: string, period: bigint): Promise<boolean> => {
     if (!publicClient) return false;
     try {
       const rate = await publicClient.readContract({
@@ -124,7 +124,7 @@ export function useTeamStaking() {
         functionName: 'getPeriodRedemptionRates',
         args: [ticker, period],
       });
-      return rate && rate > 0n;
+      return Boolean(rate && rate > 0n);
     } catch (error) {
       return false;
     }
