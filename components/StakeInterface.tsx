@@ -228,7 +228,8 @@ export default function StakeInterface({
   const COUNTDOWN_THRESHOLD_DAYS = 30;
 
   // Check if reload phase is over (matches contract requirement: current_day > RELOAD_PHASE_END)
-  const isReloadPhaseOver = currentHexDay && reloadPhaseEnd ? currentHexDay > reloadPhaseEnd : false;
+  // Add 1 day to reload phase end to get the actual end time
+  const isReloadPhaseOver = currentHexDay && reloadPhaseEnd ? currentHexDay > (reloadPhaseEnd + 1n) : false;
   
   // Only show "Start the Stake" button when:
   // 1. Stake is definitively NOT active (false, not undefined)
@@ -702,7 +703,8 @@ export default function StakeInterface({
       const SECONDS_PER_DAY = 86400;
       
       // Calculate when the reload phase end day starts (at midnight UTC)
-      const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + (Number(reloadPhaseEnd) * SECONDS_PER_DAY);
+      // Add 1 day to the contract's reload phase end to get the actual end time
+      const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + ((Number(reloadPhaseEnd) + 1) * SECONDS_PER_DAY);
       
       // Get the actual current time in seconds (not the HEX day from contract)
       const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -818,7 +820,8 @@ export default function StakeInterface({
   };
 
   // Check if minting phase is active
-  const isMintingPhaseActive = currentHexDay && reloadPhaseEnd && currentHexDay <= reloadPhaseEnd && !stakeIsActive;
+  // Add 1 day to reload phase end to get the actual end time
+  const isMintingPhaseActive = currentHexDay && reloadPhaseEnd && currentHexDay <= (reloadPhaseEnd + 1n) && !stakeIsActive;
 
   const handleEndStake = async () => {
     try {
@@ -2241,7 +2244,7 @@ export default function StakeInterface({
                 </div>
               )}
 
-              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= reloadPhaseEnd && (
+              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= (reloadPhaseEnd + 1n) && (
                 <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
                   <p className="text-sm text-yellow-400">Reload phase ends in:</p>
                   <p className="text-2xl font-bold text-white mt-1">
@@ -2451,7 +2454,7 @@ export default function StakeInterface({
                 </div>
               )}
 
-              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= reloadPhaseEnd && (
+              {!stakeIsActive && reloadPhaseEnd && currentHexDay && currentHexDay <= (reloadPhaseEnd + 1n) && (
                 <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl">
                   <p className="text-sm text-yellow-400">Reload phase ends in:</p>
                   <p className="text-2xl font-bold text-white mt-1">

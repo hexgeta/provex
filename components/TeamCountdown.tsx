@@ -32,7 +32,8 @@ export default function TeamCountdown({ stakeEndDay, reloadPhaseEnd, stakeIsActi
 
     const calculateTimeLeft = (): TimeLeft => {
       // Determine target HEX day based on stake status
-      const targetHexDay = stakeIsActive ? stakeEndDay : reloadPhaseEnd;
+      // Add 1 day to reload phase end to get the actual end time
+      const targetHexDay = stakeIsActive ? stakeEndDay : (reloadPhaseEnd + 1n);
       const newLabel = stakeIsActive ? 'Time Until End' : 'Time Until Restart';
       
       setLabel(newLabel);

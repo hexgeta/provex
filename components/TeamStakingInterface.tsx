@@ -115,6 +115,7 @@ export default function TeamStakingInterface() {
     afterPenalty: '',
   });
   const [stakeEndCountdown, setStakeEndCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [reloadPhaseCountdown, setReloadPhaseCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   // Period-specific state
   const [allPeriodCommitments, setAllPeriodCommitments] = useState<{period: number, stakeNumber: number, amount: string, formattedAmount: string, originalAmount: string, formattedOriginalAmount: string, status: 'active' | 'pending' | 'expired'}[]>([]);
@@ -241,6 +242,44 @@ export default function TeamStakingInterface() {
     setPeriodRewardsData({});
     setSelectedClaimPeriod(null);
   }, [address, chain?.id]);
+
+  // Reload phase countdown - for BASE pool
+  useEffect(() => {
+    if (baseStakeIsActive || !reloadPhaseEnd) {
+      return;
+    }
+
+    const updateReloadCountdown = () => {
+      // HEX launch timestamp: December 2, 2019 at 00:00:00 UTC
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      // Calculate when the reload phase end day starts (at midnight UTC)
+      // Add 1 day to the contract's reload phase end to get the actual end time
+      const reloadEndTimestamp = HEX_LAUNCH_TIMESTAMP + ((Number(reloadPhaseEnd) + 1) * SECONDS_PER_DAY);
+      
+      // Get the actual current time in seconds
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const secondsRemaining = reloadEndTimestamp - currentTimestamp;
+
+      if (secondsRemaining <= 0) {
+        setReloadPhaseCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
+      const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
+      const minutes = Math.floor((secondsRemaining % 3600) / 60);
+      const seconds = secondsRemaining % 60;
+
+      setReloadPhaseCountdown({ days, hours, minutes, seconds });
+    };
+
+    updateReloadCountdown();
+    const interval = setInterval(updateReloadCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [reloadPhaseEnd, baseStakeIsActive]);
 
   // Load rewards data in background after stakes are loaded
   useEffect(() => {
@@ -837,6 +876,14 @@ export default function TeamStakingInterface() {
                       You can early unstake (EES) at any time with a 3.69% penalty.
                     </span>
                   </p>
+                  {reloadPhaseCountdown.days > 0 || reloadPhaseCountdown.hours > 0 || reloadPhaseCountdown.minutes > 0 || reloadPhaseCountdown.seconds > 0 ? (
+                    <div className="mt-3 pt-3 border-t border-blue-500/30">
+                      <p className="text-xs text-blue-300 mb-1">Reload phase ends in:</p>
+                      <p className="text-lg font-bold text-white">
+                        {reloadPhaseCountdown.days}d {reloadPhaseCountdown.hours}h {reloadPhaseCountdown.minutes}m {reloadPhaseCountdown.seconds}s
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
