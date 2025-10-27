@@ -130,6 +130,38 @@ export function useTeamStaking() {
     }
   };
 
+  // Check if a token has balance available for rewards (in TEAM contract before prepareClaim)
+  // This helps us know if there are rewards to prepare for a given token
+  const checkTokenBalance = async (ticker: string): Promise<boolean> => {
+    if (!publicClient) return false;
+    try {
+      // Get the token address from TEAM contract
+      const tokenAddress = await publicClient.readContract({
+        address: TEAM_CONTRACT_ADDRESS,
+        abi: TEAM_ABI,
+        functionName: 'getSupportedTokens',
+        args: [ticker],
+      }) as Address;
+
+      if (!tokenAddress || tokenAddress === '0x0000000000000000000000000000000000000000') {
+        return false;
+      }
+
+      // Check the token balance in TEAM contract
+      // When prepareClaim is called, these tokens get transferred to STAKE_REWARD_DISTRIBUTION_ADDRESS
+      const balance = await publicClient.readContract({
+        address: tokenAddress,
+        abi: parseAbi(['function balanceOf(address) view returns (uint256)']),
+        functionName: 'balanceOf',
+        args: [TEAM_CONTRACT_ADDRESS],
+      }) as bigint;
+
+      return balance > 0n;
+    } catch (error) {
+      return false;
+    }
+  };
+
   // Check if prepareClaim has been called for a token/period
   // This is the same as checkRedemptionRate since prepareClaim sets the redemption rate
   const checkPrepareClaimStatus = async (ticker: string, period: bigint) => {
@@ -475,6 +507,7 @@ export function useTeamStaking() {
     getUserStakedForPeriod,
     getAllUserStakes,
     checkRedemptionRate,
+    checkTokenBalance,
     
     // Write functions
     stakeTeam,

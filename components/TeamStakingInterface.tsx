@@ -93,6 +93,7 @@ export default function TeamStakingInterface() {
     getUserStakedForPeriod,
     getAllUserStakes,
     checkRedemptionRate,
+    checkTokenBalance,
   } = useTeamStaking();
 
   // Use BASE pool hook to get stake status and countdown data
@@ -128,6 +129,8 @@ export default function TeamStakingInterface() {
     prepareStatuses: Record<string, boolean>;
     claimableAmounts: Record<string, bigint>;
     claimedStatuses: Record<string, boolean>;
+    hasRedemptionRate: Record<string, boolean>;
+    hasTokenBalance: Record<string, boolean>;
     totalClaimable: number;
     hasAnyRewards: boolean;
   }>>({});
@@ -243,7 +246,7 @@ export default function TeamStakingInterface() {
   useEffect(() => {
     const loadAllRewardsData = async () => {
       if (!allPeriodCommitments || allPeriodCommitments.length === 0 || rewardsLoaded) return;
-      if (!checkPrepareClaimStatus || !getClaimableAmount || !checkHasClaimed || !checkRedemptionRate) return;
+      if (!checkPrepareClaimStatus || !getClaimableAmount || !checkHasClaimed || !checkRedemptionRate || !checkTokenBalance) return;
 
       setIsLoadingRewards(true);
       const newPeriodData: Record<number, any> = {};
@@ -256,6 +259,7 @@ export default function TeamStakingInterface() {
         const claimableAmounts: Record<string, bigint> = {};
         const claimedStatuses: Record<string, boolean> = {};
         const hasRedemptionRate: Record<string, boolean> = {};
+        const hasTokenBalance: Record<string, boolean> = {};
         let totalClaimable = 0;
 
         for (const token of REWARD_TOKENS) {
@@ -264,6 +268,12 @@ export default function TeamStakingInterface() {
             const isPrepared = await checkPrepareClaimStatus(token, period);
             prepareStatuses[token] = Boolean(isPrepared);
             hasRedemptionRate[token] = isPrepared; // If prepared, it has a redemption rate
+
+            // Check if token has balance in TEAM contract (only if not prepared yet)
+            if (!isPrepared) {
+              const hasBalance = await checkTokenBalance(token);
+              hasTokenBalance[token] = hasBalance;
+            }
 
             // If prepared, get claimable amounts and check if claimed
             if (isPrepared) {
@@ -287,6 +297,7 @@ export default function TeamStakingInterface() {
           claimableAmounts,
           claimedStatuses,
           hasRedemptionRate,
+          hasTokenBalance,
           totalClaimable,
           hasAnyRewards: totalClaimable > 0 || Object.values(claimedStatuses).some(v => v),
         };
@@ -632,7 +643,7 @@ export default function TeamStakingInterface() {
   useEffect(() => {
     if (stakesLoaded && activeTab === "stake") {
       // Check if user has completed or expired stakes
-      const hasCompletedStakes = allPeriodCommitments.some((c: any) => c.status === 'expired' || c.status === 'completed');
+      const hasCompletedStakes = allPeriodCommitments.some((c: any) => c.status === 'expired');
       if (hasCompletedStakes) {
         setActiveTab("rewards");
       }
@@ -1059,14 +1070,14 @@ export default function TeamStakingInterface() {
                 </>
               )}
 
-              {/* Restake - for expired/completed stakes with balance */}
+              {/* Restake - for expired stakes with balance */}
               {(() => {
                 const selectedStake = allPeriodCommitments.find((c: any) => c.period === selectedStakePeriod);
                 const stakeStatus = selectedStake?.status;
                 const hasBalance = selectedStake && Number(selectedStake.amount) > 0;
-                // Can restake if: stake is expired or completed AND has balance AND expired in a past period
+                // Can restake if: stake is expired AND has balance AND expired in a past period
                 return selectedStakePeriod !== null && 
-                       (stakeStatus === 'expired' || stakeStatus === 'completed') && 
+                       stakeStatus === 'expired' && 
                        hasBalance &&
                        selectedStakePeriod < Number(currentPeriod);
               })() && (
@@ -1253,22 +1264,8 @@ function RewardsClaimSection({
         ),
       });
       // Wait a bit for blockchain to update, then refetch rewards
-      setTimeout(async () => {
+      setTimeout(() => {
         setRewardsLoaded(false);
-        // Force refetch of prepare status for this specific token
-        if (selectedClaimPeriod !== null) {
-          const isPreparedNew = await checkPrepareClaimStatus(ticker, BigInt(selectedClaimPeriod));
-          setPeriodRewardsData(prev => ({
-            ...prev,
-            [selectedClaimPeriod]: {
-              ...prev[selectedClaimPeriod],
-              prepareStatuses: {
-                ...prev[selectedClaimPeriod]?.prepareStatuses,
-                [ticker]: isPreparedNew,
-              },
-            },
-          }));
-        }
       }, 2000);
     } catch (error: any) {
       if (!isUserRejection(error)) {
@@ -1276,22 +1273,9 @@ function RewardsClaimSection({
         const isNoRewardsError = error.message?.includes('reverted without a reason') || 
                                  error.message?.includes('Transaction reverted');
         
-        if (isNoRewardsError && selectedClaimPeriod !== null) {
-          // Silently mark as prepared with 0 amount so it gets hidden
-          setPeriodRewardsData(prev => ({
-            ...prev,
-            [selectedClaimPeriod]: {
-              ...prev[selectedClaimPeriod],
-              prepareStatuses: {
-                ...prev[selectedClaimPeriod]?.prepareStatuses,
-                [ticker]: true,
-              },
-              claimableAmounts: {
-                ...prev[selectedClaimPeriod]?.claimableAmounts,
-                [ticker]: 0n,
-              },
-            },
-          }));
+        if (isNoRewardsError) {
+          // Silently ignore - token had no balance, will be hidden on refetch
+          setRewardsLoaded(false);
         } else {
           // Show error toast for other types of errors
           toast({
@@ -1480,10 +1464,16 @@ function RewardsClaimSection({
                 const hasClaimed = currentPeriodData.claimedStatuses?.[token];
                 const isPrepared = currentPeriodData.prepareStatuses?.[token];
                 const hasRewards = currentPeriodData.hasRedemptionRate?.[token];
+                const hasBalance = currentPeriodData.hasTokenBalance?.[token];
                 const isLoadingThisToken = loadingToken === token;
                 
                 // Skip tokens that are prepared but have 0 rewards and haven't been claimed
                 if (isPrepared && amount === 0n && !hasClaimed) {
+                  return null;
+                }
+                
+                // Skip tokens with no balance in TEAM contract (no rewards to prepare)
+                if (!isPrepared && !hasClaimed && hasBalance === false) {
                   return null;
                 }
                 
