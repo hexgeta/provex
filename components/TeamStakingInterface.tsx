@@ -260,13 +260,10 @@ export default function TeamStakingInterface() {
 
         for (const token of REWARD_TOKENS) {
           try {
-            // Check if this token has any rewards for this period
-            const hasRewards = await checkRedemptionRate(token, period);
-            hasRedemptionRate[token] = hasRewards;
-
-            // Always check prepare status
+            // Check if prepareClaim has been called (redemption rate will be > 0 if prepared)
             const isPrepared = await checkPrepareClaimStatus(token, period);
             prepareStatuses[token] = Boolean(isPrepared);
+            hasRedemptionRate[token] = isPrepared; // If prepared, it has a redemption rate
 
             // If prepared, get claimable amounts and check if claimed
             if (isPrepared) {
@@ -1485,18 +1482,13 @@ function RewardsClaimSection({
                 const hasRewards = currentPeriodData.hasRedemptionRate?.[token];
                 const isLoadingThisToken = loadingToken === token;
                 
-                // Skip tokens that don't have any rewards for this period (unless already prepared or claimed)
-                if (!hasRewards && !isPrepared && !hasClaimed) {
-                  return null;
-                }
-                
                 // Skip tokens that are prepared but have 0 rewards and haven't been claimed
                 if (isPrepared && amount === 0n && !hasClaimed) {
                   return null;
                 }
                 
-                // Rewards not prepared yet - show "Prepare Claim" button (only if rewards exist)
-                if (!isPrepared && !hasClaimed && hasRewards) {
+                // Rewards not prepared yet - show "Prepare Claim" button
+                if (!isPrepared && !hasClaimed) {
               return (
                     <div key={token} className="p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                       <div className="flex items-center justify-between">
