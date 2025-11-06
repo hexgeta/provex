@@ -381,22 +381,28 @@ export default function TeamStakingInterface() {
 
   // Countdown timer for when BASE stake ends
   useEffect(() => {
-    if (!baseStakeIsActive) {
+    if (!baseStakeIsActive || !stakeEndDay) {
       return;
     }
 
     const updateCountdown = () => {
-      // Use deadline from the latest BASE pool (dynamically selected based on chain)
-      const deadline = new Date(BASE_POOL.deadlineUTC);
-      const now = new Date();
-      const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
+      // Calculate deadline from contract's stakeEndDay (end of that HEX day at 23:59:59 UTC)
+      // HEX launch timestamp: December 3, 2019 at 00:00:00 UTC
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      // Calculate end of the stake end day (23:59:59 UTC)
+      const deadlineTimestamp = HEX_LAUNCH_TIMESTAMP + ((Number(stakeEndDay) + 1) * SECONDS_PER_DAY) - 1;
+      
+      // Get the actual current time in seconds
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const secondsRemaining = deadlineTimestamp - currentTimestamp;
 
       if (secondsRemaining <= 0) {
         setStakeEndCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
-      const SECONDS_PER_DAY = 86400;
       const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
       const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
       const minutes = Math.floor((secondsRemaining % 3600) / 60);
@@ -409,7 +415,7 @@ export default function TeamStakingInterface() {
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [baseStakeIsActive]);
+  }, [baseStakeIsActive, stakeEndDay]);
 
   // Format number without trailing zeros
   const formatNumberClean = (value: number): string => {

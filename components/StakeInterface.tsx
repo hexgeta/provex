@@ -658,22 +658,28 @@ export default function StakeInterface({
 
   // Real-time countdown - always active when stake is active
   useEffect(() => {
-    if (!stakeIsActive) {
+    if (!stakeIsActive || !stakeEndDay) {
       return;
     }
 
     const updateCountdown = () => {
-      // Use hardcoded deadline from PERPETUAL_POOLS config
-      const deadline = new Date(selectedPool.deadlineUTC);
-      const now = new Date();
-      const secondsRemaining = Math.floor((deadline.getTime() - now.getTime()) / 1000);
+      // Calculate deadline from contract's stakeEndDay (end of that HEX day at 23:59:59 UTC)
+      // HEX launch timestamp: December 3, 2019 at 00:00:00 UTC
+      const HEX_LAUNCH_TIMESTAMP = 1575331200;
+      const SECONDS_PER_DAY = 86400;
+      
+      // Calculate end of the stake end day (23:59:59 UTC)
+      const deadlineTimestamp = HEX_LAUNCH_TIMESTAMP + ((Number(stakeEndDay) + 1) * SECONDS_PER_DAY) - 1;
+      
+      // Get the actual current time in seconds
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const secondsRemaining = deadlineTimestamp - currentTimestamp;
 
       if (secondsRemaining <= 0) {
         setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
-      const SECONDS_PER_DAY = 86400;
       const days = Math.floor(secondsRemaining / SECONDS_PER_DAY);
       const hours = Math.floor((secondsRemaining % SECONDS_PER_DAY) / 3600);
       const minutes = Math.floor((secondsRemaining % 3600) / 60);
@@ -689,7 +695,7 @@ export default function StakeInterface({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [selectedPool.deadlineUTC, stakeIsActive]);
+  }, [stakeEndDay, stakeIsActive]);
 
   // Reload phase countdown - only when stake has ended
   useEffect(() => {
@@ -1525,9 +1531,14 @@ export default function StakeInterface({
                 <span className="font-semibold text-white">
                   <span className="text-gray-500 text-sm mr-2">23:59 UTC</span>
                   {(() => {
-                    // Subtract 1 minute to show 23:59 of the day before
-                    const deadline = new Date(selectedPool.deadlineUTC);
-                    deadline.setMinutes(deadline.getMinutes() - 1);
+                    if (!stakeEndDay) return 'Loading...';
+                    // Calculate end date from contract's stakeEndDay (show at 23:59 UTC)
+                    // HEX launch timestamp: December 3, 2019 at 00:00:00 UTC
+                    const HEX_LAUNCH_TIMESTAMP = 1575331200000; // milliseconds
+                    const MILLISECONDS_PER_DAY = 86400000;
+                    // End of stakeEndDay at 23:59 UTC
+                    const deadlineTimestamp = HEX_LAUNCH_TIMESTAMP + ((Number(stakeEndDay) + 1) * MILLISECONDS_PER_DAY) - 60000;
+                    const deadline = new Date(deadlineTimestamp);
                     const day = deadline.getUTCDate();
                     const month = deadline.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
                     const year = deadline.getUTCFullYear();
@@ -1535,7 +1546,7 @@ export default function StakeInterface({
                   })()}
                 </span>
                 {stakeEndDay && (
-                  <span className="text-gray-500 text-xs mt-1">HEX Day {(Number(stakeEndDay) + 2).toString()}</span>
+                  <span className="text-gray-500 text-xs mt-1">HEX Day {stakeEndDay.toString()}</span>
                 )}
               </div>
             </div>

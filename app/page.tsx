@@ -17,9 +17,19 @@ function HomeContent() {
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'end' | 'claim' | 'mint'>('claim');
-  const { isConnected } = useAccount();
+  const { isConnected, chain } = useAccount();
   const { toast } = useToast();
   const { selectedTicker } = usePool();
+
+  // Get the correct transaction URL based on chain
+  const getTxUrl = (txHash: string) => {
+    if (chain?.id === 1) {
+      // Ethereum mainnet
+      return `https://etherscan.io/tx/${txHash}`;
+    }
+    // Default to PulseChain (chain ID 369)
+    return `https://otter.pulsechain.com/tx/${txHash}`;
+  };
 
   // Check connection status
   useEffect(() => {
@@ -59,7 +69,7 @@ function HomeContent() {
           action: txHash ? (
             <ToastAction
               altText="View transaction"
-              onClick={() => window.open(`https://otter.pulsechain.com/tx/${txHash}`, '_blank')}
+              onClick={() => window.open(getTxUrl(txHash), '_blank')}
             >
               View TX
             </ToastAction>
