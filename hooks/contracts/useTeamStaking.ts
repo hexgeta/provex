@@ -250,22 +250,23 @@ export function useTeamStaking() {
       for (let stakeID = 1n; stakeID <= maxPeriod; stakeID += 2n) {
         // Only check odd periods (1, 3, 5, 7, etc.) since those are staking periods
         try {
-          const balance = await getUserStakedForPeriod(stakeID);
+          // Check original staked amount first (this persists even after unstaking)
+          const originalAmount = await publicClient.readContract({
+            address: TEAM_CONTRACT_ADDRESS,
+            abi: TEAM_ABI,
+            functionName: 'getAddressPeriodEndTotal',
+            args: [address, stakeID, stakeID],
+          }) as bigint;
           
-          if (balance > 0n) {
-            // Get original staked amount for this period
-            const originalAmount = await publicClient.readContract({
-              address: TEAM_CONTRACT_ADDRESS,
-              abi: TEAM_ABI,
-              functionName: 'getAddressPeriodEndTotal',
-              args: [address, stakeID, stakeID],
-            }) as bigint;
+          if (originalAmount > 0n) {
+            // Get current withdrawable balance
+            const balance = await getUserStakedForPeriod(stakeID);
             
             stakes.push({
               stakeID: stakeID,
               period: stakeID, // For TEAM, stakeID = period
-              balance: balance, // Current withdrawable balance
-              originalBalance: originalAmount, // Original amount staked
+              balance: balance, // Current withdrawable balance (may be 0 if already unstaked)
+              originalBalance: originalAmount, // Original amount staked (permanent record)
             });
           }
         } catch (error) {
