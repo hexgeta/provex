@@ -201,7 +201,6 @@ nav {
 }
 
 .nav-cta-button:hover {
-    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(192, 38, 211, 0.4);
 }
 
@@ -317,7 +316,6 @@ nav {
 }
 
 .mobile-cta-button:hover {
-    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(192, 38, 211, 0.4);
 }
 
@@ -433,7 +431,6 @@ h1 {
 }
 
 .hero-benefit-card:hover {
-    transform: translateY(-5px);
 }
 
 /* Individual hover colors for hero benefit cards */
@@ -525,7 +522,6 @@ section {
 }
 
 .feature-card:hover {
-    transform: translateY(-5px);
 }
 
 /* Individual hover colors for feature cards */
@@ -587,7 +583,6 @@ section {
 }
 
 .comparison-card:hover {
-    transform: translateY(-20px);
 }
 
 .old-way {
@@ -655,7 +650,6 @@ section {
 }
 
 .use-case-card:hover {
-    transform: translateY(-5px);
 }
 
 /* Individual hover colors for use case cards */
