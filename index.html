@@ -1,393 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <!-- Essential Meta Tags -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
     <!-- Primary Meta Tags -->
-    <title>ProvX - The Future of Disintermediation | MrProve Token</title>
-    <meta name="title" content="ProvX - The Future of Disintermediation | MrProve Token">
-    <meta name="description" content="MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity. Trustless, private, instant settlement powered by PrivateProver technology.">
-    <meta name="keywords" content="ProvX, MrProve, cryptocurrency, blockchain, DeFi, deflationary token, trustless proofs, private settlement, crypto disintermediation, P2P exchange">
-    <meta name="author" content="ProvX">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://provex.com/">
-    
+    <title>ProveX - The Future of Disintermediation | MrProve Token</title>
+    <meta
+      name="title"
+      content="ProveX - The Future of Disintermediation | MrProve Token"
+    />
+    <meta
+      name="description"
+      content="MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity. Trustless, private, instant settlement powered by PrivateProver technology."
+    />
+    <meta
+      name="keywords"
+      content="ProveX, MrProve, cryptocurrency, blockchain, DeFi, deflationary token, trustless proofs, private settlement, crypto disintermediation, P2P exchange"
+    />
+    <meta name="author" content="ProveX" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://provex.com/" />
+
     <!-- Theme Color -->
-    <meta name="theme-color" content="#000000">
-    <meta name="msapplication-TileColor" content="#000000">
-    
+    <meta name="theme-color" content="#000000" />
+    <meta name="msapplication-TileColor" content="#000000" />
+
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://provex.com/">
-    <meta property="og:title" content="ProvX - The Future of Disintermediation">
-    <meta property="og:description" content="MrProve replaces middlemen with mathematical proofs. Deflationary by design. Every transaction burns tokens. Every use creates scarcity.">
-    <meta property="og:image" content="https://provex.com/public/opengraph-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="ProvX - MrProve Token - The Future of Disintermediation">
-    <meta property="og:site_name" content="ProvX">
-    <meta property="og:locale" content="en_US">
-    
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://provex.com/" />
+    <meta
+      property="og:title"
+      content="ProveX - The Future of Disintermediation"
+    />
+    <meta
+      property="og:description"
+      content="MrProve replaces middlemen with mathematical proofs. Deflationary by design. Every transaction burns tokens. Every use creates scarcity."
+    />
+    <meta
+      property="og:image"
+      content="https://provex.com/public/opengraph-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="ProveX - MrProve Token - The Future of Disintermediation"
+    />
+    <meta property="og:site_name" content="ProveX" />
+    <meta property="og:locale" content="en_US" />
+
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://provex.com/">
-    <meta name="twitter:title" content="ProvX - The Future of Disintermediation">
-    <meta name="twitter:description" content="MrProve: Trustless proofs replacing middlemen. Deflationary by design. Every use burns tokens.">
-    <meta name="twitter:image" content="https://provex.com/public/opengraph-image.png">
-    <meta name="twitter:image:alt" content="ProvX - MrProve Token">
-    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://provex.com/" />
+    <meta
+      name="twitter:title"
+      content="ProveX - The Future of Disintermediation"
+    />
+    <meta
+      name="twitter:description"
+      content="MrProve: Trustless proofs replacing middlemen. Deflationary by design. Every use burns tokens."
+    />
+    <meta
+      name="twitter:image"
+      content="https://provex.com/public/opengraph-image.png"
+    />
+    <meta name="twitter:image:alt" content="ProveX - MrProve Token" />
+
     <!-- Favicons -->
-    <link rel="icon" type="image/svg+xml" href="./public/favicon.svg">
-    <link rel="icon" type="image/png" href="./public/favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./public/favicon.png">
-    
+    <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+    <link rel="icon" type="image/png" href="./public/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./public/favicon.png" />
+
     <!-- Apple Web App Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="ProvX">
-    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="ProveX" />
+
     <!-- Preload Critical Assets -->
-    <link rel="preload" href="./public/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-    <link rel="preload" href="./styles.css" as="style">
-    
+    <link
+      rel="preload"
+      href="./public/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin="anonymous"
+    />
+    <link rel="preload" href="./styles.css" as="style" />
+
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="./styles.css">
-    
+    <link rel="stylesheet" href="./styles.css" />
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
-    {
+      {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "ProvX",
+        "name": "ProveX",
         "alternateName": "MrProve",
         "url": "https://provex.com",
         "logo": "https://provex.com/public/favicon.png",
         "description": "MrProve replaces middlemen with mathematical proofs. Deflationary by design. Trustless, private, instant settlement.",
         "foundingDate": "2024",
         "sameAs": []
-    }
+      }
     </script>
-    
+
     <script type="application/ld+json">
-    {
+      {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "ProvX",
+        "name": "ProveX",
         "url": "https://provex.com",
         "description": "The future of disintermediation. Trustless proofs replacing middlemen.",
         "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://provex.com/?s={search_term_string}",
-            "query-input": "required name=search_term_string"
+          "@type": "SearchAction",
+          "target": "https://provex.com/?s={search_term_string}",
+          "query-input": "required name=search_term_string"
         }
-    }
+      }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Background -->
     <canvas id="background-canvas" aria-hidden="true"></canvas>
     <div class="gradient-overlay" aria-hidden="true"></div>
 
     <!-- Content -->
     <div class="content">
-        <!-- Navigation -->
-        <nav role="navigation" aria-label="Main navigation">
-            <div class="nav-container">
-                <a href="/" class="logo" aria-label="ProvX Home">ProvX</a>
-                <ul class="nav-links">
-                    <li><a href="#learn-more">Technology</a></li>
-                    <li><a href="#use-cases">Use Cases</a></li>
-                </ul>
-            </div>
-        </nav>
+      <!-- Navigation -->
+      <nav role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+          <a href="/" class="logo" aria-label="ProveX Home">ProveX</a>
+          <ul class="nav-links">
+            <li><a href="#learn-more">Technology</a></li>
+            <li><a href="#use-cases">Use Cases</a></li>
+          </ul>
+        </div>
+      </nav>
 
-        <!-- Hero Section -->
-        <header class="hero">
-            <div class="hero-content">
-                <h1>
-                    The Future of<br>
-                    <span class="gradient-text">Disintermediation</span>
-                </h1>
-                <p class="hero-description">
-                    MrProve replaces middlemen with mathematical proofs.<br>
-                    Every transaction burns tokens. Every use creates scarcity.
-                </p>
-                <a href="#learn-more" class="cta-button" aria-label="Learn more about ProvX">
-                    Learn More
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                </a>
-            </div>
-        </header>
+      <!-- Hero Section -->
+      <header class="hero">
+        <div class="hero-content">
+          <h1>
+            The Future of<br />
+            <span class="gradient-text">Disintermediation</span>
+          </h1>
+          <p class="hero-description">
+            MrProve replaces middlemen with mathematical proofs.<br />
+            Every transaction burns tokens. Every use creates scarcity.
+          </p>
+          <a
+            href="#learn-more"
+            class="cta-button"
+            aria-label="Learn more about ProveX"
+          >
+            Learn More
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </header>
 
-        <!-- Core Value Proposition -->
-        <section id="learn-more" class="section-alt" aria-labelledby="deflationary-title">
-            <h2 id="deflationary-title" class="section-title">Deflationary by Design</h2>
-            <p class="section-description">
-                MrProve never inflates. It only burns. Automatically bought and burnt every time someone uses PrivateProver technology.
+      <!-- Core Value Proposition -->
+      <section
+        id="learn-more"
+        class="section-alt"
+        aria-labelledby="deflationary-title"
+      >
+        <h2 id="deflationary-title" class="section-title">
+          Deflationary by Design
+        </h2>
+        <p class="section-description">
+          MrProve never inflates. It only burns. Automatically bought and burnt
+          every time someone uses PrivateProver technology.
+        </p>
+
+        <div class="feature-grid">
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Trustless Proofs</h3>
+            <p class="feature-description">
+              Replace intermediaries with mathematical certainty. No custody, no
+              middlemen, no trust required.
             </p>
+          </article>
 
-            <div class="feature-grid">
-                <article class="feature-card fade-in">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Trustless Proofs</h3>
-                    <p class="feature-description">
-                        Replace intermediaries with mathematical certainty. No custody, no middlemen, no trust required.
-                    </p>
-                </article>
-
-                <article class="feature-card fade-in">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Engineered Scarcity</h3>
-                    <p class="feature-description">
-                        Every successful use case burns tokens from a fixed supply. Adoption directly drives scarcity.
-                    </p>
-                </article>
-
-                <article class="feature-card fade-in">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Instant Settlement</h3>
-                    <p class="feature-description">
-                        Prove payment from bank. Prove coins sent. Settle instantly. No waiting, no escrow.
-                    </p>
-                </article>
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
             </div>
-        </section>
-
-        <!-- Paradigm Shift -->
-        <section aria-labelledby="paradigm-title">
-            <h2 id="paradigm-title" class="section-title">A New Paradigm</h2>
-            <p class="section-description">
-                Crypto was invented to remove middlemen. Exchanges became the new middlemen.<br>
-                MrProve brings crypto back to its original vision.
+            <h3 class="feature-title">Engineered Scarcity</h3>
+            <p class="feature-description">
+              Every successful use case burns tokens from a fixed supply.
+              Adoption directly drives scarcity.
             </p>
+          </article>
 
-            <div class="comparison-grid">
-                <article class="comparison-card old-way">
-                    <h3 class="comparison-title">The Old Way</h3>
-                    <ul class="comparison-list">
-                        <li>Custody risk with centralized exchanges</li>
-                        <li>High fees that benefit middlemen</li>
-                        <li>Privacy violations and KYC requirements</li>
-                        <li>Slow settlement times</li>
-                    </ul>
-                </article>
-
-                <article class="comparison-card new-way">
-                    <h3 class="comparison-title">The MrProve Way</h3>
-                    <ul class="comparison-list">
-                        <li>Non-custodial, trustless settlement</li>
-                        <li>Fees that burn tokens, creating scarcity</li>
-                        <li>Private proofs, no data exposure</li>
-                        <li>Instant, automated settlement</li>
-                    </ul>
-                </article>
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
             </div>
-        </section>
-
-        <!-- Use Cases -->
-        <section id="use-cases" class="section-alt" aria-labelledby="use-cases-title">
-            <h2 id="use-cases-title" class="section-title">Infinite Use Cases</h2>
-            <p class="section-description">
-                Every industry with middlemen is ready for disruption.<br>
-                Each proof burns tokens. Each use case adds demand.
+            <h3 class="feature-title">Instant Settlement</h3>
+            <p class="feature-description">
+              Prove payment from bank. Prove coins sent. Settle instantly. No
+              waiting, no escrow.
             </p>
+          </article>
+        </div>
+      </section>
 
-            <div class="use-cases-grid">
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Crypto On/Off-Ramps & CEXes</h3>
-                    <p class="use-case-description">
-                        Trustless P2P settlement replaces exchange custody and fees. Instant, private, non-custodial.
-                    </p>
-                    <span class="use-case-badge">Fastest & Easiest</span>
-                </article>
+      <!-- Paradigm Shift -->
+      <section aria-labelledby="paradigm-title">
+        <h2 id="paradigm-title" class="section-title">A New Paradigm</h2>
+        <p class="section-description">
+          Crypto was invented to remove middlemen. Exchanges became the new
+          middlemen.<br />
+          MrProve brings crypto back to its original vision.
+        </p>
 
-                <article class="use-case-card">
-                    <h3 class="use-case-title">P2P Escrow & Marketplaces</h3>
-                    <p class="use-case-description">
-                        Tickets, domains, collectibles—prove control, instant release. No marketplace middleman.
-                    </p>
-                    <span class="use-case-badge">Fastest & Easiest</span>
-                </article>
+        <div class="comparison-grid">
+          <article class="comparison-card old-way">
+            <h3 class="comparison-title">The Old Way</h3>
+            <ul class="comparison-list">
+              <li>Custody risk with centralized exchanges</li>
+              <li>High fees that benefit middlemen</li>
+              <li>Privacy violations and KYC requirements</li>
+              <li>Slow settlement times</li>
+            </ul>
+          </article>
 
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Identity & Age-Gating</h3>
-                    <p class="use-case-description">
-                        Prove "over 18", "account ownership" without data dumps. Private verification.
-                    </p>
-                    <span class="use-case-badge">Fastest & Easiest</span>
-                </article>
+          <article class="comparison-card new-way">
+            <h3 class="comparison-title">The MrProve Way</h3>
+            <ul class="comparison-list">
+              <li>Non-custodial, trustless settlement</li>
+              <li>Fees that burn tokens, creating scarcity</li>
+              <li>Private proofs, no data exposure</li>
+              <li>Instant, automated settlement</li>
+            </ul>
+          </article>
+        </div>
+      </section>
 
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Enterprise Verification</h3>
-                    <p class="use-case-description">
-                        Employment, education, income attestations with selective disclosure.
-                    </p>
-                    <span class="use-case-badge">Fastest & Easiest</span>
-                </article>
+      <!-- Use Cases -->
+      <section
+        id="use-cases"
+        class="section-alt"
+        aria-labelledby="use-cases-title"
+      >
+        <h2 id="use-cases-title" class="section-title">Infinite Use Cases</h2>
+        <p class="section-description">
+          Every industry with middlemen is ready for disruption.<br />
+          Each proof burns tokens. Each use case adds demand.
+        </p>
 
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Payments & Remittances</h3>
-                    <p class="use-case-description">
-                        Private, instant cross-border settlement without bank rails.
-                    </p>
-                    <span class="use-case-badge">Fastest & Easiest</span>
-                </article>
-
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Ticketing & Memberships</h3>
-                    <p class="use-case-description">
-                        Fraud-proof primary/secondary sales with instant, private transfers.
-                    </p>
-                    <span class="use-case-badge">Mid-Term</span>
-                </article>
-
-                <article class="use-case-card">
-                    <h3 class="use-case-title">DePIN Verification</h3>
-                    <p class="use-case-description">
-                        Attest real-world output from provider portals; no special hardware.
-                    </p>
-                    <span class="use-case-badge">Mid-Term</span>
-                </article>
-
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Supply Chain & Trade Finance</h3>
-                    <p class="use-case-description">
-                        Milestone proofs unlock capital. Complete transparency without intermediaries.
-                    </p>
-                    <span class="use-case-badge">Long-Horizon</span>
-                </article>
-
-                <article class="use-case-card">
-                    <h3 class="use-case-title">Healthcare & Life Sciences</h3>
-                    <p class="use-case-description">
-                        Credentialing, coverage eligibility, clinical data attestations.
-                    </p>
-                    <span class="use-case-badge">Long-Horizon</span>
-                </article>
-            </div>
-        </section>
-
-        <!-- Why This Wins -->
-        <section aria-labelledby="wins-title">
-            <h2 id="wins-title" class="section-title">Why This Wins</h2>
-
-            <div class="feature-grid">
-                <article class="feature-card">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Exchange-Killer UX</h3>
-                    <p class="feature-description">
-                        Instant, private, non-custodial settlement that feels simpler than a wire transfer.
-                    </p>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Composability Moat</h3>
-                    <p class="feature-description">
-                        Once wallets and dApps integrate the rail, flows compound across use cases.
-                    </p>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M2 12h20"/>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Multi-Vertical Demand</h3>
-                    <p class="feature-description">
-                        Finance, identity, commerce, DePIN, enterprise—many independent engines burning the same fixed supply.
-                    </p>
-                </article>
-
-                <article class="feature-card">
-                    <div class="feature-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title">Credible Neutrality</h3>
-                    <p class="feature-description">
-                        Proofs are math. Settlement is code. No favorites, no listings, no freeze button.
-                    </p>
-                </article>
-            </div>
-        </section>
-
-        <!-- Final CTA -->
-        <section class="section-alt" style="text-align: center;" aria-labelledby="final-cta-title">
-            <h2 id="final-cta-title" class="section-title">
-                Amplifies Blockchains.<br>
-                Transcends Them.
-            </h2>
-            <p class="section-description">
-                Blockchains solved double spends. MrProve amplifies blockchain utility by removing the middlemen that made crypto so hard.
+        <div class="use-cases-grid">
+          <article class="use-case-card">
+            <h3 class="use-case-title">Crypto On/Off-Ramps & CEXes</h3>
+            <p class="use-case-description">
+              Trustless P2P settlement replaces exchange custody and fees.
+              Instant, private, non-custodial.
             </p>
-            <p style="font-size: 1.25rem; color: #60a5fa; font-weight: 700; margin-top: 2rem;">
-                You are the network. You are the future.
+            <span class="use-case-badge">Fastest & Easiest</span>
+          </article>
+
+          <article class="use-case-card">
+            <h3 class="use-case-title">P2P Escrow & Marketplaces</h3>
+            <p class="use-case-description">
+              Tickets, domains, collectibles—prove control, instant release. No
+              marketplace middleman.
             </p>
-        </section>
+            <span class="use-case-badge">Fastest & Easiest</span>
+          </article>
 
-        <!-- Footer -->
-        <footer role="contentinfo">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>ProveX</h3>
-                    <p>The future of disintermediation. Trustless proofs replacing middlemen.</p>
-                </div>
+          <article class="use-case-card">
+            <h3 class="use-case-title">Identity & Age-Gating</h3>
+            <p class="use-case-description">
+              Prove "over 18", "account ownership" without data dumps. Private
+              verification.
+            </p>
+            <span class="use-case-badge">Fastest & Easiest</span>
+          </article>
 
-                <div class="footer-section">
-                    <h3>Links</h3>
-                    <ul class="footer-links">
-                        <li><a href="https://provex.info/" target="_blank" rel="noopener noreferrer">Sacrifice</a></li>
-                        <li><a href="#use-cases">Use Cases</a></li>
-                    </ul>
-                </div>
+          <article class="use-case-card">
+            <h3 class="use-case-title">Enterprise Verification</h3>
+            <p class="use-case-description">
+              Employment, education, income attestations with selective
+              disclosure.
+            </p>
+            <span class="use-case-badge">Fastest & Easiest</span>
+          </article>
 
-                <div class="footer-section">
-                    <h3>MrProve</h3>
-                    <p>Deflationary by design. Every use burns tokens. Every transaction creates scarcity.</p>
-                </div>
+          <article class="use-case-card">
+            <h3 class="use-case-title">Payments & Remittances</h3>
+            <p class="use-case-description">
+              Private, instant cross-border settlement without bank rails.
+            </p>
+            <span class="use-case-badge">Fastest & Easiest</span>
+          </article>
+
+          <article class="use-case-card">
+            <h3 class="use-case-title">Ticketing & Memberships</h3>
+            <p class="use-case-description">
+              Fraud-proof primary/secondary sales with instant, private
+              transfers.
+            </p>
+            <span class="use-case-badge">Mid-Term</span>
+          </article>
+
+          <article class="use-case-card">
+            <h3 class="use-case-title">DePIN Verification</h3>
+            <p class="use-case-description">
+              Attest real-world output from provider portals; no special
+              hardware.
+            </p>
+            <span class="use-case-badge">Mid-Term</span>
+          </article>
+
+          <article class="use-case-card">
+            <h3 class="use-case-title">Supply Chain & Trade Finance</h3>
+            <p class="use-case-description">
+              Milestone proofs unlock capital. Complete transparency without
+              intermediaries.
+            </p>
+            <span class="use-case-badge">Long-Horizon</span>
+          </article>
+
+          <article class="use-case-card">
+            <h3 class="use-case-title">Healthcare & Life Sciences</h3>
+            <p class="use-case-description">
+              Credentialing, coverage eligibility, clinical data attestations.
+            </p>
+            <span class="use-case-badge">Long-Horizon</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- Why This Wins -->
+      <section aria-labelledby="wins-title">
+        <h2 id="wins-title" class="section-title">Why This Wins</h2>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
             </div>
+            <h3 class="feature-title">Exchange-Killer UX</h3>
+            <p class="feature-description">
+              Instant, private, non-custodial settlement that feels simpler than
+              a wire transfer.
+            </p>
+          </article>
 
-            <div class="footer-bottom">
-                <p>&copy; <span id="year"></span> ProvX. All rights reserved.</p>
-                <p style="max-width: 500px; text-align: right;">
-                    This is software you can choose to run or not. Without you running it, it's just text that sits there. You are the network. You are the future.
-                </p>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
             </div>
-        </footer>
+            <h3 class="feature-title">Composability Moat</h3>
+            <p class="feature-description">
+              Once wallets and dApps integrate the rail, flows compound across
+              use cases.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+            </div>
+            <h3 class="feature-title">Multi-Vertical Demand</h3>
+            <p class="feature-description">
+              Finance, identity, commerce, DePIN, enterprise—many independent
+              engines burning the same fixed supply.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3 class="feature-title">Credible Neutrality</h3>
+            <p class="feature-description">
+              Proofs are math. Settlement is code. No favorites, no listings, no
+              freeze button.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section
+        class="section-alt"
+        style="text-align: center"
+        aria-labelledby="final-cta-title"
+      >
+        <h2 id="final-cta-title" class="section-title">
+          Amplifies Blockchains.<br />
+          Transcends Them.
+        </h2>
+        <p class="section-description">
+          Blockchains solved double spends. MrProve amplifies blockchain utility
+          by removing the middlemen that made crypto so hard.
+        </p>
+        <p
+          style="
+            font-size: 1.25rem;
+            color: #60a5fa;
+            font-weight: 700;
+            margin-top: 2rem;
+          "
+        >
+          You are the network. You are the future.
+        </p>
+      </section>
+
+      <!-- Footer -->
+      <footer role="contentinfo">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3>ProveX</h3>
+            <p>
+              The future of disintermediation. Trustless proofs replacing
+              middlemen.
+            </p>
+          </div>
+
+          <div class="footer-section">
+            <h3>Links</h3>
+            <ul class="footer-links">
+              <li>
+                <a
+                  href="https://provex.info/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Sacrifice</a
+                >
+              </li>
+              <li><a href="#use-cases">Use Cases</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-section">
+            <h3>MrProve</h3>
+            <p>
+              Deflationary by design. Every use burns tokens. Every transaction
+              creates scarcity.
+            </p>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>&copy; <span id="year"></span> ProveX. All rights reserved.</p>
+          <p style="max-width: 500px; text-align: right">
+            This is software you can choose to run or not. Without you running
+            it, it's just text that sits there. You are the network. You are the
+            future.
+          </p>
+        </div>
+      </footer>
     </div>
 
     <!-- JavaScript -->
     <script src="./script.js"></script>
-</body>
+  </body>
 </html>
