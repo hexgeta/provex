@@ -812,13 +812,11 @@ section {
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    padding: 0 2rem;
     transition: max-height 0.3s ease-out;
 }
 
 .faq-item.active .faq-answer {
     max-height: 500px;
-    padding: 0 2rem 1.5rem 2rem;
 }
 
 .faq-answer p {
@@ -826,6 +824,7 @@ section {
     line-height: 1.8;
     font-size: 1rem;
     margin: 0;
+    padding: 0 2rem 1.5rem 2rem;
 }
 
 .faq-answer a {
