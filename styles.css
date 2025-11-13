@@ -493,7 +493,7 @@ h1 {
 /* Sections */
 section {
     position: relative;
-    padding: 6rem 2rem;
+    padding: 6rem 6rem;
     max-width: 1400px;
     margin: 0 auto;
     z-index: 10;
