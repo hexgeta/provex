@@ -632,6 +632,109 @@ section {
     letter-spacing: 0.1em;
 }
 
+/* FAQ Section */
+.faq-underline {
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #c026d3, #d946ef);
+    margin: 1rem auto 2rem;
+    border-radius: 2px;
+}
+
+.faq-container {
+    max-width: 900px;
+    margin: 3rem auto 0;
+}
+
+.faq-item {
+    background: rgba(39, 39, 42, 0.5);
+    border: 1px solid #27272a;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.faq-item:hover {
+    border-color: #52525b;
+}
+
+.faq-question {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.faq-question:hover {
+    color: #d946ef;
+}
+
+.faq-question span {
+    flex: 1;
+}
+
+.faq-icon {
+    width: 24px;
+    height: 24px;
+    color: #9ca3af;
+    transition: transform 0.3s, color 0.3s;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.faq-question:hover .faq-icon {
+    color: #d946ef;
+}
+
+.faq-item.active .faq-question {
+    color: #d946ef;
+}
+
+.faq-item.active .faq-icon {
+    transform: rotate(180deg);
+    color: #d946ef;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.faq-item.active .faq-answer {
+    max-height: 500px;
+    padding: 0 2rem 1.5rem 2rem;
+}
+
+.faq-answer p {
+    color: #d1d5db;
+    line-height: 1.8;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.faq-answer a {
+    color: #d946ef;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+.faq-answer a:hover {
+    color: #c026d3;
+    text-decoration: underline;
+}
+
 /* Footer */
 footer {
     position: relative;
@@ -726,7 +829,7 @@ footer {
         gap: 0.75rem;
     }
 
-    .nav-links li:nth-child(n+3) {
+    .nav-links li:nth-child(n+4) {
         display: none;
     }
 
