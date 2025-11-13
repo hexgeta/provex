@@ -2,30 +2,26 @@ import '@/styles/global.css'
 import { FontLoader } from '@/components/ui/FontLoader'
 import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
-import { Providers } from '@/components/Providers'
-import AppKitProvider from '@/context/AppKitProvider'
-import { Toaster } from '@/components/ui/toaster'
 import AnimatedBackground from '@/components/ui/AnimatedBackground'
-import { headers } from 'next/headers'
 
 // Static layout with revalidation
 export const revalidate = 2592000; // 30 days in seconds
 
 export const metadata = {
-  title: 'LookIntoMaxi Dapp',
-  description: 'Don\'t fade liquid hex stakes bro - End stakes & redeem your HEX principle and yield. Manage your perpetual pool stakes with ease.',
-  metadataBase: new URL('https://stake.lookintomaxi.com'),
+  title: 'ProvX - The Future of Disintermediation',
+  description: 'MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity. Trustless, private, instant settlement powered by PrivateProver technology.',
+  metadataBase: new URL('https://provex.com'),
   openGraph: {
-    title: 'LookIntoMaxi Dapp',
-    description: 'Claim your HEX here.',
-    url: 'https://stake.lookintomaxi.com',
-    siteName: 'LookIntoMaxi Dapp',
+    title: 'ProvX - The Future of Disintermediation',
+    description: 'MrProve replaces middlemen with mathematical proofs. Deflationary by design.',
+    url: 'https://provex.com',
+    siteName: 'ProvX',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'LookIntoMaxi Dapp',
+        alt: 'ProvX - MrProve Token',
       },
     ],
     locale: 'en_US',
@@ -33,8 +29,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LookIntoMaxi Dapp',
-    description: 'The home of perpetual pool stake redemption',
+    title: 'ProvX - The Future of Disintermediation',
+    description: 'MrProve: Trustless proofs replacing middlemen. Deflationary by design.',
     images: ['/opengraph-image.png'],
   },
   icons: {
@@ -55,7 +51,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black',
-    title: 'LookIntoMaxi Dapp',
+    title: 'ProvX',
   },
 }
 
@@ -64,35 +60,26 @@ export const viewport = {
   initialScale: 1,
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersData = await headers();
-  const cookies = headersData.get('cookie');
-
   return (
     <html lang="en" className="font-sans">
       <head>
         <FontLoader weight="regular" priority={true} />
         <FontLoader weight="bold" />
-        <script defer data-domain="stake.lookintomaxi.com" src="https://plausible.io/js/script.js"></script>
       </head>
       <body className="bg-black text-white">
-        <AppKitProvider cookies={cookies}>
-          <Providers>
-            <div className="relative">
-              <AnimatedBackground />
-              <div className="flex flex-col min-h-screen relative z-10">
-                <NavBar />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-              </div>
-            </div>
-            <Toaster />
-          </Providers>
-        </AppKitProvider>
+        <div className="relative">
+          <AnimatedBackground />
+          <div className="flex flex-col min-h-screen relative z-10">
+            <NavBar />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </div>
+        </div>
       </body>
     </html>
   )

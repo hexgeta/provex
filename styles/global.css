@@ -1,3 +1,11 @@
+/* 
+  NOTE: Logo should use Avenir Next Bold (not demibold) as specified in design brief.
+  For now using Archia Bold as fallback. To add Avenir Next Bold:
+  1. Add avenir-next-bold.woff2 to /public/fonts/
+  2. Add @font-face declaration here
+  3. Update logo styling in NavBar.tsx
+*/
+
 @font-face {
   font-family: 'Archia';
   src: url('/fonts/Archia/archia-regular.woff2') format('woff2');

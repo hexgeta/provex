@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { usePool } from '@/context/PoolContext';
-import { TOKEN_CONSTANTS } from '@/constants/crypto';
 
 // ========================================
 // ANIMATION CONFIGURATION - Tweak these values!
@@ -19,12 +17,11 @@ const ANIMATION_CONFIG = {
   momentum: 0.85,           // Movement smoothness - HIGHER = smoother (min: 0.0, max: 0.99)
   pixelNoise: 0,          // Pixel skip chance - HIGHER = more holes/noise (min: 0.0, max: 0.9)
   pixelDensity: 4,          // Pixels per dot (min: 2, max: 8) - HIGHER = more detailed
-  defaultColor: '#ffffff',  // Dot color when no pool selected (hex color)
+  defaultColor: '#6366f1',  // Dot color - blue/purple for ProvX brand (hex color)
   baseOpacity: 1,         // Visibility (min: 0.0, max: 1.0)
 };
 
 export default function AnimatedBackground() {
-  const { selectedTicker } = usePool();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -36,37 +33,9 @@ export default function AnimatedBackground() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Get the color for the currently selected pool
-  const getPoolColor = (ticker: string): string => {
-    if (!ticker) return ANIMATION_CONFIG.defaultColor;
-    
-    // Remove 'e' prefix (for Ethereum versions like eBASE3 -> BASE3)
-    const normalizedTicker = ticker.replace(/^e/, '');
-    
-    // Find the matching pool in TOKEN_CONSTANTS
-    // First try exact match
-    let pool = TOKEN_CONSTANTS.find(t => t.ticker === normalizedTicker);
-    
-    // If no exact match, try matching by base name (e.g., BASE3 -> BASE, BASE2 -> BASE)
-    if (!pool) {
-      const baseTicker = normalizedTicker.replace(/\d+$/, '');
-      pool = TOKEN_CONSTANTS.find(t => {
-        if (!t.ticker) return false;
-        const poolBaseTicker = t.ticker.replace(/\d+$/, '');
-        return poolBaseTicker === baseTicker;
-      });
-    }
-    
-    return pool?.color || ANIMATION_CONFIG.defaultColor;
-  };
-
-  // Get active color based on selected pool
-  const activeColor = selectedTicker 
-    ? getPoolColor(selectedTicker)
-    : ANIMATION_CONFIG.defaultColor;
-
-  const dotColor = activeColor;
-  const activePoolColor = activeColor;
+  // Use fixed color for ProvX brand
+  const activePoolColor = ANIMATION_CONFIG.defaultColor;
+  const dotColor = activePoolColor;
   
   // Helper: Parse hex color to RGB
   const hexToRgb = (hex: string) => {
@@ -291,7 +260,7 @@ export default function AnimatedBackground() {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [activePoolColor]); // All other config values are in ANIMATION_CONFIG constant
+  }, []); // All other config values are in ANIMATION_CONFIG constant
 
   if (!ANIMATION_CONFIG.enabled) return null;
 
