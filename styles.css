@@ -507,7 +507,9 @@ section {
 /* Footer */
 footer {
     position: relative;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     padding: 3rem 2rem;
     margin-top: 4rem;
     z-index: 100;
