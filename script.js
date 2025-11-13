@@ -105,7 +105,7 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions);
 
 // Apply row-based fade-in animation (3 cards at a time)
-const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description, .faq-item');
+const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description');
 
 allElements.forEach((el, index) => {
     el.style.opacity = '0';
@@ -117,6 +117,16 @@ allElements.forEach((el, index) => {
     
     el.style.transition = `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s`;
     
+    observer.observe(el);
+});
+
+// Apply fade-in animation to all FAQ items at once (no stagger)
+const faqElements = document.querySelectorAll('.faq-item');
+
+faqElements.forEach((el) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = `opacity 0.8s ease-out, transform 0.8s ease-out`;
     observer.observe(el);
 });
 
