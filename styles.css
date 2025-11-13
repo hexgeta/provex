@@ -1110,7 +1110,7 @@ section {
     border-radius: 1rem;
     margin-bottom: 1rem;
     overflow: hidden;
-    transition: all 0.5s;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .faq-item:hover {
@@ -1131,7 +1131,7 @@ section {
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
@@ -1143,7 +1143,7 @@ section {
     width: 24px;
     height: 24px;
     color: #9ca3af;
-    transition: transform 0.3s, color 0.3s;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
     flex-shrink: 0;
     margin-left: 1rem;
 }
@@ -1156,12 +1156,12 @@ section {
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .faq-item.active .faq-answer {
     max-height: 500px;
-    transition: max-height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: max-height 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .faq-answer p {
