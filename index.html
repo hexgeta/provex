@@ -1,473 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Essential Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProvX - The Future of Disintermediation</title>
-    <meta name="description" content="MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity.">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <style>
-        /* Avenir Font Family */
-        @font-face {
-            font-family: 'Avenir';
-            src: url('./public/fonts/Avenir/Avenir Regular/Avenir Regular.ttf') format('truetype');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
+    <!-- Primary Meta Tags -->
+    <title>ProvX - The Future of Disintermediation | MrProve Token</title>
+    <meta name="title" content="ProvX - The Future of Disintermediation | MrProve Token">
+    <meta name="description" content="MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity. Trustless, private, instant settlement powered by PrivateProver technology.">
+    <meta name="keywords" content="ProvX, MrProve, cryptocurrency, blockchain, DeFi, deflationary token, trustless proofs, private settlement, crypto disintermediation, P2P exchange">
+    <meta name="author" content="ProvX">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://provex.com/">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://provex.com/">
+    <meta property="og:title" content="ProvX - The Future of Disintermediation">
+    <meta property="og:description" content="MrProve replaces middlemen with mathematical proofs. Deflationary by design. Every transaction burns tokens. Every use creates scarcity.">
+    <meta property="og:image" content="https://provex.com/public/opengraph-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ProvX - MrProve Token - The Future of Disintermediation">
+    <meta property="og:site_name" content="ProvX">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://provex.com/">
+    <meta name="twitter:title" content="ProvX - The Future of Disintermediation">
+    <meta name="twitter:description" content="MrProve: Trustless proofs replacing middlemen. Deflationary by design. Every use burns tokens.">
+    <meta name="twitter:image" content="https://provex.com/public/opengraph-image.png">
+    <meta name="twitter:image:alt" content="ProvX - MrProve Token">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="./public/favicon.svg">
+    <link rel="icon" type="image/png" href="./public/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./public/favicon.png">
+    
+    <!-- Apple Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="ProvX">
+    
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="./public/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="preload" href="./styles.css" as="style">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="./styles.css">
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "ProvX",
+        "alternateName": "MrProve",
+        "url": "https://provex.com",
+        "logo": "https://provex.com/public/favicon.png",
+        "description": "MrProve replaces middlemen with mathematical proofs. Deflationary by design. Trustless, private, instant settlement.",
+        "foundingDate": "2024",
+        "sameAs": []
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "ProvX",
+        "url": "https://provex.com",
+        "description": "The future of disintermediation. Trustless proofs replacing middlemen.",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://provex.com/?s={search_term_string}",
+            "query-input": "required name=search_term_string"
         }
-        
-        @font-face {
-            font-family: 'Avenir';
-            src: url('./public/fonts/Avenir/Avenir Book/Avenir Book.ttf') format('truetype');
-            font-weight: 500;
-            font-style: normal;
-            font-display: swap;
-        }
-        
-        @font-face {
-            font-family: 'Avenir';
-            src: url('./public/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf') format('truetype');
-            font-weight: 700;
-            font-style: normal;
-            font-display: swap;
-        }
-        
-        @font-face {
-            font-family: 'Avenir';
-            src: url('./public/fonts/Avenir/Avenir Black/Avenir Black.ttf') format('truetype');
-            font-weight: 900;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Avenir', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000000;
-            color: #ffffff;
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        /* Animated Background */
-        #background-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .gradient-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.9) 100%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .content {
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1.5rem 2rem;
-            z-index: 100;
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            letter-spacing: 0.05em;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: #d1d5db;
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: white;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8rem 2rem 4rem;
-            text-align: center;
-        }
-
-        .hero-content {
-            max-width: 1200px;
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        h1 {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-description {
-            font-size: clamp(1.25rem, 3vw, 2rem);
-            color: #d1d5db;
-            margin-bottom: 3rem;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .cta-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: white;
-            color: black;
-            padding: 1rem 2rem;
-            border-radius: 9999px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .cta-button:hover {
-            background: #e5e7eb;
-            transform: translateX(4px);
-        }
-
-        /* Sections */
-        section {
-            padding: 6rem 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .section-alt {
-            background: rgba(39, 39, 42, 0.3);
-        }
-
-        .section-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-description {
-            font-size: clamp(1.25rem, 2vw, 1.5rem);
-            color: #9ca3af;
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto 4rem;
-        }
-
-        /* Feature Grid */
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-        }
-
-        .feature-card {
-            background: #000000;
-            border: 1px solid #27272a;
-            border-radius: 1rem;
-            padding: 2rem;
-            transition: border-color 0.3s;
-        }
-
-        .feature-card:hover {
-            border-color: #52525b;
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1rem;
-            color: #60a5fa;
-        }
-
-        .feature-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .feature-description {
-            color: #9ca3af;
-            line-height: 1.8;
-        }
-
-        /* Comparison Section */
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 3rem;
-            margin-top: 3rem;
-        }
-
-        .comparison-card {
-            border-radius: 1rem;
-            padding: 2rem;
-        }
-
-        .old-way {
-            background: rgba(127, 29, 29, 0.2);
-            border: 1px solid rgba(127, 29, 29, 0.5);
-        }
-
-        .new-way {
-            background: rgba(20, 83, 45, 0.2);
-            border: 1px solid rgba(20, 83, 45, 0.5);
-        }
-
-        .comparison-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-
-        .old-way .comparison-title {
-            color: #f87171;
-        }
-
-        .new-way .comparison-title {
-            color: #4ade80;
-        }
-
-        .comparison-list {
-            list-style: none;
-        }
-
-        .comparison-list li {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            color: #d1d5db;
-        }
-
-        .old-way .comparison-list li::before {
-            content: "✗";
-            color: #f87171;
-            font-weight: 700;
-        }
-
-        .new-way .comparison-list li::before {
-            content: "✓";
-            color: #4ade80;
-            font-weight: 700;
-        }
-
-        /* Use Cases Grid */
-        .use-cases-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
-
-        .use-case-card {
-            background: #000000;
-            border: 1px solid #27272a;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            transition: all 0.3s;
-        }
-
-        .use-case-card:hover {
-            border-color: #52525b;
-            transform: translateY(-2px);
-        }
-
-        .use-case-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-        }
-
-        .use-case-description {
-            font-size: 0.9rem;
-            color: #9ca3af;
-            line-height: 1.6;
-            margin-bottom: 0.75rem;
-        }
-
-        .use-case-badge {
-            display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #60a5fa;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        /* Footer */
-        footer {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 3rem 2rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-section h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .footer-section p {
-            color: #9ca3af;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .footer-links {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-links a {
-            color: #9ca3af;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            max-width: 1400px;
-            margin: 2rem auto 0;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .footer-bottom p {
-            color: #6b7280;
-            font-size: 0.85rem;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-links {
-                gap: 1rem;
-            }
-
-            .nav-links li:last-child {
-                display: none;
-            }
-
-            section {
-                padding: 4rem 1.5rem;
-            }
-
-            .feature-grid,
-            .comparison-grid,
-            .use-cases-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Smooth scrolling */
-        html {
-            scroll-behavior: smooth;
-        }
-    </style>
+    }
+    </script>
 </head>
 <body>
     <!-- Background -->
-    <canvas id="background-canvas"></canvas>
-    <div class="gradient-overlay"></div>
+    <canvas id="background-canvas" aria-hidden="true"></canvas>
+    <div class="gradient-overlay" aria-hidden="true"></div>
 
     <!-- Content -->
     <div class="content">
         <!-- Navigation -->
-        <nav>
+        <nav role="navigation" aria-label="Main navigation">
             <div class="nav-container">
-                <a href="#" class="logo">ProvX</a>
+                <a href="/" class="logo" aria-label="ProvX Home">ProvX</a>
                 <ul class="nav-links">
                     <li><a href="#learn-more">Technology</a></li>
                     <li><a href="#use-cases">Use Cases</a></li>
@@ -476,7 +105,7 @@
         </nav>
 
         <!-- Hero Section -->
-        <section class="hero">
+        <header class="hero">
             <div class="hero-content">
                 <h1>
                     The Future of<br>
@@ -486,25 +115,25 @@
                     MrProve replaces middlemen with mathematical proofs.<br>
                     Every transaction burns tokens. Every use creates scarcity.
                 </p>
-                <a href="#learn-more" class="cta-button">
+                <a href="#learn-more" class="cta-button" aria-label="Learn more about ProvX">
                     Learn More
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                 </a>
             </div>
-        </section>
+        </header>
 
         <!-- Core Value Proposition -->
-        <section id="learn-more" class="section-alt">
-            <h2 class="section-title">Deflationary by Design</h2>
+        <section id="learn-more" class="section-alt" aria-labelledby="deflationary-title">
+            <h2 id="deflationary-title" class="section-title">Deflationary by Design</h2>
             <p class="section-description">
                 MrProve never inflates. It only burns. Automatically bought and burnt every time someone uses PrivateProver technology.
             </p>
 
             <div class="feature-grid">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
+                <article class="feature-card fade-in">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
@@ -513,10 +142,10 @@
                     <p class="feature-description">
                         Replace intermediaries with mathematical certainty. No custody, no middlemen, no trust required.
                     </p>
-                </div>
+                </article>
 
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
+                <article class="feature-card fade-in">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                         </svg>
@@ -525,10 +154,10 @@
                     <p class="feature-description">
                         Every successful use case burns tokens from a fixed supply. Adoption directly drives scarcity.
                     </p>
-                </div>
+                </article>
 
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
+                <article class="feature-card fade-in">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
@@ -537,20 +166,20 @@
                     <p class="feature-description">
                         Prove payment from bank. Prove coins sent. Settle instantly. No waiting, no escrow.
                     </p>
-                </div>
+                </article>
             </div>
         </section>
 
         <!-- Paradigm Shift -->
-        <section>
-            <h2 class="section-title">A New Paradigm</h2>
+        <section aria-labelledby="paradigm-title">
+            <h2 id="paradigm-title" class="section-title">A New Paradigm</h2>
             <p class="section-description">
                 Crypto was invented to remove middlemen. Exchanges became the new middlemen.<br>
                 MrProve brings crypto back to its original vision.
             </p>
 
             <div class="comparison-grid">
-                <div class="comparison-card old-way">
+                <article class="comparison-card old-way">
                     <h3 class="comparison-title">The Old Way</h3>
                     <ul class="comparison-list">
                         <li>Custody risk with centralized exchanges</li>
@@ -558,9 +187,9 @@
                         <li>Privacy violations and KYC requirements</li>
                         <li>Slow settlement times</li>
                     </ul>
-                </div>
+                </article>
 
-                <div class="comparison-card new-way">
+                <article class="comparison-card new-way">
                     <h3 class="comparison-title">The MrProve Way</h3>
                     <ul class="comparison-list">
                         <li>Non-custodial, trustless settlement</li>
@@ -568,100 +197,100 @@
                         <li>Private proofs, no data exposure</li>
                         <li>Instant, automated settlement</li>
                     </ul>
-                </div>
+                </article>
             </div>
         </section>
 
         <!-- Use Cases -->
-        <section id="use-cases" class="section-alt">
-            <h2 class="section-title">Infinite Use Cases</h2>
+        <section id="use-cases" class="section-alt" aria-labelledby="use-cases-title">
+            <h2 id="use-cases-title" class="section-title">Infinite Use Cases</h2>
             <p class="section-description">
                 Every industry with middlemen is ready for disruption.<br>
                 Each proof burns tokens. Each use case adds demand.
             </p>
 
             <div class="use-cases-grid">
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Crypto On/Off-Ramps & CEXes</h3>
                     <p class="use-case-description">
                         Trustless P2P settlement replaces exchange custody and fees. Instant, private, non-custodial.
                     </p>
                     <span class="use-case-badge">Fastest & Easiest</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">P2P Escrow & Marketplaces</h3>
                     <p class="use-case-description">
                         Tickets, domains, collectibles—prove control, instant release. No marketplace middleman.
                     </p>
                     <span class="use-case-badge">Fastest & Easiest</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Identity & Age-Gating</h3>
                     <p class="use-case-description">
                         Prove "over 18", "account ownership" without data dumps. Private verification.
                     </p>
                     <span class="use-case-badge">Fastest & Easiest</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Enterprise Verification</h3>
                     <p class="use-case-description">
                         Employment, education, income attestations with selective disclosure.
                     </p>
                     <span class="use-case-badge">Fastest & Easiest</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Payments & Remittances</h3>
                     <p class="use-case-description">
                         Private, instant cross-border settlement without bank rails.
                     </p>
                     <span class="use-case-badge">Fastest & Easiest</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Ticketing & Memberships</h3>
                     <p class="use-case-description">
                         Fraud-proof primary/secondary sales with instant, private transfers.
                     </p>
                     <span class="use-case-badge">Mid-Term</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">DePIN Verification</h3>
                     <p class="use-case-description">
                         Attest real-world output from provider portals; no special hardware.
                     </p>
                     <span class="use-case-badge">Mid-Term</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Supply Chain & Trade Finance</h3>
                     <p class="use-case-description">
                         Milestone proofs unlock capital. Complete transparency without intermediaries.
                     </p>
                     <span class="use-case-badge">Long-Horizon</span>
-                </div>
+                </article>
 
-                <div class="use-case-card">
+                <article class="use-case-card">
                     <h3 class="use-case-title">Healthcare & Life Sciences</h3>
                     <p class="use-case-description">
                         Credentialing, coverage eligibility, clinical data attestations.
                     </p>
                     <span class="use-case-badge">Long-Horizon</span>
-                </div>
+                </article>
             </div>
         </section>
 
         <!-- Why This Wins -->
-        <section>
-            <h2 class="section-title">Why This Wins</h2>
+        <section aria-labelledby="wins-title">
+            <h2 id="wins-title" class="section-title">Why This Wins</h2>
 
             <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
@@ -670,10 +299,10 @@
                     <p class="feature-description">
                         Instant, private, non-custodial settlement that feels simpler than a wire transfer.
                     </p>
-                </div>
+                </article>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -683,10 +312,10 @@
                     <p class="feature-description">
                         Once wallets and dApps integrate the rail, flows compound across use cases.
                     </p>
-                </div>
+                </article>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M2 12h20"/>
@@ -697,10 +326,10 @@
                     <p class="feature-description">
                         Finance, identity, commerce, DePIN, enterprise—many independent engines burning the same fixed supply.
                     </p>
-                </div>
+                </article>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
@@ -709,13 +338,13 @@
                     <p class="feature-description">
                         Proofs are math. Settlement is code. No favorites, no listings, no freeze button.
                     </p>
-                </div>
+                </article>
             </div>
         </section>
 
         <!-- Final CTA -->
-        <section class="section-alt" style="text-align: center;">
-            <h2 class="section-title">
+        <section class="section-alt" style="text-align: center;" aria-labelledby="final-cta-title">
+            <h2 id="final-cta-title" class="section-title">
                 Amplifies Blockchains.<br>
                 Transcends Them.
             </h2>
@@ -728,7 +357,7 @@
         </section>
 
         <!-- Footer -->
-        <footer>
+        <footer role="contentinfo">
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>ProveX</h3>
@@ -738,7 +367,8 @@
                 <div class="footer-section">
                     <h3>Links</h3>
                     <ul class="footer-links">
-                        <li><a href="https://provex.info/">Sacrifice</a></li>
+                        <li><a href="https://provex.info/" target="_blank" rel="noopener noreferrer">Sacrifice</a></li>
+                        <li><a href="#use-cases">Use Cases</a></li>
                     </ul>
                 </div>
 
@@ -757,111 +387,7 @@
         </footer>
     </div>
 
-    <script>
-        // Set current year
-        document.getElementById('year').textContent = new Date().getFullYear();
-
-        // Animated Background
-        const canvas = document.getElementById('background-canvas');
-        const ctx = canvas.getContext('2d');
-
-        // Set canvas size
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Particle system
-        const particles = [];
-        const particleCount = 100;
-        const connectionDistance = 150;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.radius = 2;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-            }
-
-            draw() {
-                ctx.fillStyle = 'rgba(99, 102, 241, 0.6)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        // Initialize particles
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
-        }
-
-        // Animation loop
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
-            });
-
-            // Draw connections
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < connectionDistance) {
-                        ctx.strokeStyle = `rgba(99, 102, 241, ${0.2 * (1 - distance / connectionDistance)})`;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        animate();
-
-        // Fade in elements on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.fade-in, .feature-card, .use-case-card').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            observer.observe(el);
-        });
-    </script>
+    <!-- JavaScript -->
+    <script src="./script.js"></script>
 </body>
 </html>
-
