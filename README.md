@@ -1,6 +1,6 @@
 # ProveX - The Future of Disintermediation
 
-A pure static HTML/CSS/JS website showcasing the ProveX and PrivateProver technology.
+A pure static HTML/CSS/JS website showcasing the ProveX and ProveX technology.
 
 ## Features
 
