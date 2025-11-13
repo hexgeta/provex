@@ -27,7 +27,7 @@ window.addEventListener('resize', resizeCanvas);
 
 // Particle system
 const particles = [];
-const particleCount = 100;
+const particleCount = 150;
 const connectionDistance = 150;
 
 class Particle {
@@ -38,7 +38,7 @@ class Particle {
         this.y = this.baseY;
         this.vx = (Math.random() - 0.5) * 2.5;
         this.vy = (Math.random() - 0.5) * 2.5;
-        this.radius = 2;
+        this.radius = 3;
         this.depth = Math.random() * 0.5 + 0.5; // 0.5 to 1 (closer = more parallax)
     }
 
@@ -64,8 +64,8 @@ class Particle {
     }
 
     draw() {
-        const opacity = 0.4 + (this.depth * 0.4); // Closer particles are brighter
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        const opacity = 0.6 + (this.depth * 0.4); // Closer particles are brighter
+        ctx.fillStyle = `rgba(99, 102, 241, ${opacity})`;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -96,11 +96,11 @@ function animate() {
             if (distance < connectionDistance) {
                 // Average depth for connection opacity
                 const avgDepth = (particles[i].depth + particles[j].depth) / 2;
-                const baseOpacity = 0.2 * (1 - distance / connectionDistance);
+                const baseOpacity = 0.3 * (1 - distance / connectionDistance);
                 const depthOpacity = baseOpacity * avgDepth;
                 
                 ctx.strokeStyle = `rgba(99, 102, 241, ${depthOpacity})`;
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(particles[i].x, particles[i].y);
                 ctx.lineTo(particles[j].x, particles[j].y);
