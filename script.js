@@ -143,3 +143,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Mobile Hamburger Menu
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.querySelector('.hamburger');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    
+    // Toggle menu
+    hamburger.addEventListener('click', () => {
+        const isActive = hamburger.classList.contains('active');
+        hamburger.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+        hamburger.setAttribute('aria-expanded', !isActive);
+        mobileMenu.setAttribute('aria-hidden', isActive);
+        
+        // Prevent body scroll when menu is open
+        document.body.style.overflow = isActive ? '' : 'hidden';
+    });
+    
+    // Close menu when clicking a link
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            mobileMenu.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        });
+    });
+    
+    // Close menu when clicking outside
+    mobileMenu.addEventListener('click', (e) => {
+        if (e.target === mobileMenu) {
+            hamburger.classList.remove('active');
+            mobileMenu.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+    });
+});
