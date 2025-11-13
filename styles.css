@@ -266,8 +266,7 @@ nav {
     align-items: center;
     gap: 2rem;
     width: 100%;
-    max-width: 500px;
-    padding: 2rem;
+    padding: 2rem 6rem;
 }
 
 .mobile-nav {
@@ -464,8 +463,8 @@ h1 {
 }
 
 .benefit-icon {
-    width: 48px;
-    height: 48px;
+    width: 38px;
+    height: 38px;
     margin-bottom: 1.5rem;
     color: white;
 }
@@ -1038,13 +1037,13 @@ footer {
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
     nav {
-        padding: 1.5rem 2rem;
+        padding: 1.5rem 6rem;
     }
 
     footer {
-        padding: 2rem;
+        padding: 2rem 6rem;
     }
 
     .nav-right {
@@ -1064,7 +1063,7 @@ footer {
     }
 
     section {
-        padding: 4rem 1.5rem;
+        padding: 4rem 6rem;
     }
 
     .feature-grid,
@@ -1081,6 +1080,25 @@ footer {
 
     .footer-tagline {
         text-align: center;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 768px) {
+    nav {
+        padding: 1.5rem 2rem;
+    }
+
+    footer {
+        padding: 2rem;
+    }
+
+    section {
+        padding: 4rem 2rem;
+    }
+
+    .mobile-menu-content {
+        padding: 2rem;
     }
 }
 
