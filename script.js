@@ -140,8 +140,8 @@ if (ctx) {
 
 // Fade in elements on scroll
 const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
+    threshold: 0.05,
+    rootMargin: '0px 0px -100px 0px'
 };
 
 const observer = new IntersectionObserver((entries) => {
@@ -149,14 +149,20 @@ const observer = new IntersectionObserver((entries) => {
         if (entry.isIntersecting) {
             entry.target.style.opacity = '1';
             entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('animated');
         }
     });
 }, observerOptions);
 
-document.querySelectorAll('.fade-in, .feature-card, .use-case-card').forEach(el => {
+// Apply staggered fade-in animation to all elements
+document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description').forEach((el, index) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+    
+    // Add slight stagger delay for cards in the same section
+    const delay = (index % 6) * 0.1; // Stagger by 0.1s for cards in same grid
+    el.style.transition = `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s`;
+    
     observer.observe(el);
 });
 
