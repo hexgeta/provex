@@ -104,13 +104,17 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Apply staggered fade-in animation to all elements
-document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description').forEach((el, index) => {
+// Apply row-based fade-in animation (3 cards at a time)
+const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description');
+
+allElements.forEach((el, index) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
     
-    // Add slight stagger delay for cards in the same section
-    const delay = (index % 6) * 0.1; // Stagger by 0.1s for cards in same grid
+    // Calculate row (3 cards per row)
+    const row = Math.floor(index / 3);
+    const delay = row * 0.2; // Each row animates 0.2s after the previous
+    
     el.style.transition = `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s`;
     
     observer.observe(el);
