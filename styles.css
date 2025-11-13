@@ -60,6 +60,15 @@
     }
 }
 
+@keyframes border-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 
 * {
     margin: 0;
@@ -467,6 +476,7 @@ h1 {
 }
 
 .hero-benefit-card {
+    position: relative;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -474,6 +484,34 @@ h1 {
     padding: 2rem;
     text-align: center;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+.hero-benefit-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: conic-gradient(
+        transparent,
+        transparent,
+        transparent,
+        rgba(192, 38, 211, 0.5),
+        transparent,
+        transparent,
+        transparent
+    );
+    border-radius: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: border-spin 3s linear infinite;
+    z-index: -1;
+}
+
+.hero-benefit-card:hover::before {
+    opacity: 1;
 }
 
 .hero-benefit-card:hover {
@@ -531,7 +569,7 @@ section {
     width: 100%;
     max-width: 900px;
     margin: 3rem auto 3rem auto;
-    background: linear-gradient(175deg, #18181b 0%, #171717 100%);
+    background: linear-gradient(175deg, #18181b 0%, #171717 50%);
     border-radius: 2rem;
     border: 2px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 4px 32px 0 rgba(192, 38, 211, 0.08), 0 1.5px 4px rgba(0,0,0,0.12);
@@ -623,11 +661,40 @@ section {
 }
 
 .feature-card {
+    position: relative;
     background: #000000;
     border: 1px solid #27272a;
     border-radius: 1rem;
     padding: 2rem;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: conic-gradient(
+        transparent,
+        transparent,
+        transparent,
+        rgba(217, 70, 239, 0.5),
+        transparent,
+        transparent,
+        transparent
+    );
+    border-radius: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: border-spin 3s linear infinite;
+    z-index: -1;
+}
+
+.feature-card:hover::before {
+    opacity: 1;
 }
 
 .feature-card:hover {
@@ -677,10 +744,39 @@ section {
 }
 
 .comparison-card {
+    position: relative;
     border-radius: 1rem;
     padding: 2rem;
     backdrop-filter: blur(6px);
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+.comparison-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: conic-gradient(
+        transparent,
+        transparent,
+        transparent,
+        rgba(16, 185, 129, 0.5),
+        transparent,
+        transparent,
+        transparent
+    );
+    border-radius: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: border-spin 3s linear infinite;
+    z-index: -1;
+}
+
+.comparison-card:hover::before {
+    opacity: 1;
 }
 
 .comparison-card:hover {
@@ -743,11 +839,40 @@ section {
 }
 
 .use-case-card {
+    position: relative;
     background: #000000;
     border: 1px solid #27272a;
     border-radius: 0.75rem;
     padding: 1.5rem;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+.use-case-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: conic-gradient(
+        transparent,
+        transparent,
+        transparent,
+        rgba(6, 182, 212, 0.5),
+        transparent,
+        transparent,
+        transparent
+    );
+    border-radius: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: border-spin 3s linear infinite;
+    z-index: -1;
+}
+
+.use-case-card:hover::before {
+    opacity: 1;
 }
 
 .use-case-card:hover {
