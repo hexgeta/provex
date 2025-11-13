@@ -217,15 +217,15 @@ nav {
 }
 
 .hamburger span {
-    width: 25px;
-    height: 3px;
+    width: 32px;
+    height: 4px;
     background: white;
-    border-radius: 2px;
+    border-radius: 0;
     transition: all 0.3s;
 }
 
 .hamburger.active span:nth-child(1) {
-    transform: rotate(45deg) translate(8px, 8px);
+    transform: rotate(45deg) translate(9px, 9px);
 }
 
 .hamburger.active span:nth-child(2) {
@@ -233,7 +233,7 @@ nav {
 }
 
 .hamburger.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -7px);
+    transform: rotate(-45deg) translate(9px, -9px);
 }
 
 /* Mobile Menu Overlay */
