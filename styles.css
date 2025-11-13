@@ -1040,7 +1040,7 @@ footer {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
     nav {
         padding: 1.5rem 2rem;
     }
