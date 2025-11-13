@@ -248,11 +248,12 @@ nav {
     -webkit-backdrop-filter: blur(10px);
     z-index: 1000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
+    overflow-y: auto;
 }
 
 .mobile-menu.active {
@@ -266,7 +267,7 @@ nav {
     align-items: center;
     gap: 2rem;
     width: 100%;
-    padding: 2rem 6rem;
+    padding: 8rem 6rem 4rem 6rem;
 }
 
 .mobile-nav {
@@ -1098,7 +1099,7 @@ footer {
     }
 
     .mobile-menu-content {
-        padding: 2rem;
+        padding: 8rem 2rem 4rem 2rem;
     }
 }
 
