@@ -100,7 +100,7 @@ module.exports = {
     		},
 	fontFamily: {
 		sans: [
-			'Archia',
+			'Avenir',
 			'ui-sans-serif',
 			'system-ui',
 			'sans-serif',
@@ -110,7 +110,5 @@ module.exports = {
     },
     plugins: [
       require('tailwindcss-animate'),
-      require('tailwind-scrollbar')({ nocompatible: true }),
-      // ... any other plugins you're using
     ],
   }

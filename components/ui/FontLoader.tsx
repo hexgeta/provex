@@ -1,7 +1,5 @@
-import { cn } from '@/lib/utils'
-
 interface FontLoaderProps {
-  weight?: 'regular' | 'bold'
+  weight?: 'regular' | 'bold' | 'heavy'
   priority?: boolean
 }
 
@@ -9,16 +7,25 @@ export function FontLoader({
   weight = 'regular',
   priority = false 
 }: FontLoaderProps) {
-  const fontPath = weight === 'bold' 
-    ? `/fonts/Archia/archia-bold.woff2`
-    : `/fonts/Archia/archia-regular.woff2`
+  let fontPath: string;
+  
+  switch (weight) {
+    case 'heavy':
+      fontPath = `/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf`;
+      break;
+    case 'bold':
+      fontPath = `/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf`;
+      break;
+    default:
+      fontPath = `/fonts/Avenir/Avenir Regular/Avenir Regular.ttf`;
+  }
   
   return (
     <link
       rel="preload"
       href={fontPath}
       as="font"
-      type="font/woff2"
+      type="font/ttf"
       crossOrigin="anonymous"
       fetchPriority={priority ? 'high' : 'auto'}
     />

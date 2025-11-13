@@ -8,20 +8,20 @@ import AnimatedBackground from '@/components/ui/AnimatedBackground'
 export const revalidate = 2592000; // 30 days in seconds
 
 export const metadata = {
-  title: 'ProvX - The Future of Disintermediation',
+  title: 'ProveX - The Future of Disintermediation',
   description: 'MrProve replaces middlemen with mathematical proofs. Every transaction burns tokens. Every use creates scarcity. Trustless, private, instant settlement powered by PrivateProver technology.',
   metadataBase: new URL('https://provex.com'),
   openGraph: {
-    title: 'ProvX - The Future of Disintermediation',
+    title: 'ProveX - The Future of Disintermediation',
     description: 'MrProve replaces middlemen with mathematical proofs. Deflationary by design.',
     url: 'https://provex.com',
-    siteName: 'ProvX',
+    siteName: 'ProveX',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'ProvX - MrProve Token',
+        alt: 'ProveX',
       },
     ],
     locale: 'en_US',
@@ -29,8 +29,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ProvX - The Future of Disintermediation',
-    description: 'MrProve: Trustless proofs replacing middlemen. Deflationary by design.',
+    title: 'ProveX - The Future of Disintermediation',
+    description: 'Trustless proofs replacing middlemen. Deflationary by design.',
     images: ['/opengraph-image.png'],
   },
   icons: {
@@ -51,7 +51,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black',
-    title: 'ProvX',
+    title: 'ProveX',
   },
 }
 

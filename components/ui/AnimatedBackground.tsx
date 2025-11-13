@@ -17,7 +17,7 @@ const ANIMATION_CONFIG = {
   momentum: 0.85,           // Movement smoothness - HIGHER = smoother (min: 0.0, max: 0.99)
   pixelNoise: 0,          // Pixel skip chance - HIGHER = more holes/noise (min: 0.0, max: 0.9)
   pixelDensity: 4,          // Pixels per dot (min: 2, max: 8) - HIGHER = more detailed
-  defaultColor: '#6366f1',  // Dot color - blue/purple for ProvX brand (hex color)
+  defaultColor: '#6366f1',  // Dot color - blue/purple for ProveX brand (hex color)
   baseOpacity: 1,         // Visibility (min: 0.0, max: 1.0)
 };
 
@@ -33,7 +33,7 @@ export default function AnimatedBackground() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Use fixed color for ProvX brand
+  // Use fixed color for ProveX brand
   const activePoolColor = ANIMATION_CONFIG.defaultColor;
   const dotColor = activePoolColor;
   

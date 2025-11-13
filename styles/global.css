@@ -1,23 +1,33 @@
-/* 
-  NOTE: Logo should use Avenir Next Bold (not demibold) as specified in design brief.
-  For now using Archia Bold as fallback. To add Avenir Next Bold:
-  1. Add avenir-next-bold.woff2 to /public/fonts/
-  2. Add @font-face declaration here
-  3. Update logo styling in NavBar.tsx
-*/
+/* Avenir Font Family */
 
 @font-face {
-  font-family: 'Archia';
-  src: url('/fonts/Archia/archia-regular.woff2') format('woff2');
+  font-family: 'Avenir';
+  src: url('/fonts/Avenir/Avenir Regular/Avenir Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Archia';
-  src: url('/fonts/Archia/archia-bold.woff2') format('woff2');
+  font-family: 'Avenir';
+  src: url('/fonts/Avenir/Avenir Book/Avenir Book.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Avenir';
+  src: url('/fonts/Avenir/Avenir Heavy/Avenir Heavy.ttf') format('truetype');
   font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Avenir';
+  src: url('/fonts/Avenir/Avenir Black/Avenir Black.ttf') format('truetype');
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -31,75 +41,10 @@
   --text-color: #ffffff;
 }
 
-/* No-select utility classes */
-.no-select {
-  @apply select-none !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -khtml-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
-  pointer-events: auto !important;
-}
-
-.no-select * {
-  @apply select-none !important;
-  pointer-events: auto !important;
-}
-
-.no-select img {
-  -webkit-user-drag: none !important;
-  -khtml-user-drag: none !important;
-  -moz-user-drag: none !important;
-  -o-user-drag: none !important;
-  user-drag: none !important;
-  pointer-events: none !important;
-}
-
-.skeleton {
-  @apply bg-zinc-950 bg-[length:200%_100%] animate-shine;
-  background-image: linear-gradient(
-    110deg,
-    rgb(9, 9, 11) 8%,      /* This is the BASE color (zinc-950)
-                              It's what you see before and after the shine effect */
-    rgb(24, 24, 27) 18%,   /* This is the SHINE color (zinc-900)
-                              It's slightly lighter, creating the moving highlight */
-    rgb(9, 9, 11) 33%      /* This returns to the BASE color
-                              Creates the end of the shine effect */
-  );
-}
-
-.skeleton-dark {
-  @apply bg-zinc-900 bg-[length:200%_100%] animate-shine;
-  background-image: linear-gradient(
-    110deg,
-    rgb(24, 24, 27) 8%,     /* Base color (zinc-900) */
-    rgb(63, 63, 70) 18%,    /* Shine color (zinc-700) - more visible */
-    rgb(24, 24, 27) 33%     /* Back to base color */
-  );
-  animation: shine 1.5s infinite linear;  /* Slower animation for more visible effect */
-}
-
-@keyframes shine {
-  to {
-    background-position-x: -200%;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 html,
 body {
   @apply w-full m-0 font-sans bg-[var(--background-color)] text-[var(--text-color)];
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Avenir', ui-sans-serif, system-ui, sans-serif;
   font-size: 19px;
   line-height: 1.4;
   overflow-x: hidden;
@@ -107,138 +52,25 @@ body {
   position: relative;
 }
 
-@keyframes wave {
-  0% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(20deg);
-  }
-  50% {
-    transform: rotate(0deg);
-  }
-  75% {
-    transform: rotate(20deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-.App {
-  @apply max-w-[1200px] mx-auto relative;
-}
-
-/* Removed padding-left calc to fix scrolling issues */
-html {
-  /* padding-left: calc(100vw - 100%); */
-}
-
-/* Framer's standard breakpoints */
-@media (max-width: 1199px) {
-  .App {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 991px) {
-  .App {
-  }
-}
-
-@media (max-width: 767px) {
-  .App {
-  }
-}
-
-@media (max-width: 479px) {
-  .App {
-  }
-}
-
 * {
   box-sizing: border-box;
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Avenir', ui-sans-serif, system-ui, sans-serif !important;
   letter-spacing: 0.05em;
   word-spacing: 0.2em;
 }
 
 a {
   @apply text-inherit no-underline;
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Avenir', ui-sans-serif, system-ui, sans-serif !important;
 }
 
-/* Ensure all text elements use Archia */
 span, div, p, h1, h2, h3, h4, h5, h6, button, input, textarea, label {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Avenir', ui-sans-serif, system-ui, sans-serif !important;
   letter-spacing: 0.05em;
   word-spacing: 0.2em;
 }
 
-/* Target Web3Modal button specifically */
-w3m-button, w3m-button *, w3m-button button, w3m-button span {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-}
-
-/* Target any Web3Modal components */
-[data-w3m], [data-w3m] *, [data-w3m] button, [data-w3m] span {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-}
-
-/* More aggressive Web3Modal targeting */
-.w3m-button, .w3m-button *, .w3m-button button, .w3m-button span,
-.w3m-connect-button, .w3m-connect-button *, .w3m-connect-button button, .w3m-connect-button span,
-.w3m-modal, .w3m-modal *, .w3m-modal button, .w3m-modal span {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-}
-
-/* Target all possible button variations */
-button, .button, [role="button"] {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-}
-
-/* Ultra-aggressive Web3Modal targeting - try to catch everything */
-w3m-button, w3m-button *, w3m-button button, w3m-button span, w3m-button div,
-w3m-connect-button, w3m-connect-button *, w3m-connect-button button, w3m-connect-button span, w3m-connect-button div,
-w3m-modal, w3m-modal *, w3m-modal button, w3m-modal span, w3m-modal div,
-[data-w3m], [data-w3m] *, [data-w3m] button, [data-w3m] span, [data-w3m] div,
-.w3m-button, .w3m-button *, .w3m-connect-button, .w3m-connect-button *, .w3m-modal, .w3m-modal *,
-.w3m-connect-button, .w3m-connect-button *, .w3m-modal, .w3m-modal *,
-w3m-button::part(button), w3m-button::part(text), w3m-button::part(label),
-w3m-connect-button::part(button), w3m-connect-button::part(text), w3m-connect-button::part(label) {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-  color: white !important;
-  background-color: white !important;
-  border: 1px solid white !important;
-}
-
-/* Try to target shadow DOM elements */
-w3m-button::shadow, w3m-connect-button::shadow, w3m-modal::shadow,
-w3m-button::shadow *, w3m-connect-button::shadow *, w3m-modal::shadow * {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-  color: white !important;
-  background-color: white !important;
-}
-
-/* Add a style tag injection approach */
-@supports (selector(:where(*))) {
-  :where(w3m-button, w3m-connect-button, w3m-modal) {
-    font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-  }
-  
-  :where(w3m-button, w3m-connect-button, w3m-modal) * {
-    font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-    color: white !important;
-    background-color: white !important;
-  }
-}
-
-/* Adjust text color for inputs and textareas */
-input,
-textarea {
-  @apply text-[var(--background-color)];
-}
-
-/* Global Scrollbar Hiding for All Elements (Lines 193-217) */
+/* Hide scrollbars */
 *::-webkit-scrollbar {
   width: 0px;
   background: transparent;
@@ -250,16 +82,13 @@ textarea {
   display: none;
 }
 
-/* Cross-Browser Compatibility (Lines 205-217) */
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-*::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+body {
+  overflow-y: auto;
 }
 
 @layer base {
@@ -283,21 +112,9 @@ textarea {
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -318,19 +135,6 @@ textarea {
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -340,361 +144,10 @@ textarea {
   }
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'Archia', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Avenir', ui-sans-serif, system-ui, sans-serif;
     font-size: 19px;
     line-height: 1.4;
     letter-spacing: 0.05em;
     word-spacing: 0.2em;
-  }
-}
-
-.hamburger-line {
-  @apply w-[25px] h-[3px] bg-white my-1 transition-all duration-300;
-}
-
-/* Only hide overflow on desktop for radio page */
-@media (min-width: 768px) {
-  .radio-page {
-    overflow: hidden;
-  }
-  
-  /* When radio-page class is present, prevent scrolling on body only if explicitly needed */
-  .radio-page ~ body {
-    overflow: hidden;
-  }
-}
-
-/* Remove overflow hidden from body by default */
-body {
-  overflow-y: auto;
-}
-
-/* Utility Class for Selective Hiding (Lines 179-186) */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
-}
-.scrollbar-hide::-webkit-scrollbar { 
-  display: none;  /* Safari and Chrome */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
-}
-
-/* Hide scrollbar arrows globally */
-::-webkit-scrollbar-button {
-  display: none;
-}
-
-/* Hide scrollbar arrows specifically */
-::-webkit-scrollbar-button:start:decrement,
-::-webkit-scrollbar-button:end:increment {
-  display: none;
-}
-
-/* Custom AppKit Connect Button Styling - Multiple targeting approaches */
-
-/* Approach 1: Direct targeting */
-.connect-button-wrapper {
-  @apply relative;
-}
-
-/* Approach 2: Target all possible AppKit selectors */
-appkit-button,
-appkit-button *,
-appkit-button button,
-appkit-button span,
-appkit-button div,
-w3m-button,
-w3m-button *,
-w3m-button button,
-w3m-button span,
-w3m-button div,
-[data-w3m],
-[data-w3m] *,
-[data-w3m] button,
-[data-w3m] span,
-[data-w3m] div {
-  font-family: 'Archia', ui-sans-serif, system-ui, sans-serif !important;
-  letter-spacing: 0.05em !important;
-  word-spacing: 0.2em !important;
-}
-
-/* Style the main button element - multiple selectors */
-appkit-button button,
-w3m-button button,
-[data-w3m] button,
-.connect-button-wrapper appkit-button button,
-.connect-button-wrapper w3m-button button {
-  background: white !important;
-  color: black !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-radius: 9999px !important;
-  padding: 12px 32px !important;
-  font-weight: 600 !important;
-  font-size: 10px !important;
-  transition: background-color 0.2s ease !important;
-}
-
-appkit-button button:hover,
-w3m-button button:hover,
-[data-w3m] button:hover,
-.connect-button-wrapper appkit-button button:hover,
-.connect-button-wrapper w3m-button button:hover {
-  background: #e5e7eb !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Style button text */
-appkit-button button span,
-appkit-button button div,
-w3m-button button span,
-w3m-button button div,
-[data-w3m] button span,
-[data-w3m] button div {
-  color: black !important;
-  font-weight: 600 !important;
-}
-
-/* Ensure proper spacing and alignment */
-appkit-button,
-w3m-button,
-[data-w3m] {
-  display: inline-block !important;
-}
-
-/* Style the AppKit modal backdrop to match CreatePositionModal */
-w3m-modal,
-w3m-modal::backdrop,
-[data-w3m-modal],
-[data-w3m-modal]::backdrop,
-.w3m-modal,
-.w3m-modal::backdrop {
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 9999 !important; /* Higher than navbar (z-[100]) and footer */
-}
-
-/* Target the modal container itself */
-w3m-modal > div,
-[data-w3m-modal] > div,
-.w3m-modal > div {
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 9999 !important;
-}
-
-/* More aggressive targeting for the modal backdrop */
-w3m-modal,
-[data-w3m-modal],
-.w3m-modal {
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 9999 !important;
-}
-
-/* Target any overlay or backdrop elements */
-.w3m-overlay,
-.w3m-backdrop,
-[data-w3m-overlay],
-[data-w3m-backdrop] {
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 9999 !important;
-}
-
-/* Fix white outline issue - remove any borders or outlines from AppKit modal */
-w3m-modal,
-[data-w3m-modal],
-.w3m-modal,
-w3m-modal *,
-[data-w3m-modal] *,
-.w3m-modal * {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Ensure the modal content has proper z-index */
-w3m-modal > div > div,
-[data-w3m-modal] > div > div,
-.w3m-modal > div > div {
-  z-index: 10000 !important;
-}
-
-/* Hide AppKit branding */
-w3m-modal [data-testid="footer"],
-w3m-modal .w3m-footer,
-[data-w3m-modal] [data-testid="footer"],
-[data-w3m-modal] .w3m-footer,
-.w3m-modal [data-testid="footer"],
-.w3m-modal .w3m-footer,
-w3m-modal [data-testid="footer"] *,
-[data-w3m-modal] [data-testid="footer"] *,
-.w3m-modal [data-testid="footer"] * {
-  display: none !important;
-}
-
-/* Hide "UX by" branding */
-w3m-modal [data-testid="footer"]:has-text("UX by"),
-w3m-modal [data-testid="footer"]:has-text("reown"),
-[data-w3m-modal] [data-testid="footer"]:has-text("UX by"),
-[data-w3m-modal] [data-testid="footer"]:has-text("reown"),
-.w3m-modal [data-testid="footer"]:has-text("UX by"),
-.w3m-modal [data-testid="footer"]:has-text("reown") {
-  display: none !important;
-}
-
-/* Customize search bar appearance */
-w3m-modal input[type="search"],
-w3m-modal input[placeholder*="Search"],
-[data-w3m-modal] input[type="search"],
-[data-w3m-modal] input[placeholder*="Search"],
-.w3m-modal input[type="search"],
-.w3m-modal input[placeholder*="Search"] {
-  background: #000000 !important;
-  border: 1px solid #333333 !important;
-  color: #ffffff !important;
-  border-radius: 8px !important;
-  padding: 12px 16px !important;
-}
-
-/* Style search bar placeholder */
-w3m-modal input[type="search"]::placeholder,
-w3m-modal input[placeholder*="Search"]::placeholder,
-[data-w3m-modal] input[type="search"]::placeholder,
-[data-w3m-modal] input[placeholder*="Search"]::placeholder,
-.w3m-modal input[type="search"]::placeholder,
-.w3m-modal input[placeholder*="Search"]::placeholder {
-  color: #cccccc !important;
-  opacity: 1 !important;
-}
-
-/* Disable body scroll when AppKit modal is open - only via class */
-.w3m-modal-open {
-  overflow: hidden !important;
-}
-
-/* Hide AppKit branding footer - Multiple approaches */
-w3m-footer,
-w3m-footer-branding,
-w3m-footer-branding *,
-w3m-footer * {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  opacity: 0 !important;
-}
-
-/* Hide any reown branding elements */
-[data-testid="footer-branding"],
-[data-testid="w3m-footer-branding"],
-[data-testid="w3m-footer"],
-.w3m-footer-branding,
-.w3m-footer,
-.w3m-footer-branding *,
-.w3m-footer * {
-  display: none !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-/* Hide the "UX BY" text and reown branding */
-div[class*="footer"],
-div[class*="branding"],
-span[class*="branding"],
-p[class*="branding"],
-a[class*="branding"] {
-  display: none !important;
-}
-
-/* Target specific text content */
-*:contains("UX BY"),
-*:contains("reown"),
-*:contains("UX BY reown") {
-  display: none !important;
-}
-
-/* More specific selectors for AppKit modal */
-.w3m-modal w3m-footer,
-.w3m-modal w3m-footer-branding,
-.w3m-modal [class*="footer"],
-.w3m-modal [class*="branding"] {
-  display: none !important;
-}
-
-/* Target the modal container specifically */
-w3m-modal w3m-footer,
-w3m-modal w3m-footer-branding {
-  display: none !important;
-  height: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Hide the specific UX BY reown branding element */
-.wui-ux-by-reown {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  opacity: 0 !important;
-}
-
-/* Create Deal Button hover effect */
-.create-deal-button:hover {
-  background-color: white !important;
-  color: black !important;
-}
-
-/* Also target any parent containers */
-* .wui-ux-by-reown,
-w3m-modal .wui-ux-by-reown,
-.w3m-modal .wui-ux-by-reown {
-  display: none !important;
-}
-
-/* Force modal background to be pure black */
-w3m-modal,
-.w3m-modal,
-w3m-modal > div,
-.w3m-modal > div {
-  background-color: #000000 !important;
-  background: #000000 !important;
-}
-
-/* Force all modal content backgrounds to be black */
-w3m-modal *,
-.w3m-modal * {
-  background-color: #000000 !important;
-}
-
-/* Override any grey backgrounds in the modal */
-w3m-modal [class*="bg-"],
-.w3m-modal [class*="bg-"],
-w3m-modal [style*="background"],
-.w3m-modal [style*="background"] {
-  background-color: #000000 !important;
-  background: #000000 !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .connect-button-wrapper appkit-button button {
-    @apply px-4 py-2 text-sm;
   }
 }

@@ -56,7 +56,7 @@ const Footer = () => {
         <div className="border-t border-[rgba(255,255,255,0.1)] pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
-              © {CURRENT_YEAR} ProvX. All rights reserved.
+              © {CURRENT_YEAR} ProveX. All rights reserved.
             </p>
             <p className="text-xs text-gray-600 max-w-md text-center md:text-right">
               This is software you can choose to run or not. Without you running it, it&apos;s just text that sits there. You are the network. You are the future.
