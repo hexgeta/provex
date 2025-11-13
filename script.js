@@ -3,18 +3,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 // Animated Background
 const canvas = document.getElementById('background-canvas');
-console.log('Canvas element:', canvas);
-
-if (!canvas) {
-    console.error('Canvas element not found!');
-}
-
 const ctx = canvas ? canvas.getContext('2d') : null;
-console.log('Canvas context:', ctx);
-
-if (!ctx) {
-    console.error('Could not get 2D context!');
-}
 
 // Mouse position for parallax
 let mouseX = 0;
@@ -83,16 +72,11 @@ class Particle {
     }
 }
 
-// Only initialize if we have a valid canvas context
+// Initialize particles
 if (ctx) {
-    console.log('Initializing particles...');
-    
-    // Initialize particles
     for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle());
     }
-    
-    console.log(`Created ${particles.length} particles`);
 }
 
 // Animation loop
@@ -131,11 +115,9 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+// Start animation
 if (ctx) {
-    console.log('Starting animation...');
     animate();
-} else {
-    console.error('Cannot start animation - no canvas context');
 }
 
 // Fade in elements on scroll
