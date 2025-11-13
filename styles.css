@@ -791,10 +791,6 @@ section {
     transition: all 0.3s;
 }
 
-.faq-question:hover {
-    color: #d946ef;
-}
-
 .faq-question span {
     flex: 1;
 }
@@ -808,23 +804,16 @@ section {
     margin-left: 1rem;
 }
 
-.faq-question:hover .faq-icon {
-    color: #d946ef;
-}
-
-.faq-item.active .faq-question {
-    color: #d946ef;
-}
-
 .faq-item.active .faq-icon {
     transform: rotate(180deg);
-    color: #d946ef;
+    color: #fff;
 }
 
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 0 2rem;
+    transition: max-height 0.3s ease-out;
 }
 
 .faq-item.active .faq-answer {
