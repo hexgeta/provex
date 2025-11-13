@@ -426,7 +426,7 @@ h1 {
 /* Hero Benefits Cards */
 .hero-benefits {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: 2rem;
 }
 
@@ -475,16 +475,16 @@ h1 {
 }
 
 .hero-benefit-card h3 {
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
     color: white;
 }
 
 .hero-benefit-card p {
     color: #d1d5db;
     line-height: 1.6;
-    font-size: 0.95rem;
+    font-size: 0.75rem;
 }
 
 /* Sections */
