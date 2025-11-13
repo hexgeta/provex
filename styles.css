@@ -31,6 +31,50 @@
     font-display: swap;
 }
 
+/* Spring Animation Keyframes */
+@keyframes spring-in {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce-in {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(5px);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes elastic-scale {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.08);
+    }
+    60% {
+        transform: scale(0.98);
+    }
+    100% {
+        transform: scale(1.03);
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -177,11 +221,12 @@ nav {
     color: #d1d5db;
     text-decoration: none;
     font-size: 0.95rem;
-    transition: color 0.3s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-links a:hover {
     color: white;
+    transform: translateY(-2px);
 }
 
 /* Nav CTA Button */
@@ -195,7 +240,7 @@ nav {
     font-weight: 700;
     font-size: 0.95rem;
     text-decoration: none;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 4px 15px rgba(192, 38, 211, 0.3);
     white-space: nowrap;
 }
@@ -379,7 +424,7 @@ h1 {
     font-weight: 700;
     font-size: 1.1rem;
     text-decoration: none;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 
         0 0 0 1px rgba(255, 143, 15, 0.15) inset,
         0 2px 8px rgba(0, 0, 0, 0.6),
@@ -414,7 +459,7 @@ h1 {
     font-weight: 700;
     font-size: 1.1rem;
     text-decoration: none;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
@@ -442,10 +487,11 @@ h1 {
     border-radius: 1rem;
     padding: 2rem;
     text-align: center;
-    transition: all 0.3s;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .hero-benefit-card:hover {
+    animation: elastic-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Individual hover colors for hero benefit cards */
@@ -517,7 +563,7 @@ section {
     color: #9ca3af;
     text-align: center;
     max-width: 800px;
-    margin: 0 auto 4rem;
+    margin: 0 auto 1rem;
 }
 
 /* Feature Grid */
@@ -533,10 +579,11 @@ section {
     border: 1px solid #27272a;
     border-radius: 1rem;
     padding: 2rem;
-    transition: border-color 0.3s;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .feature-card:hover {
+    animation: elastic-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Individual hover colors for feature cards */
@@ -594,10 +641,11 @@ section {
     border-radius: 1rem;
     padding: 2rem;
     backdrop-filter: blur(6px);
-    transition: all 0.3s;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .comparison-card:hover {
+    animation: elastic-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .old-way {
@@ -661,10 +709,11 @@ section {
     border: 1px solid #27272a;
     border-radius: 0.75rem;
     padding: 1.5rem;
-    transition: all 0.3s;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .use-case-card:hover {
+    animation: elastic-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Individual hover colors for use case cards */
@@ -938,7 +987,7 @@ section {
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 
@@ -963,11 +1012,12 @@ section {
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.1s ease-out;
+    transition: max-height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .faq-item.active .faq-answer {
     max-height: 500px;
+    transition: max-height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .faq-answer p {
