@@ -105,7 +105,7 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions);
 
 // Apply row-based fade-in animation (3 cards at a time)
-const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description');
+const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description, .faq-item');
 
 allElements.forEach((el, index) => {
     el.style.opacity = '0';
