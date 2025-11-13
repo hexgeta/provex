@@ -459,7 +459,7 @@ h1 {
     width: 48px;
     height: 48px;
     margin-bottom: 1.5rem;
-    color: #d946ef;
+    color: white;
 }
 
 .benefit-icon svg {
@@ -490,9 +490,7 @@ section {
 }
 
 .section-alt {
-    background: #0A0A0A;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0b0b0b;
 }
 
 .section-title {
@@ -584,7 +582,7 @@ section {
 .comparison-card {
     border-radius: 1rem;
     padding: 2rem;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(6px);
     transition: all 0.3s;
 }
 
@@ -597,21 +595,10 @@ section {
     border: 1px solid rgba(255, 113, 113, 0.3);
 }
 
-.old-way:hover {
-    background: rgba(127, 29, 29, 0.2);
-    border-color: rgba(255, 113, 113, 0.4);
-    box-shadow: 0 10px 30px rgba(127, 29, 29, 0.3);
-}
 
 .new-way {
     background: rgba(20, 83, 45, 0.15);
     border: 1px solid rgba(74, 222, 128, 0.3);
-}
-
-.new-way:hover {
-    background: rgba(20, 83, 45, 0.2);
-    border-color: rgba(74, 222, 128, 0.4);
-    box-shadow: 0 10px 30px rgba(20, 83, 45, 0.3);
 }
 
 .comparison-title {
@@ -763,8 +750,8 @@ section {
 }
 
 .faq-item {
-    background: rgba(39, 39, 42, 0.5);
-    border: 1px solid #27272a;
+    background: rgba(17, 17, 20, 1);
+    border: 1px solid #27272a, 0.25;
     border-radius: 1rem;
     margin-bottom: 1rem;
     overflow: hidden;
