@@ -132,7 +132,7 @@ nav {
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 6rem;
     z-index: 100;
 }
 
@@ -750,8 +750,8 @@ section {
 }
 
 .faq-item {
-    background: rgba(17, 17, 20, .04);
-    backdrop-filter: blur(6px);
+    background: rgba(17, 17, 20, 0.8);
+    backdrop-filter: blur(2px);
     border: 1px solid #27272a, 0.25;
     border-radius: 1rem;
     margin-bottom: 1rem;
@@ -761,7 +761,7 @@ section {
 
 .faq-item:hover {
     border-color: #52525b;
-    background: rgba(34, 34, 40, 1);
+    background: rgba(34, 34, 40, 0.8);
 }
 
 .faq-question {
@@ -836,7 +836,7 @@ footer {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 2rem;
+    padding: 2rem 6rem;
     margin-top: 4rem;
     z-index: 100;
 }
@@ -882,6 +882,14 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
+    nav {
+        padding: 1.5rem 2rem;
+    }
+
+    footer {
+        padding: 2rem;
+    }
+
     .nav-right {
         gap: 1rem;
     }
