@@ -394,16 +394,34 @@ section {
 .comparison-card {
     border-radius: 1rem;
     padding: 2rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+}
+
+.comparison-card:hover {
+    transform: translateY(-5px);
 }
 
 .old-way {
+    background: rgba(127, 29, 29, 0.15);
+    border: 1px solid rgba(255, 113, 113, 0.3);
+}
+
+.old-way:hover {
     background: rgba(127, 29, 29, 0.2);
-    border: 1px solid rgba(127, 29, 29, 0.5);
+    border-color: rgba(255, 113, 113, 0.4);
+    box-shadow: 0 10px 30px rgba(127, 29, 29, 0.3);
 }
 
 .new-way {
+    background: rgba(20, 83, 45, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.new-way:hover {
     background: rgba(20, 83, 45, 0.2);
-    border: 1px solid rgba(20, 83, 45, 0.5);
+    border-color: rgba(74, 222, 128, 0.4);
+    box-shadow: 0 10px 30px rgba(20, 83, 45, 0.3);
 }
 
 .comparison-title {
