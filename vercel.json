@@ -1,20 +1,29 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": null,
+  "outputDirectory": ".",
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/public/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -33,4 +42,3 @@
     }
   ]
 }
-
