@@ -431,6 +431,8 @@ h1 {
     gap: 2rem;
     align-items: center;
     justify-content: center;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .hero-benefit-card {
