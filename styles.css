@@ -44,6 +44,10 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     line-height: 1.6;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
