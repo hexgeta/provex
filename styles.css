@@ -238,8 +238,6 @@ nav {
 /* Hamburger Menu */
 .hamburger {
     display: none;
-    flex-direction: column;
-    gap: 5px;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -247,24 +245,26 @@ nav {
     z-index: 1001;
 }
 
-.hamburger span {
-    width: 32px;
-    height: 4px;
-    background: white;
-    border-radius: 0;
-    transition: all 0.3s;
+.hamburger-icon {
+    display: block;
 }
 
-.hamburger.active span:nth-child(1) {
-    transform: rotate(45deg) translate(9px, 9px);
+.hamburger-line {
+    transition: opacity 0.3s, transform 0.3s;
+    transform-origin: center;
 }
 
-.hamburger.active span:nth-child(2) {
+.x-shape {
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Hide hamburger lines and show X when active */
+.hamburger.active .hamburger-line {
     opacity: 0;
 }
 
-.hamburger.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(9px, -9px);
+.hamburger.active .x-shape {
+    opacity: 1;
 }
 
 /* Mobile Menu Overlay */
