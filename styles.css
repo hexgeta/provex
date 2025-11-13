@@ -102,6 +102,25 @@ body {
     z-index: 5;
 }
 
+/* Horizontal vignette overlay */
+.content::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0) 20%,
+        rgba(0, 0, 0, 0) 80%,
+        rgba(0, 0, 0, 0.6) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+}
+
 /* Navigation */
 nav {
     position: fixed;
