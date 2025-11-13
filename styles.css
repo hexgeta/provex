@@ -83,6 +83,25 @@ body {
     z-index: 10;
 }
 
+/* Vertical vignette overlay */
+.content::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0) 15%,
+        rgba(0, 0, 0, 0) 85%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+}
+
 /* Navigation */
 nav {
     position: fixed;
@@ -188,9 +207,11 @@ h1 {
 
 /* Sections */
 section {
+    position: relative;
     padding: 6rem 2rem;
     max-width: 1400px;
     margin: 0 auto;
+    z-index: 10;
 }
 
 .section-alt {
@@ -355,9 +376,11 @@ section {
 
 /* Footer */
 footer {
+    position: relative;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 3rem 2rem;
     margin-top: 4rem;
+    z-index: 100;
 }
 
 .footer-content {
