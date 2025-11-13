@@ -1,40 +1,9 @@
-# Dependencies
-/node_modules
-/.pnp
-.pnp.js
+# macOS
+.DS_Store
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-
-# Production
-/build
+# IDE
+.vscode/
+.idea/
 
 # Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env*.local
-.env
-
-# Media files
-/public/music/*.mp3
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Private configuration
-config/whitelisted-emails.private.ts 
+*.log
