@@ -65,7 +65,7 @@ class Particle {
 
     draw() {
         const opacity = 0.4 + (this.depth * 0.4); // Closer particles are brighter
-        ctx.fillStyle = `rgba(99, 102, 241, ${opacity})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
