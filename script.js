@@ -229,4 +229,30 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = '';
         }
     });
+
+    // Countdown Timer for Sacrifice End Date (Dec 3, 2025 00:00:00 UTC)
+    function updateCountdown() {
+        const endDate = new Date('2025-12-03T00:00:00Z').getTime();
+        const now = new Date().getTime();
+        const distance = endDate - now;
+
+        if (distance < 0) {
+            document.getElementById('sacrifice-timer').innerHTML = 'ENDED';
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById('timer-days').textContent = String(days).padStart(2, '0');
+        document.getElementById('timer-hours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('timer-minutes').textContent = String(minutes).padStart(2, '0');
+        document.getElementById('timer-seconds').textContent = String(seconds).padStart(2, '0');
+    }
+
+    // Update countdown every second
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
 });
