@@ -104,29 +104,65 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Apply row-based fade-in animation (3 cards at a time)
-const allElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card, .section-title, .section-description');
+// Apply fade-in to section titles first
+const sectionTitles = document.querySelectorAll('.section-title:not(#faq .section-title)');
+sectionTitles.forEach((el) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = `opacity 0.8s ease-out, transform 0.8s ease-out`;
+    observer.observe(el);
+});
 
-allElements.forEach((el, index) => {
+// Apply fade-in to section descriptions
+const sectionDescriptions = document.querySelectorAll('.section-description');
+sectionDescriptions.forEach((el) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = `opacity 0.8s ease-out 0.1s, transform 0.8s ease-out 0.1s`;
+    observer.observe(el);
+});
+
+// Apply row-based fade-in animation to cards (after titles)
+const cardElements = document.querySelectorAll('.fade-in, .feature-card, .use-case-card, .comparison-card');
+
+cardElements.forEach((el, index) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
     
     // Calculate row (3 cards per row)
     const row = Math.floor(index / 3);
-    const delay = row * 0.2; // Each row animates 0.2s after the previous
+    const delay = 0.2 + (row * 0.15); // Start after titles (0.2s) + stagger by row
     
     el.style.transition = `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s`;
     
     observer.observe(el);
 });
 
-// Apply fade-in animation to all FAQ items at once (no stagger)
-const faqElements = document.querySelectorAll('.faq-item');
+// Apply fade-in animation to sacrifice section elements
+const sacrificeElements = document.querySelectorAll('.sacrifice-live-badge, .sacrifice-title, .sacrifice-box, .sacrifice-info-item, .process-step, .sacrifice-cta-button');
 
+sacrificeElements.forEach((el, index) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    const delay = index * 0.1; // Stagger animation
+    el.style.transition = `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s`;
+    observer.observe(el);
+});
+
+// Apply fade-in animation to FAQ section (title first, then items)
+const faqTitle = document.querySelector('#faq .section-title');
+if (faqTitle) {
+    faqTitle.style.opacity = '0';
+    faqTitle.style.transform = 'translateY(20px)';
+    faqTitle.style.transition = `opacity 0.8s ease-out, transform 0.8s ease-out`;
+    observer.observe(faqTitle);
+}
+
+const faqElements = document.querySelectorAll('.faq-item');
 faqElements.forEach((el) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
-    el.style.transition = `opacity 0.8s ease-out, transform 0.8s ease-out`;
+    el.style.transition = `opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s`; // Delay after title
     observer.observe(el);
 });
 
